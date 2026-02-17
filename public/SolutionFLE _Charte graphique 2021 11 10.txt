@@ -1,0 +1,65 @@
+
+Charte graphique et utilisation des modèles
+
+1	LE LOGO POUR WORD
+ 	Solution – FLE 
+
+Complet pour en-tête 2x2 cm
+	
+	Solution – FLE  
+
+Complet pour Signature 0,7x0,7
+TAILLE 5x5 cm	
+ 
+	Taille pixel 200x230
+2	LE THÈME 
+2.1	Le jeu de couleurs – palette 
+Voici comment se déclinent les couleurs Solution FLE :
+
+	Couleur 	Pantone	Correspondance Code R/G/B
+Texte / arrière-plan – Sombre 1			
+Texte / arrière-plan – Clair 1			
+Texte / arrière-plan – Sombre 2			11/24/109
+Texte / arrière-plan – Clair 2			138/218/241
+Accentuation 1			128/128/128
+Accentuation 2			255/204/0
+Accentuation 3			65/128/224
+Accentuation 4			0/176/80
+Accentuation 5			234/26/56
+Accentuation 6			249/215/120
+Lien hypertexte		na	na
+Lien hypertexte visité		na	na (par défaut Word)
+
+
+Dans la palette de couleurs Word, en choisissant curseur RVB, on peut modifier et personnaliser les couleurs avec le code Red /Green/Blue  (Rouge / Vert /Bleu en FR)  du tableau ci-dessus.
+
+Les couleurs sont enregistrées dans le Thème Office SolutionFLE. Sur Mac elles se modifient en passant par PowerPoint 2011, grâce à la fenêtre ci-dessous, le thème est ensuite disponible dans Word. Un thème contient, le jeu de couleurs (palette) le jeu de police et le jeu de styles.
+2.2	Le jeu de polices
+Le jeu de polices contient une police de titre et une police de corps de texte pour les caractères latins et la même chose pour les autres alphabets (chinois, arabe, cyrillique…).
+	Tahoma pour les titres
+	Calibri pour le corps de texte
+2.3	Le jeu de styles
+Les formatages de la table des matières Voici le jeu de style de Solution FLE – 
+Ok mis à jour le 10/11/2021	 
+2.4	Le thème Solution FLE
+Se nomme « Thème_SolutionFLE_2022.thmx » et il est composé des 3 éléments ci-dessus :
+	Jeu de couleurs = palette
+	Jeu de polices
+	Jeu de styles
+Il est enregistré dans Bibliothèque/Application Support/Microsoft/Office/Modèles utilisateur.
+2.5	Les tableaux
+A partir du moment où vous travaillez avec le thème SolutionFLE, Word vous propose automatiquement des styles de tableaux qui correspondent à vos couleurs. Vous les trouvez dans l’onglet Disposition de tableau. Voici des exemples : 
+
+ 
+
+3	LES MODÈLES SOLUTION FLE
+3.1	Le modèle normal 
+3.2	Le papier à lettre électronique 
+3.3	La signature électronique 
+3.4	Les présentations Powerpoint 
+3.5	Les factures 
+
+4	CONCLUSION
+Le modèle normal se trouve également dans Bibliothèque/Application Support/Microsoft/Office/Modèles utilisateur.
+
+
