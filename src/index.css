@@ -35,6 +35,40 @@ body {
 
 [dir="rtl"] body {
   font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+  font-size: 110%;
+  /* Increase base font size for Arabic */
+}
+
+[dir="rtl"] h1 {
+  font-size: 1.15em;
+}
+
+[dir="rtl"] h2 {
+  font-size: 1.15em;
+}
+
+[dir="rtl"] h3 {
+  font-size: 1.15em;
+}
+
+[dir="rtl"] .hero-subtitle {
+  font-size: 1.25em;
+}
+
+[dir="rtl"] .logo-text {
+  font-size: 1.1em;
+}
+
+[dir="rtl"] .nav-links a {
+  font-size: 1.1em;
+}
+
+[dir="rtl"] .btn {
+  font-size: 1.1em;
+}
+
+[dir="rtl"] .mobile-nav a {
+  font-size: 1.1em;
 }
 
 /* Fixed Background Watermark - Optimized for Desktop & Clear Text */
@@ -150,10 +184,21 @@ header .container {
   align-items: center;
 }
 
+.logo-img {
+  height: 85px;
+  width: auto;
+}
+
 .logo-text {
   font-weight: 800;
   font-size: 2.2rem;
   font-family: var(--font-title);
+  line-height: 1.1;
+}
+
+.mobile-lang-under-logo {
+  display: none;
+  margin-top: 0.25rem;
 }
 
 .nav-links {
@@ -250,8 +295,28 @@ header .container {
     font-size: 1.5rem;
   }
 
-  header img {
+  .logo-img {
     height: 60px !important;
+  }
+
+  .mobile-lang-under-logo {
+    display: block;
+  }
+
+  .mobile-lang-under-logo .lang-switcher {
+    padding: 0.15rem;
+    gap: 0.15rem;
+    background: rgba(11, 24, 109, 0.04);
+  }
+
+  .mobile-lang-under-logo .lang-btn {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.7rem;
+    border-radius: 8px;
+  }
+
+  .mobile-lang-under-logo .lang-flag {
+    font-size: 0.9rem;
   }
 
   h1 {
@@ -557,15 +622,4 @@ header .container {
 
 .lang-label {
   letter-spacing: 0.5px;
-}
-
-/* Hide mobile lang switcher on desktop */
-.mobile-lang-switcher {
-  display: none;
-}
-
-@media (max-width: 900px) {
-  .mobile-lang-switcher {
-    display: block;
-  }
 }

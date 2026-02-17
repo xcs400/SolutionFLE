@@ -78,18 +78,18 @@ const Contact = () => {
                 </div>
             </div>
 
-            <footer style={{ marginTop: '8rem' }}>
+            <footer style={{ marginTop: '8rem', paddingBottom: '2rem' }}>
                 <div className="container">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '2rem' }}>
                         <div>
-                            <img src="./LogoOfficiel.png" alt="Logo" style={{ height: '50px', filter: 'brightness(0) invert(1)' }} />
+                            <img src="./LogoOfficiel.png" alt="Logo" style={{ height: '60px' }} />
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                            <p>&copy; {new Date().getFullYear()} {t('footer.copyright')}</p>
-                            <p style={{ fontSize: '0.8rem' }}>{t('footer.siret')}</p>
+                        <div style={{ textAlign: 'right', color: 'var(--color-primary)' }}>
+                            <p style={{ fontWeight: 'bold', margin: '0 0 0.5rem 0' }}>&copy; {new Date().getFullYear()} {t('footer.copyright')}</p>
+                            <p style={{ fontSize: '0.8rem', opacity: 0.7, margin: 0 }}>{t('footer.siret')}</p>
                         </div>
                     </div>
-                    <div style={{ textAlign: 'center', marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ textAlign: 'center', marginTop: '3rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
                         <a
                             href="#"
                             onClick={(e) => {
@@ -102,14 +102,16 @@ const Contact = () => {
                                 }
                             }}
                             style={{
-                                fontSize: '0.7rem',
-                                color: 'rgba(255,255,255,0.15)',
+                                fontSize: '0.85rem',
+                                color: 'var(--color-secondary)',
                                 textDecoration: 'none',
                                 cursor: 'pointer',
-                                transition: 'color 0.3s',
+                                transition: 'all 0.3s',
+                                opacity: 0.4,
+                                fontWeight: '600'
                             }}
-                            onMouseEnter={(e) => e.target.style.color = 'rgba(255,255,255,0.4)'}
-                            onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.15)'}
+                            onMouseEnter={(e) => e.target.style.opacity = '1'}
+                            onMouseLeave={(e) => e.target.style.opacity = '0.4'}
                         >
                             Admin
                         </a>

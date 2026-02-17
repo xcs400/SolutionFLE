@@ -26,12 +26,17 @@ const Header = () => {
                     <img
                         src="./LogoOfficiel.png"
                         alt="Solution FLE Logo"
-                        style={{ height: '85px', width: 'auto' }}
+                        className="logo-img"
                     />
-                    <span className="logo-text">
-                        <span style={{ color: '#000000' }}>Solution</span>
-                        <span style={{ color: 'var(--color-secondary)', marginLeft: '0.6rem' }}>FLE</span>
-                    </span>
+                    <div className="logo-content" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span className="logo-text">
+                            <span style={{ color: '#000000' }}>Solution</span>
+                            <span style={{ color: 'var(--color-secondary)', marginLeft: '0.6rem' }}>FLE</span>
+                        </span>
+                        <div className="mobile-lang-under-logo">
+                            <LanguageSwitcher />
+                        </div>
+                    </div>
                 </a>
 
                 {/* Desktop Navigation */}
@@ -50,9 +55,6 @@ const Header = () => {
 
                 {/* Mobile Menu Toggle */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <div className="mobile-lang-switcher">
-                        <LanguageSwitcher />
-                    </div>
                     <button className="mobile-menu-toggle" onClick={toggleMenu} aria-label="Toggle menu">
                         {isOpen ? <X size={32} /> : <Menu size={32} />}
                     </button>
