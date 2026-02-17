@@ -89,6 +89,31 @@ const Contact = () => {
                             <p style={{ fontSize: '0.8rem' }}>{t('footer.siret')}</p>
                         </div>
                     </div>
+                    <div style={{ textAlign: 'center', marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                        <a
+                            href="#"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                const pwd = prompt('Mot de passe admin :');
+                                if (pwd === 'Pascal') {
+                                    window.open('/textedit.html', '_blank');
+                                } else if (pwd !== null) {
+                                    alert('Mot de passe incorrect');
+                                }
+                            }}
+                            style={{
+                                fontSize: '0.7rem',
+                                color: 'rgba(255,255,255,0.15)',
+                                textDecoration: 'none',
+                                cursor: 'pointer',
+                                transition: 'color 0.3s',
+                            }}
+                            onMouseEnter={(e) => e.target.style.color = 'rgba(255,255,255,0.4)'}
+                            onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.15)'}
+                        >
+                            Admin
+                        </a>
+                    </div>
                 </div>
             </footer>
         </section>

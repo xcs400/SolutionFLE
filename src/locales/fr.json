@@ -1,159 +1,159 @@
 {
-    "nav": {
-        "home": "Accueil",
-        "about": "A propos",
-        "services": "Services",
-        "resources": "Contenu",
-        "testimonials": "Témoignages",
-        "contact": "Contact",
-        "cta": "Contactez-moi"
-    },
-    "hero": {
-        "title_line1": "Apprendre le français",
-        "title_line2": "et tout devient possible",
-        "subtitle_html": "Formations personnalisées en Français Langue Étrangère (FLE)<br/>avec <strong>Aline Gamblin</strong>, professeure diplômée DAEFLE.",
-        "cta": "Découvrir les formations",
-        "image_alt": "Visuel FLE"
-    },
-    "about": {
-        "title": "Mon Parcours",
-        "name": "Aline GAMBLIN",
-        "role": "Professeure de FLE diplômée DAEFLE",
-        "bio": "Passionnée par la transmission de la langue et de la culture française, j'accompagne depuis plusieurs années un public international varié dans sa quête de maîtrise linguistique.",
-        "highlights": [
-            "Enseignement sur-mesure et flexible",
-            "Immersion culturelle et ateliers pratiques",
-            "Pédagogie active centrée sur l'apprenant",
-            "Accompagnement bienveillant et structuré"
+  "nav": {
+    "home": "Accueil",
+    "about": "A propos",
+    "services": "Services",
+    "resources": "Contenu",
+    "testimonials": "Témoignages",
+    "contact": "Contact",
+    "cta": "Contactez-moi"
+  },
+  "hero": {
+    "title_line1": "Apprendre le français",
+    "title_line2": "et tout devient possible",
+    "subtitle_html": "Formations personnalisées en Français Langue Étrangère (FLE)<br/>avec <strong>Aline Gamblin</strong>, professeure diplômée DAEFLE.",
+    "cta": "Découvrir les formations",
+    "image_alt": "Visuel FLE"
+  },
+  "about": {
+    "title": "Mon Parcours",
+    "name": "Aline GAMBLIN",
+    "role": "Professeure de FLE diplômée DAEFLE",
+    "bio": "Passionnée par la transmission de la langue et de la culture française, j'accompagne depuis plusieurs années un public international varié dans sa quête de maîtrise linguistique.",
+    "highlights": [
+      "Enseignement sur-mesure et flexible",
+      "Immersion culturelle et ateliers pratiques",
+      "Pédagogie active centrée sur l'apprenant",
+      "Accompagnement bienveillant et structuré"
+    ]
+  },
+  "services": {
+    "title": "Mes Prestations",
+    "items": [
+      {
+        "title": "Tous Niveaux",
+        "desc": "Accompagnement complet de débutant à avancé avec une méthode structurée.",
+        "tags": [
+          "Débutant → Avancé",
+          "Soutien"
         ]
-    },
-    "services": {
-        "title": "Mes Prestations",
-        "items": [
-            {
-                "title": "Tous Niveaux",
-                "desc": "Accompagnement complet de débutant à avancé avec une méthode structurée.",
-                "tags": [
-                    "Débutant → Avancé",
-                    "Soutien"
-                ]
-            },
-            {
-                "title": "Conversation",
-                "desc": "Développez votre aisance orale et votre confiance à travers des échanges thématiques.",
-                "tags": [
-                    "Ateliers",
-                    "Phonétique"
-                ]
-            },
-            {
-                "title": "Formation Groupe",
-                "desc": "Une dynamique collective pour apprendre ensemble dans la convivialité.",
-                "tags": [
-                    "Etudiants",
-                    "Expatriés"
-                ]
-            },
-            {
-                "title": "Cours Particuliers",
-                "desc": "Focus total sur vos besoins spécifiques pour une progression accélérée.",
-                "tags": [
-                    "Individuel",
-                    "Sur-mesure"
-                ]
-            },
-            {
-                "title": "Flexibilité",
-                "desc": "Des séances dont la durée et le rythme s'adaptent à votre emploi du temps.",
-                "tags": [
-                    "À la carte",
-                    "Rapide"
-                ]
-            },
-            {
-                "title": "Immersion",
-                "desc": "Sorties et ateliers pratiques pour pratiquer le français en situation réelle.",
-                "tags": [
-                    "Visites",
-                    "Quotidien"
-                ]
-            }
+      },
+      {
+        "title": "Conversation",
+        "desc": "Développez votre aisance orale et votre confiance à travers des échanges thématiques.",
+        "tags": [
+          "Ateliers",
+          "Phonétique"
         ]
-    },
-    "resources": {
-        "title": "Contenus & Actualités FLE",
-        "subtitle": "Restez connectés avec le monde francophone. Voici une sélection de ressources mises à jour quotidiennement pour pratiquer votre français.",
-        "error": "Impossible de charger les actualités FLE pour le moment.",
-        "feed_unavailable": "Flux temporairement indisponible.",
-        "read_more": "Consulter"
-    },
-    "testimonials": {
-        "title": "Témoignages de mes étudiants",
-        "subtitle": "Découvrez ce que mes étudiants pensent de leur expérience d'apprentissage avec Solution FLE.",
-        "prev": "Précédent",
-        "next": "Suivant",
-        "items": [
-            {
-                "name": "Maria Garcia",
-                "country": "Espagne",
-                "level": "Débutante -> Intermédiaire",
-                "text": "Aline est une professeure exceptionnelle ! Ses cours sont structurés, dynamiques et adaptés à mon rythme. En 6 mois, j'ai progressé bien plus que je ne l'aurais imaginé. Je recommande vivement Solution FLE !"
-            },
-            {
-                "name": "Yuki Tanaka",
-                "country": "Japon",
-                "level": "Intermédiaire",
-                "text": "Les ateliers d'immersion culturelle sont fantastiques ! J'ai non seulement amélioré mon français, mais j'ai aussi découvert la culture française de manière authentique. Merci Aline !"
-            },
-            {
-                "name": "Hans Mueller",
-                "country": "Allemagne",
-                "level": "Avancé",
-                "text": "Professionnelle, patiente et très engagée. Aline m'a aidé à préparer mon examen DELF avec confiance. Son approche pédagogique est vraiment efficace."
-            },
-            {
-                "name": "Sophie Chen",
-                "country": "Taïwan",
-                "level": "Débutante",
-                "text": "J'avais peur d'apprendre le français, mais Aline a rendu cela amusant et accessible. Elle explique clairement et encourage beaucoup. Je suis très satisfaite !"
-            },
-            {
-                "name": "Carlos Silva",
-                "country": "Brésil",
-                "level": "Intermédiaire",
-                "text": "Les cours particuliers sont vraiment personnalisés. Aline écoute mes besoins et ajuste son enseignement en conséquence. Excellent rapport qualité-prix !"
-            }
+      },
+      {
+        "title": "Formation Groupe",
+        "desc": "Une dynamique collective pour apprendre ensemble dans la convivialité.",
+        "tags": [
+          "Etudiants",
+          "Expatriés"
         ]
-    },
-    "contact": {
-        "title": "Contactez-moi",
-        "subtitle_html": "Prêt à commencer votre aventure linguistique ?<br/>Parlons ensemble de votre projet de formation.",
-        "phone": "Téléphone",
-        "email": "Email",
-        "location": "Lieu",
-        "location_value": "Individuel ou Groupe",
-        "linkedin": "Suivre mes actualités sur LinkedIn",
-        "form_title": "Envoyez-moi un message",
-        "label_name": "Votre nom",
-        "label_email": "Votre email",
-        "label_message": "Votre message",
-        "placeholder_name": "Jean Dupont",
-        "placeholder_email": "jean@exemple.com",
-        "placeholder_message": "Décrivez vos objectifs d'apprentissage...",
-        "submit": "Envoyer le message",
-        "sending": "Envoi...",
-        "sending_progress": "Envoi en cours...",
-        "error_fields": "Veuillez remplir tous les champs",
-        "error_email": "Veuillez entrer une adresse email valide",
-        "error_send": "Erreur lors de l'envoi",
-        "error_generic": "Une erreur est survenue. Veuillez réessayer ou m'appeler directement.",
-        "success": "Merci ! Votre message a été envoyé avec succès. Je vous recontacterai très bientôt."
-    },
-    "footer": {
-        "copyright": "Aline Gamblin - Solution FLE",
-        "siret": "Diplômée DAEFLE - SIRET 804 466 282 00014"
-    },
-    "app": {
-        "call_now": "Appeler maintenant"
-    }
+      },
+      {
+        "title": "Cours Particuliers",
+        "desc": "Focus total sur vos besoins spécifiques pour une progression accélérée.",
+        "tags": [
+          "Individuel",
+          "Sur-mesure"
+        ]
+      },
+      {
+        "title": "Flexibilité",
+        "desc": "Des séances dont la durée et le rythme s'adaptent à votre emploi du temps.",
+        "tags": [
+          "À la carte",
+          "Rapide"
+        ]
+      },
+      {
+        "title": "Immersion",
+        "desc": "Sorties et ateliers pratiques pour pratiquer le français en situation réelle.",
+        "tags": [
+          "Visites",
+          "Quotidien"
+        ]
+      }
+    ]
+  },
+  "resources": {
+    "title": "Contenus & Actualités FLE",
+    "subtitle": "Restez connectés avec le monde francophone. Voici une sélection de ressources mises à jour quotidiennement pour pratiquer votre français.",
+    "error": "Impossible de charger les actualités FLE pour le moment.",
+    "feed_unavailable": "Flux temporairement indisponible.",
+    "read_more": "Consulter"
+  },
+  "testimonials": {
+    "title": "Témoignages de mes étudiants",
+    "subtitle": "Découvrez ce que mes étudiants pensent de leur expérience d'apprentissage avec Solution FLE.",
+    "prev": "Précédent",
+    "next": "Suivant",
+    "items": [
+      {
+        "name": "Maria Garcia",
+        "country": "Espagne",
+        "level": "Débutante -> Intermédiaire",
+        "text": "Aline est une professeure exceptionnelle ! Ses cours sont structurés, dynamiques et adaptés à mon rythme. En 6 mois, j'ai progressé bien plus que je ne l'aurais imaginé. Je recommande vivement Solution FLE !"
+      },
+      {
+        "name": "Yuki Tanaka",
+        "country": "Japon",
+        "level": "Intermédiaire",
+        "text": "Les ateliers d'immersion culturelle sont fantastiques ! J'ai non seulement amélioré mon français, mais j'ai aussi découvert la culture française de manière authentique. Merci Aline !"
+      },
+      {
+        "name": "Hans Mueller",
+        "country": "Allemagne",
+        "level": "Avancé",
+        "text": "Professionnelle, patiente et très engagée. Aline m'a aidé à préparer mon examen DELF avec confiance. Son approche pédagogique est vraiment efficace."
+      },
+      {
+        "name": "Sophie Chen",
+        "country": "Taïwan",
+        "level": "Débutante",
+        "text": "J'avais peur d'apprendre le français, mais Aline a rendu cela amusant et accessible. Elle explique clairement et encourage beaucoup. Je suis très satisfaite !"
+      },
+      {
+        "name": "Carlos Silva",
+        "country": "Brésil",
+        "level": "Intermédiaire",
+        "text": "Les cours particuliers sont vraiment personnalisés. Aline écoute mes besoins et ajuste son enseignement en conséquence. Excellent rapport qualité-prix !"
+      }
+    ]
+  },
+  "contact": {
+    "title": "Contactez-moi",
+    "subtitle_html": "Prêt à commencer votre aventure linguistique ?<br/>Parlons ensemble de votre projet de formation.",
+    "phone": "Téléphone",
+    "email": "Email",
+    "location": "Lieu",
+    "location_value": "Individuel ou Groupe",
+    "linkedin": "Suivre mes actualités sur LinkedIn",
+    "form_title": "Envoyez-moi un message",
+    "label_name": "Votre nom",
+    "label_email": "Votre email",
+    "label_message": "Votre message",
+    "placeholder_name": "Jean Dupont",
+    "placeholder_email": "jean@exemple.com",
+    "placeholder_message": "Décrivez vos objectifs d'apprentissage...",
+    "submit": "Envoyer le message",
+    "sending": "Envoi...",
+    "sending_progress": "Envoi en cours...",
+    "error_fields": "Veuillez remplir tous les champs",
+    "error_email": "Veuillez entrer une adresse email valide",
+    "error_send": "Erreur lors de l'envoi",
+    "error_generic": "Une erreur est survenue. Veuillez réessayer ou m'appeler directement.",
+    "success": "Merci ! Votre message a été envoyé avec succès. Je vous recontacterai très bientôt."
+  },
+  "footer": {
+    "copyright": "Aline Gamblin - Solution FLE",
+    "siret": "Diplômée DAEFLE - SIRET 804 466 282 00014"
+  },
+  "app": {
+    "call_now": "Appeler maintenant"
+  }
 }

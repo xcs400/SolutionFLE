@@ -2,6 +2,7 @@ import express from 'express';
 import nodemailer from 'nodemailer';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import Parser from 'rss-parser';
@@ -60,8 +61,49 @@ app.get('/api/rss', async (req, res) => {
     }
 });
 
+// ─── Locales API (for textedit.html) ────────────────────
+const LOCALES_DIR = path.join(__dirname, 'src', 'locales');
+const VALID_LANGS = ['fr', 'en', 'es', 'ar'];
+
+app.get('/api/locales/:lang', (req, res) => {
+    const { lang } = req.params;
+    if (!VALID_LANGS.includes(lang)) {
+        return res.status(400).json({ error: 'Langue non supportée' });
+    }
+    const filePath = path.join(LOCALES_DIR, `${lang}.json`);
+    try {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        res.json(JSON.parse(content));
+    } catch (err) {
+        console.error(`Erreur lecture ${filePath}:`, err.message);
+        res.status(500).json({ error: 'Impossible de lire le fichier de traduction' });
+    }
+});
+
+app.put('/api/locales/:lang', (req, res) => {
+    const { lang } = req.params;
+    if (!VALID_LANGS.includes(lang)) {
+        return res.status(400).json({ error: 'Langue non supportée' });
+    }
+    const filePath = path.join(LOCALES_DIR, `${lang}.json`);
+    try {
+        const content = JSON.stringify(req.body, null, 2);
+        fs.writeFileSync(filePath, content, 'utf-8');
+        console.log(`✅ Traduction ${lang}.json sauvegardée`);
+        res.json({ success: true, message: `${lang}.json sauvegardé` });
+    } catch (err) {
+        console.error(`Erreur écriture ${filePath}:`, err.message);
+        res.status(500).json({ error: 'Impossible de sauvegarder le fichier de traduction' });
+    }
+});
+
 // Serve static files from the Vite build directory
 app.use(express.static(path.join(__dirname, 'dist')));
+
+// Route for the translation editor (accessible via /textedit)
+app.get('/textedit', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'textedit.html'));
+});
 
 // API Route for Contact Form
 app.post('/api/contact', async (req, res) => {

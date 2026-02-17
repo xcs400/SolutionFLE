@@ -1,19 +1,24 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import fr from '../locales/fr.json';
-import en from '../locales/en.json';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
-const translations = { fr, en };
+// Static fallbacks (used immediately while API loads)
+import frStatic from '../locales/fr.json';
+import enStatic from '../locales/en.json';
+import esStatic from '../locales/es.json';
+import arStatic from '../locales/ar.json';
+
+const staticTranslations = { fr: frStatic, en: enStatic, es: esStatic, ar: arStatic };
 
 const SUPPORTED_LANGUAGES = [
-    { code: 'fr', label: 'FR', flag: '🇫🇷', name: 'Français' },
-    { code: 'en', label: 'EN', flag: '🇬🇧', name: 'English' },
+    { code: 'fr', label: 'FR', flag: '🇫🇷', name: 'Français', dir: 'ltr' },
+    { code: 'en', label: 'EN', flag: '🇬🇧', name: 'English', dir: 'ltr' },
+    { code: 'es', label: 'ES', flag: '🇪🇸', name: 'Español', dir: 'ltr' },
+    { code: 'ar', label: 'AR', flag: '🇸🇦', name: 'العربية', dir: 'rtl' },
 ];
 
 const LanguageContext = createContext();
 
 /**
  * Get a nested value from an object using a dot-separated path.
- * e.g. getNestedValue(obj, "nav.home") => obj.nav.home
  */
 function getNestedValue(obj, path) {
     return path.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : path), obj);
@@ -21,30 +26,53 @@ function getNestedValue(obj, path) {
 
 export const LanguageProvider = ({ children }) => {
     const [language, setLanguage] = useState(() => {
-        // Try to read saved preference from localStorage
         const saved = localStorage.getItem('solutionfle-lang');
-        if (saved && translations[saved]) return saved;
-        // Auto-detect from browser
+        if (saved && staticTranslations[saved]) return saved;
         const browserLang = navigator.language?.split('-')[0];
-        return translations[browserLang] ? browserLang : 'fr';
+        return staticTranslations[browserLang] ? browserLang : 'fr';
     });
+
+    const [translations, setTranslations] = useState(staticTranslations);
+
+    // Fetch live translations from server on mount
+    useEffect(() => {
+        const fetchTranslations = async () => {
+            try {
+                const langs = ['fr', 'en', 'es', 'ar'];
+                const responses = await Promise.all(
+                    langs.map(lang => fetch(`/api/locales/${lang}`))
+                );
+                if (responses.every(r => r.ok)) {
+                    const data = await Promise.all(responses.map(r => r.json()));
+                    const result = {};
+                    langs.forEach((lang, i) => { result[lang] = data[i]; });
+                    setTranslations(result);
+                }
+            } catch (err) {
+                console.log('Using bundled translations (API unavailable)');
+            }
+        };
+        fetchTranslations();
+    }, []);
+
+    // Apply dir and lang attributes when language changes
+    useEffect(() => {
+        const langInfo = SUPPORTED_LANGUAGES.find(l => l.code === language);
+        document.documentElement.lang = language;
+        document.documentElement.dir = langInfo?.dir || 'ltr';
+    }, [language]);
 
     const changeLanguage = useCallback((lang) => {
         if (translations[lang]) {
             setLanguage(lang);
             localStorage.setItem('solutionfle-lang', lang);
-            document.documentElement.lang = lang;
         }
-    }, []);
+    }, [translations]);
 
-    /**
-     * Translation function.
-     * Usage: t('nav.home') => "Accueil" (fr) or "Home" (en)
-     */
     const t = useCallback((key) => {
         const value = getNestedValue(translations[language], key);
         return value;
-    }, [language]);
+    }, [language, translations]);
 
     return (
         <LanguageContext.Provider value={{ language, changeLanguage, t, supportedLanguages: SUPPORTED_LANGUAGES }}>
