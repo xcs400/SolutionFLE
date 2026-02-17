@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const Header = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const { t } = useLanguage();
 
     const toggleMenu = () => setIsOpen(!isOpen);
 
     const links = [
-        { name: 'Accueil', href: '#home' },
-        { name: 'A propos', href: '#about' },
-        { name: 'Services', href: '#services' },
-        { name: 'Contenu', href: '#resources' },
-        { name: 'Témoignages', href: '#testimonials' },
-        { name: 'Contact', href: '#contact' },
+        { name: t('nav.home'), href: '#home' },
+        { name: t('nav.about'), href: '#about' },
+        { name: t('nav.services'), href: '#services' },
+        { name: t('nav.resources'), href: '#resources' },
+        { name: t('nav.testimonials'), href: '#testimonials' },
+        { name: t('nav.contact'), href: '#contact' },
     ];
 
     return (
@@ -35,19 +38,25 @@ const Header = () => {
                 <nav className="nav-links">
                     {links.map(link => (
                         <a
-                            key={link.name}
+                            key={link.href}
                             href={link.href}
                         >
                             {link.name}
                         </a>
                     ))}
-                    <a href="#contact" className="btn">Contactez-moi</a>
+                    <a href="#contact" className="btn">{t('nav.cta')}</a>
+                    <LanguageSwitcher />
                 </nav>
 
                 {/* Mobile Menu Toggle */}
-                <button className="mobile-menu-toggle" onClick={toggleMenu} aria-label="Toggle menu">
-                    {isOpen ? <X size={32} /> : <Menu size={32} />}
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div className="mobile-lang-switcher">
+                        <LanguageSwitcher />
+                    </div>
+                    <button className="mobile-menu-toggle" onClick={toggleMenu} aria-label="Toggle menu">
+                        {isOpen ? <X size={32} /> : <Menu size={32} />}
+                    </button>
+                </div>
             </div>
 
             {/* Mobile Navigation */}
@@ -62,7 +71,7 @@ const Header = () => {
                     >
                         {links.map(link => (
                             <a
-                                key={link.name}
+                                key={link.href}
                                 href={link.href}
                                 onClick={() => setIsOpen(false)}
                             >
@@ -74,7 +83,7 @@ const Header = () => {
                             className="btn"
                             onClick={() => setIsOpen(false)}
                         >
-                            Contactez-moi
+                            {t('nav.cta')}
                         </a>
                     </motion.nav>
                 )}

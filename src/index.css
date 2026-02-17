@@ -506,3 +506,59 @@ header .container {
 :root {
   --color-yellow: rgb(255, 204, 0);
 }
+
+/* Language Switcher */
+.lang-switcher {
+  display: flex;
+  gap: 0.25rem;
+  background: rgba(11, 24, 109, 0.06);
+  border-radius: 12px;
+  padding: 0.25rem;
+}
+
+.lang-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--color-primary);
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+.lang-btn:hover {
+  opacity: 0.8;
+}
+
+.lang-btn.active {
+  background: white;
+  opacity: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.lang-flag {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.lang-label {
+  letter-spacing: 0.5px;
+}
+
+/* Hide mobile lang switcher on desktop */
+.mobile-lang-switcher {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .mobile-lang-switcher {
+    display: block;
+  }
+}

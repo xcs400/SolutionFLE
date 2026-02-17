@@ -1,7 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext';
 
 const About = () => {
+    const { t } = useLanguage();
+    const highlights = t('about.highlights');
+
     return (
         <section id="about" className="section section-alt">
             <div className="container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '4rem', alignItems: 'center' }}>
@@ -40,23 +44,17 @@ const About = () => {
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                 >
-                    <h2 style={{ textAlign: 'left', marginBottom: '2rem' }}>Mon Parcours</h2>
-                    <h3 style={{ color: 'var(--color-primary)', marginBottom: '0.5rem' }}>Aline GAMBLIN</h3>
+                    <h2 style={{ textAlign: 'left', marginBottom: '2rem' }}>{t('about.title')}</h2>
+                    <h3 style={{ color: 'var(--color-primary)', marginBottom: '0.5rem' }}>{t('about.name')}</h3>
                     <p style={{ color: 'var(--color-secondary)', fontSize: '1.2rem', marginBottom: '1.5rem', fontWeight: 'bold' }}>
-                        Professeure de FLE diplômée DAEFLE
+                        {t('about.role')}
                     </p>
                     <p style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>
-                        Passionnée par la transmission de la langue et de la culture française, j'accompagne depuis plusieurs années
-                        un public international varié dans sa quête de maîtrise linguistique.
+                        {t('about.bio')}
                     </p>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
-                        {[
-                            'Enseignement sur-mesure et flexible',
-                            'Immersion culturelle et ateliers pratiques',
-                            'Pédagogie active centrée sur l’apprenant',
-                            'Accompagnement bienveillant et structuré'
-                        ].map((text, idx) => (
+                        {highlights.map((text, idx) => (
                             <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                 <div style={{
                                     width: '12px',

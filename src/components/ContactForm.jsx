@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 const ContactForm = () => {
+    const { t } = useLanguage();
+
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -28,7 +31,7 @@ const ContactForm = () => {
         if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
             setStatus({
                 type: 'error',
-                message: 'Veuillez remplir tous les champs',
+                message: t('contact.error_fields'),
             });
             return;
         }
@@ -37,14 +40,14 @@ const ContactForm = () => {
         if (!emailRegex.test(formData.email)) {
             setStatus({
                 type: 'error',
-                message: 'Veuillez entrer une adresse email valide',
+                message: t('contact.error_email'),
             });
             return;
         }
 
         setStatus({
             type: 'loading',
-            message: 'Envoi en cours...',
+            message: t('contact.sending_progress'),
         });
 
         try {
@@ -58,12 +61,12 @@ const ContactForm = () => {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || "Erreur lors de l'envoi");
+                throw new Error(errorData.error || t('contact.error_send'));
             }
 
             setStatus({
                 type: 'success',
-                message: 'Merci ! Votre message a été envoyé avec succès. Je vous recontacterai très bientôt.',
+                message: t('contact.success'),
             });
 
             setFormData({ name: '', email: '', message: '' });
@@ -75,7 +78,7 @@ const ContactForm = () => {
         } catch (error) {
             setStatus({
                 type: 'error',
-                message: error.message || "Une erreur est survenue. Veuillez réessayer ou m'appeler directement.",
+                message: error.message || t('contact.error_generic'),
             });
         }
     };
@@ -88,40 +91,40 @@ const ContactForm = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
         >
-            <h3 style={{ marginBottom: '2.5rem', textAlign: 'center' }}>Envoyez-moi un message</h3>
+            <h3 style={{ marginBottom: '2.5rem', textAlign: 'center' }}>{t('contact.form_title')}</h3>
 
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                    <label className="form-label">Votre nom</label>
+                    <label className="form-label">{t('contact.label_name')}</label>
                     <input
                         type="text"
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
-                        placeholder="Jean Dupont"
+                        placeholder={t('contact.placeholder_name')}
                         className="form-control"
                     />
                 </div>
 
                 <div className="form-group">
-                    <label className="form-label">Votre email</label>
+                    <label className="form-label">{t('contact.label_email')}</label>
                     <input
                         type="email"
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
-                        placeholder="jean@exemple.com"
+                        placeholder={t('contact.placeholder_email')}
                         className="form-control"
                     />
                 </div>
 
                 <div className="form-group">
-                    <label className="form-label">Votre message</label>
+                    <label className="form-label">{t('contact.label_message')}</label>
                     <textarea
                         name="message"
                         value={formData.message}
                         onChange={handleChange}
-                        placeholder="Décrivez vos objectifs d'apprentissage..."
+                        placeholder={t('contact.placeholder_message')}
                         rows={5}
                         className="form-control"
                         style={{ resize: 'none' }}
@@ -152,10 +155,10 @@ const ContactForm = () => {
                     disabled={status.type === 'loading'}
                     style={{ width: '100%', justifyContent: 'center', marginTop: '1rem' }}
                 >
-                    {status.type === 'loading' ? 'Envoi...' : (
+                    {status.type === 'loading' ? t('contact.sending') : (
                         <>
                             <Send size={20} style={{ marginRight: '10px' }} />
-                            Envoyer le message
+                            {t('contact.submit')}
                         </>
                     )}
                 </button>

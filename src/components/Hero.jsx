@@ -1,7 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext';
 
 const Hero = () => {
+    const { t } = useLanguage();
+
     return (
         <section id="home" className="hero">
             <div className="hero-content">
@@ -24,8 +27,8 @@ const Hero = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.3 }}
                 >
-                    Apprendre le français<br />
-                    <span style={{ color: 'var(--color-secondary)' }}>et tout devient possible</span>
+                    {t('hero.title_line1')}<br />
+                    <span style={{ color: 'var(--color-secondary)' }}>{t('hero.title_line2')}</span>
                 </motion.h1>
 
                 <motion.p
@@ -34,10 +37,8 @@ const Hero = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6, duration: 0.8 }}
                     style={{ fontWeight: '400', maxWidth: '700px', margin: '2rem auto 3rem', fontSize: '1.4rem' }}
-                >
-                    Formations personnalisées en Français Langue Étrangère (FLE)<br />
-                    avec <strong>Aline Gamblin</strong>, professeure diplômée DAEFLE.
-                </motion.p>
+                    dangerouslySetInnerHTML={{ __html: t('hero.subtitle_html') }}
+                />
 
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
@@ -46,7 +47,7 @@ const Hero = () => {
                     style={{ position: 'relative' }}
                 >
                     <a href="#services" className="btn">
-                        Découvrir les formations
+                        {t('hero.cta')}
                     </a>
                 </motion.div>
 
@@ -89,7 +90,7 @@ const Hero = () => {
                             >
                                 <img
                                     src={img.src}
-                                    alt={`Visuel FLE ${index + 1}`}
+                                    alt={`${t('hero.image_alt')} ${index + 1}`}
                                     style={{ width: '100%', height: 'auto', display: 'block' }}
                                 />
                             </div>

@@ -2,8 +2,11 @@ import React from 'react';
 import { Mail, Phone, MapPin, Linkedin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ContactForm from './ContactForm';
+import { useLanguage } from '../context/LanguageContext';
 
 const Contact = () => {
+    const { t } = useLanguage();
+
     return (
         <section id="contact" className="section" style={{ background: 'rgba(11, 24, 109, 0.02)' }}>
             <div className="container">
@@ -13,17 +16,17 @@ const Contact = () => {
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
                     >
-                        <h2 style={{ textAlign: 'left' }}>Contactez-moi</h2>
-                        <p style={{ fontSize: '1.2rem', marginBottom: '3rem', color: '#64748b' }}>
-                            Prêt à commencer votre aventure linguistique ?<br />
-                            Parlons ensemble de votre projet de formation.
-                        </p>
+                        <h2 style={{ textAlign: 'left' }}>{t('contact.title')}</h2>
+                        <p
+                            style={{ fontSize: '1.2rem', marginBottom: '3rem', color: '#64748b' }}
+                            dangerouslySetInnerHTML={{ __html: t('contact.subtitle_html') }}
+                        />
 
                         <div style={{ display: 'grid', gap: '2rem', marginBottom: '4rem' }}>
                             {[
-                                { icon: <Phone />, title: "Téléphone", value: "06 49 16 35 37", link: "tel:+33649163537", color: 'var(--color-strong-blue)' },
-                                { icon: <Mail />, title: "Email", value: "gamblin.aline@gmail.com", link: "mailto:gamblin.aline@gmail.com", color: 'var(--color-red)' },
-                                { icon: <MapPin />, title: "Lieu", value: "Individuel ou Groupe", link: null, color: 'var(--color-green)' }
+                                { icon: <Phone />, title: t('contact.phone'), value: "06 49 16 35 37", link: "tel:+33649163537", color: 'var(--color-strong-blue)' },
+                                { icon: <Mail />, title: t('contact.email'), value: "gamblin.aline@gmail.com", link: "mailto:gamblin.aline@gmail.com", color: 'var(--color-red)' },
+                                { icon: <MapPin />, title: t('contact.location'), value: t('contact.location_value'), link: null, color: 'var(--color-green)' }
                             ].map((item, idx) => (
                                 <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                                     <div style={{
@@ -67,7 +70,7 @@ const Contact = () => {
                             }}
                         >
                             <Linkedin size={28} />
-                            Suivre mes actualités sur LinkedIn
+                            {t('contact.linkedin')}
                         </a>
                     </motion.div>
 
@@ -82,8 +85,8 @@ const Contact = () => {
                             <img src="./LogoOfficiel.png" alt="Logo" style={{ height: '50px', filter: 'brightness(0) invert(1)' }} />
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                            <p>&copy; {new Date().getFullYear()} Aline Gamblin - Solution FLE</p>
-                            <p style={{ fontSize: '0.8rem' }}>Diplômée DAEFLE - SIRET 804 466 282 00014</p>
+                            <p>&copy; {new Date().getFullYear()} {t('footer.copyright')}</p>
+                            <p style={{ fontSize: '0.8rem' }}>{t('footer.siret')}</p>
                         </div>
                     </div>
                 </div>

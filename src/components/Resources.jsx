@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ExternalLink, BookOpen, Clock, AlertCircle } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 const Resources = () => {
     const [feeds, setFeeds] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const { t, language } = useLanguage();
 
     useEffect(() => {
         const fetchFeeds = async () => {
@@ -17,7 +19,7 @@ const Resources = () => {
                 setLoading(false);
             } catch (err) {
                 console.error(err);
-                setError("Impossible de charger les actualités FLE pour le moment.");
+                setError(t('resources.error'));
                 setLoading(false);
             }
         };
@@ -34,10 +36,9 @@ const Resources = () => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                 >
-                    <h2>Contenus & Actualités FLE</h2>
+                    <h2>{t('resources.title')}</h2>
                     <p style={{ maxWidth: '750px', margin: '2rem auto', fontSize: '1.2rem', color: '#64748b' }}>
-                        Restez connectés avec le monde francophone. Voici une sélection de ressources
-                        mises à jour quotidiennement pour pratiquer votre français.
+                        {t('resources.subtitle')}
                     </p>
                 </motion.div>
 
@@ -81,7 +82,7 @@ const Resources = () => {
 
                                 <div className="feed-items" style={{ flexGrow: 1 }}>
                                     {feed.error ? (
-                                        <p style={{ fontSize: '0.9rem', color: '#94a3b8', fontStyle: 'italic' }}>Flux temporairement indisponible.</p>
+                                        <p style={{ fontSize: '0.9rem', color: '#94a3b8', fontStyle: 'italic' }}>{t('resources.feed_unavailable')}</p>
                                     ) : (
                                         feed.items.map((item, i) => (
                                             <a
@@ -116,10 +117,10 @@ const Resources = () => {
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.75rem', color: '#94a3b8' }}>
                                                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                                                         <Clock size={12} />
-                                                        {new Date(item.pubDate).toLocaleDateString('fr-FR')}
+                                                        {new Date(item.pubDate).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}
                                                     </span>
                                                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--color-secondary)' }}>
-                                                        Consulter <ExternalLink size={12} />
+                                                        {t('resources.read_more')} <ExternalLink size={12} />
                                                     </span>
                                                 </div>
                                             </a>

@@ -1,0 +1,159 @@
+{
+    "nav": {
+        "home": "Home",
+        "about": "About",
+        "services": "Services",
+        "resources": "Content",
+        "testimonials": "Testimonials",
+        "contact": "Contact",
+        "cta": "Contact me"
+    },
+    "hero": {
+        "title_line1": "Learn French",
+        "title_line2": "and everything becomes possible",
+        "subtitle_html": "Personalized French as a Foreign Language (FLE) training<br/>with <strong>Aline Gamblin</strong>, DAEFLE certified teacher.",
+        "cta": "Discover our courses",
+        "image_alt": "FLE Visual"
+    },
+    "about": {
+        "title": "My Background",
+        "name": "Aline GAMBLIN",
+        "role": "DAEFLE Certified French Teacher",
+        "bio": "Passionate about sharing the French language and culture, I have been helping a diverse international audience master the language for several years.",
+        "highlights": [
+            "Tailored and flexible teaching",
+            "Cultural immersion and practical workshops",
+            "Active, learner-centered pedagogy",
+            "Supportive and structured guidance"
+        ]
+    },
+    "services": {
+        "title": "My Services",
+        "items": [
+            {
+                "title": "All Levels",
+                "desc": "Complete support from beginner to advanced with a structured method.",
+                "tags": [
+                    "Beginner → Advanced",
+                    "Support"
+                ]
+            },
+            {
+                "title": "Conversation",
+                "desc": "Develop your oral fluency and confidence through thematic exchanges.",
+                "tags": [
+                    "Workshops",
+                    "Phonetics"
+                ]
+            },
+            {
+                "title": "Group Training",
+                "desc": "A collective dynamic to learn together in a friendly environment.",
+                "tags": [
+                    "Students",
+                    "Expats"
+                ]
+            },
+            {
+                "title": "Private Lessons",
+                "desc": "Total focus on your specific needs for accelerated progress.",
+                "tags": [
+                    "Individual",
+                    "Custom"
+                ]
+            },
+            {
+                "title": "Flexibility",
+                "desc": "Sessions whose duration and pace adapt to your schedule.",
+                "tags": [
+                    "À la carte",
+                    "Fast"
+                ]
+            },
+            {
+                "title": "Immersion",
+                "desc": "Outings and practical workshops to practice French in real-life situations.",
+                "tags": [
+                    "Visits",
+                    "Daily life"
+                ]
+            }
+        ]
+    },
+    "resources": {
+        "title": "FLE Content & News",
+        "subtitle": "Stay connected with the French-speaking world. Here is a selection of resources updated daily to practice your French.",
+        "error": "Unable to load FLE news at the moment.",
+        "feed_unavailable": "Feed temporarily unavailable.",
+        "read_more": "Read more"
+    },
+    "testimonials": {
+        "title": "Student Testimonials",
+        "subtitle": "Discover what my students think of their learning experience with Solution FLE.",
+        "prev": "Previous",
+        "next": "Next",
+        "items": [
+            {
+                "name": "Maria Garcia",
+                "country": "Spain",
+                "level": "Beginner -> Intermediate",
+                "text": "Aline is an exceptional teacher! Her lessons are structured, dynamic and tailored to my pace. In 6 months, I progressed much more than I ever imagined. I highly recommend Solution FLE!"
+            },
+            {
+                "name": "Yuki Tanaka",
+                "country": "Japan",
+                "level": "Intermediate",
+                "text": "The cultural immersion workshops are fantastic! I not only improved my French, but also discovered French culture in an authentic way. Thank you Aline!"
+            },
+            {
+                "name": "Hans Mueller",
+                "country": "Germany",
+                "level": "Advanced",
+                "text": "Professional, patient and very committed. Aline helped me prepare my DELF exam with confidence. Her teaching approach is truly effective."
+            },
+            {
+                "name": "Sophie Chen",
+                "country": "Taiwan",
+                "level": "Beginner",
+                "text": "I was afraid to learn French, but Aline made it fun and accessible. She explains clearly and is very encouraging. I am very satisfied!"
+            },
+            {
+                "name": "Carlos Silva",
+                "country": "Brazil",
+                "level": "Intermediate",
+                "text": "The private lessons are truly personalized. Aline listens to my needs and adjusts her teaching accordingly. Excellent value for money!"
+            }
+        ]
+    },
+    "contact": {
+        "title": "Contact me",
+        "subtitle_html": "Ready to start your language adventure?<br/>Let's talk about your training project.",
+        "phone": "Phone",
+        "email": "Email",
+        "location": "Location",
+        "location_value": "Individual or Group",
+        "linkedin": "Follow my updates on LinkedIn",
+        "form_title": "Send me a message",
+        "label_name": "Your name",
+        "label_email": "Your email",
+        "label_message": "Your message",
+        "placeholder_name": "John Doe",
+        "placeholder_email": "john@example.com",
+        "placeholder_message": "Describe your learning goals...",
+        "submit": "Send message",
+        "sending": "Sending...",
+        "sending_progress": "Sending in progress...",
+        "error_fields": "Please fill in all fields",
+        "error_email": "Please enter a valid email address",
+        "error_send": "Error sending message",
+        "error_generic": "An error occurred. Please try again or call me directly.",
+        "success": "Thank you! Your message has been sent successfully. I will get back to you very soon."
+    },
+    "footer": {
+        "copyright": "Aline Gamblin - Solution FLE",
+        "siret": "DAEFLE Certified - SIRET 804 466 282 00014"
+    },
+    "app": {
+        "call_now": "Call now"
+    }
+}

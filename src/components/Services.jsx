@@ -8,52 +8,29 @@ import {
     MapPin
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext';
+
+const serviceIcons = [
+    <GraduationCap />,
+    <MessageCircle />,
+    <Users />,
+    <User />,
+    <Clock />,
+    <MapPin />
+];
+
+const serviceColors = [
+    'var(--color-dark-blue)',
+    'var(--color-strong-blue)',
+    'var(--color-green)',
+    'var(--color-red)',
+    'var(--color-yellow)',
+    'var(--color-sand)',
+];
 
 const Services = () => {
-    const services = [
-        {
-            icon: <GraduationCap />,
-            title: "Tous Niveaux",
-            desc: "Accompagnement complet de débutant à avancé avec une méthode structurée.",
-            color: 'var(--color-dark-blue)',
-            tags: ["Débutant \u2192 Avancé", "Soutien"]
-        },
-        {
-            icon: <MessageCircle />,
-            title: "Conversation",
-            desc: "Développez votre aisance orale et votre confiance à travers des échanges thématiques.",
-            color: 'var(--color-strong-blue)',
-            tags: ["Ateliers", "Phonétique"]
-        },
-        {
-            icon: <Users />,
-            title: "Formation Groupe",
-            desc: "Une dynamique collective pour apprendre ensemble dans la convivialité.",
-            color: 'var(--color-green)',
-            tags: ["Etudiants", "Expatriés"]
-        },
-        {
-            icon: <User />,
-            title: "Cours Particuliers",
-            desc: "Focus total sur vos besoins spécifiques pour une progression accélérée.",
-            color: 'var(--color-red)',
-            tags: ["Individuel", "Sur-mesure"]
-        },
-        {
-            icon: <Clock />,
-            title: "Flexibilité",
-            desc: "Des séances dont la durée et le rythme s'adaptent à votre emploi du temps.",
-            color: 'var(--color-yellow)',
-            tags: ["À la carte", "Rapide"]
-        },
-        {
-            icon: <MapPin />,
-            title: "Immersion",
-            desc: "Sorties et ateliers pratiques pour pratiquer le français en situation réelle.",
-            color: 'var(--color-sand)',
-            tags: ["Visites", "Quotidien"]
-        }
-    ];
+    const { t } = useLanguage();
+    const serviceItems = t('services.items');
 
     return (
         <section id="services" className="section bg-white">
@@ -63,11 +40,11 @@ const Services = () => {
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                 >
-                    Mes Prestations
+                    {t('services.title')}
                 </motion.h2>
 
                 <div className="service-grid">
-                    {services.map((service, index) => (
+                    {serviceItems.map((service, index) => (
                         <motion.div
                             key={index}
                             className="card"
@@ -75,16 +52,16 @@ const Services = () => {
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
                             viewport={{ once: true }}
-                            style={{ borderTop: `6px solid ${service.color}` }}
+                            style={{ borderTop: `6px solid ${serviceColors[index]}` }}
                         >
-                            <div className="feature-icon" style={{ background: `${service.color}15`, color: service.color }}>
-                                {service.icon}
+                            <div className="feature-icon" style={{ background: `${serviceColors[index]}15`, color: serviceColors[index] }}>
+                                {serviceIcons[index]}
                             </div>
                             <h3 style={{ fontSize: '1.4rem', color: 'var(--color-primary)' }}>{service.title}</h3>
                             <p style={{ flexGrow: 1, marginBottom: '1.5rem', color: '#64748b' }}>{service.desc}</p>
                             <div className="tag-container">
                                 {service.tags.map((tag, i) => (
-                                    <span key={i} className="tag" style={{ borderLeft: `3px solid ${service.color}` }}>{tag}</span>
+                                    <span key={i} className="tag" style={{ borderLeft: `3px solid ${serviceColors[index]}` }}>{tag}</span>
                                 ))}
                             </div>
                         </motion.div>
