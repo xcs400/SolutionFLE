@@ -7,17 +7,20 @@
     "testimonials": "Témoignages",
     "contact": "Contact",
     "language": "Langue",
-    "cta": "Contactez-moi"
+    "cta": "Contactez-moi",
+    "logo_part1": "Solution",
+    "logo_part2": "FLE"
   },
   "hero": {
     "title_line1": "Apprendre le français avec ",
     "title_line2": "Aline Gamblin ",
-    "subtitle_html": "Professeure diplomée DAEFLE. <br>Formations personnalisées en Français Langue Étrangère (FLE)<br/>  bla   bla   bla  ",
+    "subtitle_html": "Professeure diplomée DAEFLE. <br>Formations personnalisées en Français Langue Étrangère (FLE)<br/>  bla   bla  ",
     "cta": "Découvrir",
+    "cta_link": "#services",
     "image_alt": "Visuel FLE"
   },
   "about": {
-    "title": "Mon Parcours",
+    "title": "Qui suis-je?",
     "name": "Aline GAMBLIN",
     "role": "Professeure de FLE diplômée DAEFLE",
     "bio": "Passionnée par la transmission de la langue et de la culture française, j'accompagne depuis plusieurs années un public international varié dans sa quête de maîtrise linguistique.",
@@ -134,7 +137,7 @@
     "location": "Lieu",
     "location_value": "Individuel ou Groupe",
     "linkedin": "Suivre mes actualités sur LinkedIn",
-    "form_title": "Envoyez-moi un message",
+    "form_title": "ou Envoyez-moi un message directement par ce formulaire",
     "label_name": "Votre nom",
     "label_email": "Votre email",
     "label_message": "Votre message",
@@ -148,7 +151,9 @@
     "error_email": "Veuillez entrer une adresse email valide",
     "error_send": "Erreur lors de l'envoi",
     "error_generic": "Une erreur est survenue. Veuillez réessayer ou m'appeler directement.",
-    "success": "Merci ! Votre message a été envoyé avec succès. Je vous recontacterai très bientôt."
+    "success": "Merci ! Votre message a été envoyé avec succès. Je vous recontacterai très bientôt.",
+    "phone_value": "33 6 06 06 06",
+    "email_value": "SolutionFLE@gmail.com"
   },
   "footer": {
     "copyright": "Aline Gamblin - Solution FLE",

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import EditableText from './EditableText';
 
 const ContactForm = () => {
     const { t } = useLanguage();
@@ -91,11 +92,15 @@ const ContactForm = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
         >
-            <h3 style={{ marginBottom: '2.5rem', textAlign: 'center' }}>{t('contact.form_title')}</h3>
+            <h3 style={{ marginBottom: '2.5rem', textAlign: 'center' }}>
+                <EditableText tag="span" translationKey="contact.form_title">{t('contact.form_title')}</EditableText>
+            </h3>
 
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                    <label className="form-label">{t('contact.label_name')}</label>
+                    <label className="form-label">
+                        <EditableText tag="span" translationKey="contact.label_name">{t('contact.label_name')}</EditableText>
+                    </label>
                     <input
                         type="text"
                         name="name"
@@ -107,7 +112,9 @@ const ContactForm = () => {
                 </div>
 
                 <div className="form-group">
-                    <label className="form-label">{t('contact.label_email')}</label>
+                    <label className="form-label">
+                        <EditableText tag="span" translationKey="contact.label_email">{t('contact.label_email')}</EditableText>
+                    </label>
                     <input
                         type="email"
                         name="email"
@@ -119,7 +126,9 @@ const ContactForm = () => {
                 </div>
 
                 <div className="form-group">
-                    <label className="form-label">{t('contact.label_message')}</label>
+                    <label className="form-label">
+                        <EditableText tag="span" translationKey="contact.label_message">{t('contact.label_message')}</EditableText>
+                    </label>
                     <textarea
                         name="message"
                         value={formData.message}
@@ -158,7 +167,7 @@ const ContactForm = () => {
                     {status.type === 'loading' ? t('contact.sending') : (
                         <>
                             <Send size={20} style={{ marginRight: '10px' }} />
-                            {t('contact.submit')}
+                            <EditableText tag="span" translationKey="contact.submit">{t('contact.submit')}</EditableText>
                         </>
                     )}
                 </button>

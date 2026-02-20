@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
+import EditableText from './EditableText';
 
 const serviceIcons = [
     <GraduationCap />,
@@ -40,7 +41,7 @@ const Services = () => {
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                 >
-                    {t('services.title')}
+                    <EditableText tag="span" translationKey="services.title">{t('services.title')}</EditableText>
                 </motion.h2>
 
                 <div className="service-grid">
@@ -57,11 +58,17 @@ const Services = () => {
                             <div className="feature-icon" style={{ background: `${serviceColors[index]}15`, color: serviceColors[index] }}>
                                 {serviceIcons[index]}
                             </div>
-                            <h3 style={{ fontSize: '1.4rem', color: 'var(--color-primary)' }}>{service.title}</h3>
-                            <p style={{ flexGrow: 1, marginBottom: '1.5rem', color: '#64748b' }}>{service.desc}</p>
+                            <h3 style={{ fontSize: '1.4rem', color: 'var(--color-primary)' }}>
+                                <EditableText tag="span" translationKey={`services.items.${index}.title`}>{service.title}</EditableText>
+                            </h3>
+                            <p style={{ flexGrow: 1, marginBottom: '1.5rem', color: '#64748b' }}>
+                                <EditableText tag="span" translationKey={`services.items.${index}.desc`}>{service.desc}</EditableText>
+                            </p>
                             <div className="tag-container" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                                 {service.tags.map((tag, i) => (
-                                    <span key={i} className="tag" style={{ color: 'var(--color-primary)', fontWeight: '500' }}>{tag}</span>
+                                    <span key={i} className="tag" style={{ color: 'var(--color-primary)', fontWeight: '500' }}>
+                                        <EditableText tag="span" translationKey={`services.items.${index}.tags.${i}`}>{tag}</EditableText>
+                                    </span>
                                 ))}
                             </div>
                         </motion.div>

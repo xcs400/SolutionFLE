@@ -21,7 +21,28 @@ const LanguageContext = createContext();
  * Get a nested value from an object using a dot-separated path.
  */
 function getNestedValue(obj, path) {
-    return path.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : path), obj);
+    if (!obj || !path) return path;
+    const parts = path.split('.');
+    let current = obj;
+    for (const part of parts) {
+        if (current[part] === undefined) return path;
+        current = current[part];
+    }
+    return current;
+}
+
+/**
+ * Set a nested value in an object using a dot-separated path.
+ */
+function setNestedValue(obj, path, value) {
+    const parts = path.split('.');
+    let current = obj;
+    for (let i = 0; i < parts.length - 1; i++) {
+        const part = parts[i];
+        if (!current[part]) current[part] = {};
+        current = current[part];
+    }
+    current[parts[parts.length - 1]] = value;
 }
 
 export const LanguageProvider = ({ children }) => {
@@ -33,6 +54,7 @@ export const LanguageProvider = ({ children }) => {
     });
 
     const [translations, setTranslations] = useState(staticTranslations);
+    const [editMode, setEditMode] = useState(false);
 
     // Fetch live translations from server on mount
     useEffect(() => {
@@ -69,13 +91,64 @@ export const LanguageProvider = ({ children }) => {
         }
     }, [translations]);
 
+    const updateTranslation = useCallback(async (key, newValue) => {
+        setTranslations(prev => {
+            const next = { ...prev };
+            const langData = { ...next[language] };
+            setNestedValue(langData, key, newValue);
+            next[language] = langData;
+            return next;
+        });
+
+        // Save to server
+        try {
+            const currentLangData = { ...translations[language] };
+            setNestedValue(currentLangData, key, newValue);
+
+            const response = await fetch(`/api/locales/${language}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(currentLangData)
+            });
+
+            if (!response.ok) throw new Error('Save failed');
+        } catch (err) {
+            console.error('Failed to save translation:', err);
+            alert('Erreur lors de la sauvegarde : ' + err.message);
+        }
+    }, [language, translations]);
+
     const t = useCallback((key) => {
         const value = getNestedValue(translations[language], key);
+
+        // If it's a string and we are in edit mode, we could wrap it, 
+        // but it's cleaner to handle it in a separate component or return the key.
         return value;
     }, [language, translations]);
 
+    const toggleEditMode = useCallback(() => {
+        if (editMode) {
+            setEditMode(false);
+            return;
+        }
+        const pwd = prompt('Mot de passe pour éditer en ligne :');
+        if (pwd === 'Pascal') {
+            setEditMode(true);
+        } else if (pwd !== null) {
+            alert('Mot de passe incorrect');
+        }
+    }, [editMode]);
+
     return (
-        <LanguageContext.Provider value={{ language, changeLanguage, t, supportedLanguages: SUPPORTED_LANGUAGES }}>
+        <LanguageContext.Provider value={{
+            language,
+            changeLanguage,
+            t,
+            supportedLanguages: SUPPORTED_LANGUAGES,
+            editMode,
+            toggleEditMode,
+            updateTranslation
+        }}>
             {children}
         </LanguageContext.Provider>
     );

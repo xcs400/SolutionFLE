@@ -7,13 +7,16 @@
     "testimonials": "Testimonios",
     "contact": "Contacto",
     "language": "Idioma",
-    "cta": "Contáctame"
+    "cta": "Contáctame",
+    "logo_part1": "Solution",
+    "logo_part2": "FLE"
   },
   "hero": {
     "title_line1": "Aprende francés",
     "title_line2": "y todo se vuelve posible",
     "subtitle_html": "Formaciones personalizadas en Francés como Lengua Extranjera (FLE)<br/>con <strong>Aline Gamblin</strong>, profesora certificada DAEFLE.",
     "cta": "Descubrir las formaciones",
+    "cta_link": "#services",
     "image_alt": "Visual FLE"
   },
   "about": {
@@ -25,17 +28,17 @@
       "Enseñanza personalizada y flexible",
       "Inmersión cultural y talleres prácticos",
       "Pedagogía activa centrada en el alumno",
-      "Acompañamiento amable y estructurado"
+      "Acompaضamiento amable y estructurado"
     ]
   },
   "services": {
     "title": "Mis Servicios",
     "items": [
       {
-        "title": "Todos los Niveles",
-        "desc": "Acompañamiento completo de principiante a avanzado con un método estructurado.",
+        "title": "Todos los niveles",
+        "desc": "Acompañamiento completo desde principiante hasta avanzado con un método estructurado.",
         "tags": [
-          "Principiante → Avanzado",
+          "Principiante ← Avanzado",
           "Apoyo"
         ]
       },
@@ -48,8 +51,8 @@
         ]
       },
       {
-        "title": "Formación en Grupo",
-        "desc": "Una dinámica colectiva para aprender juntos en un ambiente amigable.",
+        "title": "Entrenamiento Grupal",
+        "desc": "Dinámica de grupo para aprender juntos en un ambiente agradable.",
         "tags": [
           "Estudiantes",
           "Expatriados"
@@ -57,7 +60,7 @@
       },
       {
         "title": "Clases Particulares",
-        "desc": "Enfoque total en tus necesidades específicas para un progreso acelerado.",
+        "desc": "Atención total a tus necesidades específicas para un progreso rápido.",
         "tags": [
           "Individual",
           "A medida"
@@ -65,7 +68,7 @@
       },
       {
         "title": "Flexibilidad",
-        "desc": "Sesiones cuya duración y ritmo se adaptan a tu horario.",
+        "desc": "Sesiones cuya duración y ritmo se adaptan a tu agenda.",
         "tags": [
           "A la carta",
           "Rápido"
@@ -73,7 +76,7 @@
       },
       {
         "title": "Inmersión",
-        "desc": "Salidas y talleres prácticos para practicar el francés en situaciones reales.",
+        "desc": "Salidas y talleres prácticos para practicar francés en situaciones reales.",
         "tags": [
           "Visitas",
           "Cotidiano"
@@ -82,47 +85,47 @@
     ]
   },
   "resources": {
-    "title": "Contenidos y Actualidades FLE",
+    "title": "Contenidos y Noticias FLE",
     "subtitle": "Mantente conectado con el mundo francófono. Aquí tienes una selección de recursos actualizados diariamente para practicar tu francés.",
-    "error": "No se pueden cargar las noticias FLE en este momento.",
-    "feed_unavailable": "Fuente temporalmente no disponible.",
-    "read_more": "Consultar"
+    "error": "No se han podido cargar las noticias de FLE en este momento.",
+    "feed_unavailable": "Fuente no disponible temporalmente.",
+    "read_more": "Leer más"
   },
   "testimonials": {
-    "title": "Testimonios de mis estudiantes",
-    "subtitle": "Descubre lo que mis estudiantes piensan de su experiencia de aprendizaje con Solution FLE.",
+    "title": "Testimonios de mis alumnos",
+    "subtitle": "Descubre lo que dicen mis alumnos sobre su experiencia de aprendizaje con Solution FLE.",
     "prev": "Anterior",
     "next": "Siguiente",
     "items": [
       {
         "name": "Maria Garcia",
         "country": "España",
-        "level": "Principiante -> Intermedio",
-        "text": "¡Aline es una profesora excepcional! Sus clases son estructuradas, dinámicas y adaptadas a mi ritmo. En 6 meses, progresé mucho más de lo que imaginaba. ¡Recomiendo encarecidamente Solution FLE!"
+        "level": "Principiante ← Intermedio",
+        "text": "¡Aline es una profesora excepcional! Sus clases son estructuradas, dinámicas y adaptadas a mi ritmo. En 6 meses, he progresado mucho más de lo que imaginaba. ¡Recomiendo totalmente Solution FLE!"
       },
       {
         "name": "Yuki Tanaka",
         "country": "Japón",
         "level": "Intermedio",
-        "text": "¡Los talleres de inmersión cultural son fantásticos! No solo mejoré mi francés, sino que también descubrí la cultura francesa de manera auténtica. ¡Gracias Aline!"
+        "text": "¡Los talleres de inmersión cultural son geniales! No solo mejoré mi francés, sino que también descubrí la cultura francesa de una manera auténtica. ¡Gracias Aline!"
       },
       {
-        "name": "Hans Mueller",
+        "name": "Hans Müller",
         "country": "Alemania",
         "level": "Avanzado",
-        "text": "Profesional, paciente y muy comprometida. Aline me ayudó a preparar mi examen DELF con confianza. Su enfoque pedagógico es realmente eficaz."
+        "text": "Profesional, paciente y muy comprometida. Aline me ayudó a prepararme para el examen DELF con confianza. Su pedagogía es realmente eficaz."
       },
       {
         "name": "Sophie Chen",
         "country": "Taiwán",
         "level": "Principiante",
-        "text": "Tenía miedo de aprender francés, pero Aline lo hizo divertido y accesible. Explica con claridad y anima mucho. ¡Estoy muy satisfecha!"
+        "text": "Tenía miedo de aprender francés, pero Aline hizo que fuera divertido y fácil. Explica con claridad y anima mucho. ¡Estoy muy satisfecha!"
       },
       {
         "name": "Carlos Silva",
         "country": "Brasil",
         "level": "Intermedio",
-        "text": "Las clases particulares son realmente personalizadas. Aline escucha mis necesidades y adapta su enseñanza en consecuencia. ¡Excelente relación calidad-precio!"
+        "text": "Las clases particulares están realmente hechas a medida. Aline escucha mis necesidades y adapta su enseñanza en consecuencia. ¡Excelente relación calidad-precio!"
       }
     ]
   },
@@ -133,6 +136,8 @@
     "email": "Email",
     "location": "Lugar",
     "location_value": "Individual o Grupo",
+    "phone_value": "06 49 16 35 37",
+    "email_value": "solutionFLE@gmail.com",
     "linkedin": "Sigue mis novedades en LinkedIn",
     "form_title": "Envíame un mensaje",
     "label_name": "Tu nombre",
@@ -152,9 +157,6 @@
   },
   "footer": {
     "copyright": "Aline Gamblin - Solution FLE",
-    "siret": "Certificada DAEFLE - SIRET 804 466 282 00014"
-  },
-  "app": {
-    "call_now": "Llamar ahora"
+    "siret": "Diplomada DAEFLE - SIRET 804 466 282 00014"
   }
 }

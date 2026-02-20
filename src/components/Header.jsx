@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Menu, X, Phone, Mail, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
+import EditableText from './EditableText';
 
 const Header = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -53,10 +54,10 @@ const Header = () => {
                         gap: '0.1rem'
                     }}>
                         <a href="tel:+33649163537" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '600' }}>
-                            <Phone size={12} /> 06 49 16 35 37
+                            <Phone size={12} /> <EditableText tag="span" translationKey="contact.phone_value">{t('contact.phone_value') || '06 49 16 35 37'}</EditableText>
                         </a>
                         <a href="mailto:solutionFLE@gmail.com" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '600' }}>
-                            <Mail size={12} /> solutionFLE@gmail.com
+                            <Mail size={12} /> <EditableText tag="span" translationKey="contact.email_value">{t('contact.email_value') || 'solutionFLE@gmail.com'}</EditableText>
                         </a>
                     </div>
 
@@ -78,9 +79,13 @@ const Header = () => {
                         <div className="logo-content" style={{ display: 'flex', flexDirection: 'column' }}>
                             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem', marginBottom: '4px' }}>
                                 <span className="logo-text" style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem', color: '#7f7f7f' }}>
-                                    <span style={{ fontWeight: '800' }}>Solution</span>
+                                    <span style={{ fontWeight: '800' }}>
+                                        <EditableText tag="span" translationKey="nav.logo_part1">{t('nav.logo_part1') || 'Solution'}</EditableText>
+                                    </span>
                                     <span style={{ fontWeight: '300', opacity: 0.5, fontSize: '1.8rem', paddingBottom: '2px' }}>|</span>
-                                    <span style={{ fontWeight: '800' }}>FLE</span>
+                                    <span style={{ fontWeight: '800' }}>
+                                        <EditableText tag="span" translationKey="nav.logo_part2">{t('nav.logo_part2') || 'FLE'}</EditableText>
+                                    </span>
                                 </span>
                                 <img
                                     src="./Picture2.png"
@@ -93,8 +98,10 @@ const Header = () => {
 
                     {/* Desktop Navigation */}
                     <nav className="nav-links">
-                        {links.map(link => (
-                            <a key={link.href} href={link.href} style={{ textDecoration: 'none', color: 'var(--color-primary)', fontWeight: 700, marginLeft: '1.5rem' }}>{link.name}</a>
+                        {links.map((link, idx) => (
+                            <a key={link.href} href={link.href} style={{ textDecoration: 'none', color: 'var(--color-primary)', fontWeight: 700, marginLeft: '1.5rem' }}>
+                                <EditableText tag="span" translationKey={`nav.${['about', 'services', 'resources', 'testimonials', 'contact'][idx]}`}>{link.name}</EditableText>
+                            </a>
                         ))}
 
                         {/* Language Dropdown Desktop */}
@@ -113,7 +120,7 @@ const Header = () => {
                                     gap: '0.5rem'
                                 }}
                             >
-                                {currentLangData?.flag} {t('nav.language')}
+                                {currentLangData?.flag} <EditableText tag="span" translationKey="nav.language">{t('nav.language')}</EditableText>
                                 <motion.span animate={{ rotate: isLangOpen ? 180 : 0 }}>▾</motion.span>
                             </button>
 
@@ -188,7 +195,7 @@ const Header = () => {
                             overflow: 'hidden'
                         }}
                     >
-                        {links.map(link => (
+                        {links.map((link, idx) => (
                             <a
                                 key={link.href}
                                 href={link.href}
@@ -202,7 +209,7 @@ const Header = () => {
                                     fontWeight: 700
                                 }}
                             >
-                                {link.name}
+                                <EditableText tag="span" translationKey={`nav.${['about', 'services', 'resources', 'testimonials', 'contact'][idx]}`}>{link.name}</EditableText>
                             </a>
                         ))}
 
@@ -224,7 +231,7 @@ const Header = () => {
                                     alignItems: 'center'
                                 }}
                             >
-                                <span>{currentLangData?.flag} {t('nav.language')}</span>
+                                <span>{currentLangData?.flag} <EditableText tag="span" translationKey="nav.language">{t('nav.language')}</EditableText></span>
                                 <motion.span animate={{ rotate: isLangOpen ? 180 : 0 }}>▾</motion.span>
                             </button>
 

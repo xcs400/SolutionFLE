@@ -7,13 +7,16 @@
     "testimonials": "الشهادات",
     "contact": "اتصل بنا",
     "language": "اللغة",
-    "cta": "تواصل معي"
+    "cta": "تواصل معي",
+    "logo_part2": "FLE",
+    "logo_part1": "Solution"
   },
   "hero": {
     "title_line1": "تعلّم الفرنسية",
     "title_line2": "وكل شيء يصبح ممكنًا",
     "subtitle_html": "تدريبات مخصصة في اللغة الفرنسية كلغة أجنبية (FLE)<br/>مع <strong>ألين غامبلان</strong>، معلمة حاصلة على شهادة DAEFLE.",
     "cta": "اكتشف الدورات",
+    "cta_link": "#services",
     "image_alt": "صورة FLE"
   },
   "about": {
@@ -133,6 +136,8 @@
     "email": "البريد الإلكتروني",
     "location": "المكان",
     "location_value": "فردي أو جماعي",
+    "phone_value": "06 49 16 35 37",
+    "email_value": "solutionFLE@gmail.com",
     "linkedin": "تابع أخباري على لينكد إن",
     "form_title": "أرسل لي رسالة",
     "label_name": "اسمك",

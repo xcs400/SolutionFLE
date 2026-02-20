@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ExternalLink, BookOpen, Clock, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import EditableText from './EditableText';
 
 const Resources = () => {
     const [feeds, setFeeds] = useState([]);
@@ -36,9 +37,9 @@ const Resources = () => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                 >
-                    <h2>{t('resources.title')}</h2>
+                    <h2><EditableText tag="span" translationKey="resources.title">{t('resources.title')}</EditableText></h2>
                     <p style={{ maxWidth: '750px', margin: '2rem auto', fontSize: '1.2rem', color: '#64748b' }}>
-                        {t('resources.subtitle')}
+                        <EditableText tag="span" translationKey="resources.subtitle">{t('resources.subtitle')}</EditableText>
                     </p>
                 </motion.div>
 

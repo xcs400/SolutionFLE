@@ -1,23 +1,26 @@
 {
   "nav": {
     "home": "Home",
-    "about": "about",
+    "about": "Who am I",
     "services": "Services",
     "resources": "Content",
     "testimonials": "Testimonials",
     "contact": "Contact",
     "language": "Language",
-    "cta": "Contact me"
+    "cta": "Contact me",
+    "logo_part1": "Solution",
+    "logo_part2": "FLE"
   },
   "hero": {
     "title_line1": "Learn French",
     "title_line2": "and everything becomes possible",
     "subtitle_html": "Personalized French as a Foreign Language (FLE) training<br/>with <strong>Aline Gamblin</strong>, DAEFLE certified teacher.",
-    "cta": "Discover our courses",
+    "cta": "Discover",
+    "cta_link": "#services",
     "image_alt": "FLE Visual"
   },
   "about": {
-    "title": "My Background",
+    "title": "Who am I?",
     "name": "Aline GAMBLIN",
     "role": "DAEFLE Certified French Teacher",
     "bio": "Passionate about sharing the French language and culture, I have been helping a diverse international audience master the language for several years.",
@@ -133,6 +136,8 @@
     "email": "Email",
     "location": "Location",
     "location_value": "Individual or Group",
+    "phone_value": "06 49 16 35 37",
+    "email_value": "solutionFLE@gmail.com",
     "linkedin": "Follow my updates on LinkedIn",
     "form_title": "Send me a message",
     "label_name": "Your name",

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import EditableText from './EditableText';
 
 const Testimonials = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -34,9 +35,9 @@ const Testimonials = () => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                 >
-                    <h2>{t('testimonials.title')}</h2>
+                    <h2><EditableText tag="span" translationKey="testimonials.title">{t('testimonials.title')}</EditableText></h2>
                     <p style={{ maxWidth: '700px', margin: '2rem auto', fontSize: '1.2rem', color: '#64748b' }}>
-                        {t('testimonials.subtitle')}
+                        <EditableText tag="span" translationKey="testimonials.subtitle">{t('testimonials.subtitle')}</EditableText>
                     </p>
                 </motion.div>
 
@@ -56,12 +57,16 @@ const Testimonials = () => {
                             </div>
 
                             <p className="testimonial-text">
-                                "{testimonial.text}"
+                                "<EditableText tag="span" translationKey={`testimonials.items.${(currentIndex + idx) % testimonials.length}.text`}>{testimonial.text}</EditableText>"
                             </p>
 
                             <div className="testimonial-author">
-                                <p className="author-name">{testimonial.name}</p>
-                                <p className="author-meta">{testimonial.country} • {testimonial.level}</p>
+                                <p className="author-name">
+                                    <EditableText tag="span" translationKey={`testimonials.items.${(currentIndex + idx) % testimonials.length}.name`}>{testimonial.name}</EditableText>
+                                </p>
+                                <p className="author-meta">
+                                    <EditableText tag="span" translationKey={`testimonials.items.${(currentIndex + idx) % testimonials.length}.country`}>{testimonial.country}</EditableText> • <EditableText tag="span" translationKey={`testimonials.items.${(currentIndex + idx) % testimonials.length}.level`}>{testimonial.level}</EditableText>
+                                </p>
                             </div>
                         </motion.div>
                     ))}

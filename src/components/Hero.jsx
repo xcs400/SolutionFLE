@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
+import EditableText from './EditableText';
 
 const Hero = () => {
-    const { t } = useLanguage();
+    const { t, editMode, updateTranslation } = useLanguage();
 
     return (
         <section id="home" className="hero" style={{ position: 'relative', overflow: 'hidden' }}>
@@ -15,8 +16,10 @@ const Hero = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.3 }}
                 >
-                    {t('hero.title_line1')}<br />
-                    <span style={{ color: 'var(--color-secondary)' }}>{t('hero.title_line2')}</span>
+                    <EditableText tag="span" translationKey="hero.title_line1">{t('hero.title_line1')}</EditableText><br />
+                    <span style={{ color: 'var(--color-secondary)' }}>
+                        <EditableText tag="span" translationKey="hero.title_line2">{t('hero.title_line2')}</EditableText>
+                    </span>
                 </motion.h1>
 
                 <motion.p
@@ -25,8 +28,11 @@ const Hero = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6, duration: 0.8 }}
                     style={{ fontWeight: '400', maxWidth: '700px', margin: '2rem auto 3rem', fontSize: '1.4rem' }}
-                    dangerouslySetInnerHTML={{ __html: t('hero.subtitle_html') }}
-                />
+                >
+                    <EditableText tag="span" translationKey="hero.subtitle_html" isHtml={true}>
+                        {t('hero.subtitle_html')}
+                    </EditableText>
+                </motion.p>
 
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
@@ -34,9 +40,40 @@ const Hero = () => {
                     transition={{ delay: 0.9, duration: 0.5 }}
                     style={{ position: 'relative' }}
                 >
-                    <a href="#services" className="btn">
-                        {t('hero.cta')}
-                    </a>
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                        <a href={t('hero.cta_link') || "#services"} className="btn">
+                            <EditableText tag="span" translationKey="hero.cta">{t('hero.cta')}</EditableText>
+                        </a>
+                        {editMode && (
+                            <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    const newLink = prompt('Nouveau lien pour le bouton CTA :', t('hero.cta_link') || "#services");
+                                    if (newLink !== null) updateTranslation('hero.cta_link', newLink);
+                                }}
+                                style={{
+                                    position: 'absolute',
+                                    top: '-15px',
+                                    right: '-15px',
+                                    background: 'white',
+                                    border: '1px solid #ccc',
+                                    borderRadius: '50%',
+                                    width: '24px',
+                                    height: '24px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    fontSize: '12px',
+                                    boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                                    zIndex: 10
+                                }}
+                                title="Modifier le lien"
+                            >
+                                🔗
+                            </button>
+                        )}
+                    </div>
                 </motion.div>
 
                 {/* Animated Showcase - Cycling Images Sequential */}

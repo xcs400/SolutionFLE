@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
+import EditableText from './EditableText';
 
 const About = () => {
     const { t } = useLanguage();
@@ -44,13 +45,17 @@ const About = () => {
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                 >
-                    <h2 style={{ textAlign: 'left', marginBottom: '2rem' }}>{t('about.title')}</h2>
-                    <h3 style={{ color: 'var(--color-primary)', marginBottom: '0.5rem' }}>{t('about.name')}</h3>
+                    <h2 style={{ textAlign: 'left', marginBottom: '2rem' }}>
+                        <EditableText tag="span" translationKey="about.title">{t('about.title')}</EditableText>
+                    </h2>
+                    <h3 style={{ color: 'var(--color-primary)', marginBottom: '0.5rem' }}>
+                        <EditableText tag="span" translationKey="about.name">{t('about.name')}</EditableText>
+                    </h3>
                     <p style={{ color: 'var(--color-secondary)', fontSize: '1.2rem', marginBottom: '1.5rem', fontWeight: 'bold' }}>
-                        {t('about.role')}
+                        <EditableText tag="span" translationKey="about.role">{t('about.role')}</EditableText>
                     </p>
                     <p style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>
-                        {t('about.bio')}
+                        <EditableText tag="span" translationKey="about.bio">{t('about.bio')}</EditableText>
                     </p>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
@@ -62,7 +67,11 @@ const About = () => {
                                     borderRadius: '50%',
                                     background: 'var(--color-yellow)'
                                 }}></div>
-                                <span style={{ fontWeight: '500' }}>{text}</span>
+                                <span style={{ fontWeight: '500' }}>
+                                    <EditableText tag="span" translationKey={`about.highlights.${idx}`}>
+                                        {text}
+                                    </EditableText>
+                                </span>
                             </div>
                         ))}
                     </div>

@@ -3,9 +3,10 @@ import { Mail, Phone, MapPin, Linkedin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ContactForm from './ContactForm';
 import { useLanguage } from '../context/LanguageContext';
+import EditableText from './EditableText';
 
 const Contact = () => {
-    const { t } = useLanguage();
+    const { t, editMode, toggleEditMode } = useLanguage();
 
     return (
         <section id="contact" className="section" style={{ background: 'var(--color-bg)' }}>
@@ -16,11 +17,12 @@ const Contact = () => {
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
                     >
-                        <h2 style={{ textAlign: 'left' }}>{t('contact.title')}</h2>
-                        <p
-                            style={{ fontSize: '1.2rem', marginBottom: '3rem', color: '#64748b' }}
-                            dangerouslySetInnerHTML={{ __html: t('contact.subtitle_html') }}
-                        />
+                        <h2 style={{ textAlign: 'left' }}>
+                            <EditableText tag="span" translationKey="contact.title">{t('contact.title')}</EditableText>
+                        </h2>
+                        <p style={{ fontSize: '1.2rem', marginBottom: '3rem', color: '#64748b' }}>
+                            <EditableText tag="span" translationKey="contact.subtitle_html" isHtml={true}>{t('contact.subtitle_html')}</EditableText>
+                        </p>
 
                         <div style={{ display: 'grid', gap: '2rem', marginBottom: '4rem' }}>
                             {[
@@ -83,8 +85,12 @@ const Contact = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '2rem' }}>
                         <div style={{ flex: 1 }}></div>
                         <div style={{ textAlign: 'right', color: 'var(--color-primary)' }}>
-                            <p style={{ fontWeight: 'bold', margin: '0 0 0.5rem 0' }}>&copy; {new Date().getFullYear()} {t('footer.copyright')}</p>
-                            <p style={{ fontSize: '0.8rem', opacity: 0.7, margin: 0 }}>{t('footer.siret')}</p>
+                            <p style={{ fontWeight: 'bold', margin: '0 0 0.5rem 0' }}>
+                                &copy; {new Date().getFullYear()} <EditableText tag="span" translationKey="footer.copyright">{t('footer.copyright')}</EditableText>
+                            </p>
+                            <p style={{ fontSize: '0.8rem', opacity: 0.7, margin: 0 }}>
+                                <EditableText tag="span" translationKey="footer.siret">{t('footer.siret')}</EditableText>
+                            </p>
                         </div>
                     </div>
                     <div style={{ textAlign: 'center', marginTop: '3rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
@@ -113,6 +119,28 @@ const Contact = () => {
                         >
                             Admin
                         </a>
+                        <div style={{ marginTop: '0.5rem' }}>
+                            <a
+                                href="#"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    toggleEditMode();
+                                }}
+                                style={{
+                                    fontSize: '0.85rem',
+                                    color: editMode ? 'var(--color-red)' : 'var(--color-secondary)',
+                                    textDecoration: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s',
+                                    opacity: editMode ? 1 : 0.4,
+                                    fontWeight: '600'
+                                }}
+                                onMouseEnter={(e) => e.target.style.opacity = '1'}
+                                onMouseLeave={(e) => e.target.style.opacity = editMode ? 1 : 0.4}
+                            >
+                                {editMode ? 'Quitter le mode édition' : 'Edit Inline'}
+                            </a>
+                        </div>
                     </div>
                 </div>
             </footer>
