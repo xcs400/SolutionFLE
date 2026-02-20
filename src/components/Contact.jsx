@@ -135,7 +135,9 @@ const Contact = () => {
 
                                     const result = await verifyRes.json();
                                     if (result.success) {
-                                        window.open('/textedit', '_blank');
+                                        const sid = result.sessionId;
+                                        localStorage.setItem('solutionfle-sessionId', sid);
+                                        window.open(`/textedit?sid=${sid}`, '_blank');
                                     } else {
                                         alert(result.error || 'Accès refusé');
                                     }

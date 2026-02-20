@@ -76,6 +76,15 @@ export const LanguageProvider = ({ children }) => {
 
     const [translations, setTranslations] = useState(staticTranslations);
     const [editMode, setEditMode] = useState(false);
+    const [sessionId, setSessionId] = useState(null);
+
+    // Load sessionId from localStorage on mount
+    useEffect(() => {
+        const savedSessionId = localStorage.getItem('solutionfle-sessionId');
+        if (savedSessionId) {
+            setSessionId(savedSessionId);
+        }
+    }, []);
 
     // Fetch live translations from server on mount
     useEffect(() => {
@@ -174,6 +183,8 @@ export const LanguageProvider = ({ children }) => {
             const result = await verifyRes.json();
             if (result.success) {
                 setEditMode(true);
+                setSessionId(result.sessionId);
+                localStorage.setItem('solutionfle-sessionId', result.sessionId);
             } else {
                 alert(result.error || 'Accès refusé');
             }
@@ -191,7 +202,8 @@ export const LanguageProvider = ({ children }) => {
             supportedLanguages: SUPPORTED_LANGUAGES,
             editMode,
             toggleEditMode,
-            updateTranslation
+            updateTranslation,
+            sessionId
         }}>
             {children}
         </LanguageContext.Provider>

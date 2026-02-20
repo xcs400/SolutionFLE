@@ -25,6 +25,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const nonces = new Set();
+const authenticatedSessions = new Map(); // sessionId -> { createdAt, expiresAt }
 
 /**
  * Simple MD5 hash function - codé en dur, utilisé pour vérifier le password
@@ -114,9 +115,38 @@ app.put('/api/locales/:lang', (req, res) => {
     }
 });
 
-// Route for the translation editor (accessible via /textedit)
-app.get('/textedit', (req, res) => {
+// Route for the translation editor (accessible via /textedit) - PROTECTED
+const authMiddleware = (req, res, next) => {
+    const sessionId = req.headers['x-session-id'] || req.query.sid;
+    
+    if (!sessionId || !authenticatedSessions.has(sessionId)) {
+        console.log('Unauthorized access to /textedit from', req.ip);
+        return res.status(401).send('Unauthorized: Please authenticate first');
+    }
+
+    const session = authenticatedSessions.get(sessionId);
+    if (Date.now() > session.expiresAt) {
+        authenticatedSessions.delete(sessionId);
+        console.log('Session expired for', req.ip);
+        return res.status(401).send('Unauthorized: Session expired');
+    }
+
+    console.log('Authorized access to /textedit from', req.ip);
+    next();
+};
+
+app.get('/textedit', authMiddleware, (req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'textedit.html'));
+});
+
+// Logout endpoint
+app.post('/api/auth/logout', (req, res) => {
+    const sessionId = req.headers['x-session-id'];
+    if (sessionId && authenticatedSessions.has(sessionId)) {
+        authenticatedSessions.delete(sessionId);
+        console.log('Session logged out:', sessionId);
+    }
+    res.json({ success: true });
 });
 
 // Serve static files from the Vite build directory (after API routes)
@@ -154,7 +184,13 @@ app.post('/api/auth/verify', (req, res) => {
 
     if (hash === expectedHash) {
         console.log('Auth success for', req.ip);
-        res.json({ success: true });
+        // Create authenticated session
+        const sessionId = crypto.randomBytes(32).toString('hex');
+        const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+        authenticatedSessions.set(sessionId, { createdAt: Date.now(), expiresAt });
+        // Clean up expired sessions
+        setTimeout(() => authenticatedSessions.delete(sessionId), 24 * 60 * 60 * 1000);
+        res.json({ success: true, sessionId });
     } else {
         console.log('Auth failed (wrong hash) for', req.ip);
         res.status(401).json({ error: 'Mot de passe incorrect' });

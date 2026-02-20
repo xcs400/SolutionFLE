@@ -620,6 +620,24 @@
     </div>
 
     <script>
+        // ─── Security: Check authentication ─────────────────────────────
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('sid') || localStorage.getItem('solutionfle-sessionId');
+        if (!sessionId) {
+            document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; color:#f87171;"><div><p style="font-size:1.2rem; font-weight:bold;">Accès refusé</p><p>Veuillez vous authentifier d\'abord</p></div></div>';
+            throw new Error('No sessionId provided');
+        }
+        
+        // Wrap fetch to add session header
+        const originalFetch = window.fetch;
+        window.fetch = function(...args) {
+            const [resource, config] = args;
+            const finalConfig = config || {};
+            if (!finalConfig.headers) finalConfig.headers = {};
+            finalConfig.headers['x-session-id'] = sessionId;
+            return originalFetch.apply(this, [resource, finalConfig]);
+        };
+
         // ─── Configuration ─────────────────────────────
         const LANGS = [
             { code: 'fr', flag: '🇫🇷', name: 'Français' },
