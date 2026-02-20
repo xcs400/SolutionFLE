@@ -633,6 +633,16 @@
         let current = {};
         let changeCount = 0;
 
+        /**
+         * Hash a password with a nonce using SHA-256.
+         */
+        async function hashPassword(password, nonce) {
+            const msgUint8 = new TextEncoder().encode(password + nonce);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
         // Set CSS variable for grid columns
         document.documentElement.style.setProperty('--lang-count', LANGS.length);
 
@@ -886,8 +896,28 @@
         // ─── Save ──────────────────────────────────────
         async function saveAll() {
             if (changeCount === 0) return;
+
+            const pwd = prompt('Confirmez le mot de passe pour sauvegarder :');
+            if (!pwd) return;
+
             showLoading(true);
             try {
+                // 1. Get challenge
+                const challengeRes = await fetch('/api/auth/challenge');
+                const { nonce } = await challengeRes.json();
+                const hash = await hashPassword(pwd, nonce);
+
+                // 2. Verify challenge
+                const verifyRes = await fetch('/api/auth/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ hash, nonce })
+                });
+
+                const authResult = await verifyRes.json();
+                if (!authResult.success) throw new Error(authResult.error || 'Authentification échouée');
+
+                // 3. Perform save
                 const responses = await Promise.all(
                     LANGS.map(l => fetch(`/api/locales/${l.code}`, {
                         method: 'PUT',
@@ -906,7 +936,7 @@
                 countChanges();
                 toast(`${saved} modification(s) sauvegardée(s)`, 'success');
             } catch (err) {
-                toast('Erreur de sauvegarde : ' + err.message, 'error');
+                toast('Erreur : ' + err.message, 'error');
             } finally {
                 showLoading(false);
             }

@@ -6,6 +6,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import Parser from 'rss-parser';
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -22,6 +23,8 @@ const RSS_SOURCES = [
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const nonces = new Set();
 
 const app = express();
 const PORT = process.env.PORT || 5173;
@@ -103,6 +106,38 @@ app.use(express.static(path.join(__dirname, 'dist')));
 // Route for the translation editor (accessible via /textedit)
 app.get('/textedit', (req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'textedit.html'));
+});
+
+// ─── Authentication API ────────────────────────────────
+app.get('/api/auth/challenge', (req, res) => {
+    const nonce = crypto.randomBytes(16).toString('hex');
+    nonces.add(nonce);
+    // Expire le nonce après 2 minutes
+    setTimeout(() => nonces.delete(nonce), 120000);
+    res.json({ nonce });
+});
+
+app.post('/api/auth/verify', (req, res) => {
+    const { hash, nonce } = req.body;
+
+    if (!nonce || !hash) {
+        return res.status(400).json({ error: 'Paramètres manquants' });
+    }
+
+    if (!nonces.has(nonce)) {
+        return res.status(401).json({ error: 'Défi expiré ou invalide' });
+    }
+
+    nonces.delete(nonce);
+
+    const adminPassword = process.env.ADMIN_PASSWORD || 'Pascal';
+    const expectedHash = crypto.createHash('sha256').update(adminPassword + nonce).digest('hex');
+
+    if (hash === expectedHash) {
+        res.json({ success: true });
+    } else {
+        res.status(401).json({ error: 'Mot de passe incorrect' });
+    }
 });
 
 // API Route for Contact Form

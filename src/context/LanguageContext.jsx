@@ -18,6 +18,16 @@ const SUPPORTED_LANGUAGES = [
 const LanguageContext = createContext();
 
 /**
+ * Hash a password with a nonce using SHA-256.
+ */
+async function hashPassword(password, nonce) {
+    const msgUint8 = new TextEncoder().encode(password + nonce);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
  * Get a nested value from an object using a dot-separated path.
  */
 function getNestedValue(obj, path) {
@@ -126,16 +136,39 @@ export const LanguageProvider = ({ children }) => {
         return value;
     }, [language, translations]);
 
-    const toggleEditMode = useCallback(() => {
+    const toggleEditMode = useCallback(async () => {
         if (editMode) {
             setEditMode(false);
             return;
         }
+
         const pwd = prompt('Mot de passe pour éditer en ligne :');
-        if (pwd === 'Pascal') {
-            setEditMode(true);
-        } else if (pwd !== null) {
-            alert('Mot de passe incorrect');
+        if (!pwd) return;
+
+        try {
+            // 1. Demander un challenge au serveur
+            const challengeRes = await fetch('/api/auth/challenge');
+            const { nonce } = await challengeRes.json();
+
+            // 2. Calculer le hash localement
+            const hash = await hashPassword(pwd, nonce);
+
+            // 3. Vérifier le hash sur le serveur
+            const verifyRes = await fetch('/api/auth/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hash, nonce })
+            });
+
+            const result = await verifyRes.json();
+            if (result.success) {
+                setEditMode(true);
+            } else {
+                alert(result.error || 'Accès refusé');
+            }
+        } catch (err) {
+            console.error('Erreur authentification:', err);
+            alert('Erreur technique lors de la vérification');
         }
     }, [editMode]);
 

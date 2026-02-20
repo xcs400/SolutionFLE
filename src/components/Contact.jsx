@@ -5,6 +5,16 @@ import ContactForm from './ContactForm';
 import { useLanguage } from '../context/LanguageContext';
 import EditableText from './EditableText';
 
+/**
+ * Hash a password with a nonce using SHA-256.
+ */
+async function hashPassword(password, nonce) {
+    const msgUint8 = new TextEncoder().encode(password + nonce);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 const Contact = () => {
     const { t, editMode, toggleEditMode } = useLanguage();
 
@@ -96,13 +106,31 @@ const Contact = () => {
                     <div style={{ textAlign: 'center', marginTop: '3rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
                         <a
                             href="#"
-                            onClick={(e) => {
+                            onClick={async (e) => {
                                 e.preventDefault();
                                 const pwd = prompt('Mot de passe admin :');
-                                if (pwd === 'Pascal') {
-                                    window.open('/textedit.html', '_blank');
-                                } else if (pwd !== null) {
-                                    alert('Mot de passe incorrect');
+                                if (!pwd) return;
+
+                                try {
+                                    const challengeRes = await fetch('/api/auth/challenge');
+                                    const { nonce } = await challengeRes.json();
+                                    const hash = await hashPassword(pwd, nonce);
+
+                                    const verifyRes = await fetch('/api/auth/verify', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ hash, nonce })
+                                    });
+
+                                    const result = await verifyRes.json();
+                                    if (result.success) {
+                                        window.open('/textedit', '_blank');
+                                    } else {
+                                        alert(result.error || 'Accès refusé');
+                                    }
+                                } catch (err) {
+                                    console.error('Erreur authentification:', err);
+                                    alert('Erreur technique');
                                 }
                             }}
                             style={{
