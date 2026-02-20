@@ -1,11 +1,12 @@
 {
   "nav": {
     "home": "Home",
-    "about": "About",
+    "about": "about",
     "services": "Services",
     "resources": "Content",
     "testimonials": "Testimonials",
     "contact": "Contact",
+    "language": "Language",
     "cta": "Contact me"
   },
   "hero": {

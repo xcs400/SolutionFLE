@@ -8,7 +8,7 @@ const Contact = () => {
     const { t } = useLanguage();
 
     return (
-        <section id="contact" className="section" style={{ background: 'rgba(11, 24, 109, 0.02)' }}>
+        <section id="contact" className="section" style={{ background: 'var(--color-bg)' }}>
             <div className="container">
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '5rem' }}>
                     <motion.div
@@ -81,9 +81,7 @@ const Contact = () => {
             <footer style={{ marginTop: '8rem', paddingBottom: '2rem' }}>
                 <div className="container">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '2rem' }}>
-                        <div>
-                            <img src="./LogoOfficiel.png" alt="Logo" style={{ height: '60px' }} />
-                        </div>
+                        <div style={{ flex: 1 }}></div>
                         <div style={{ textAlign: 'right', color: 'var(--color-primary)' }}>
                             <p style={{ fontWeight: 'bold', margin: '0 0 0.5rem 0' }}>&copy; {new Date().getFullYear()} {t('footer.copyright')}</p>
                             <p style={{ fontSize: '0.8rem', opacity: 0.7, margin: 0 }}>{t('footer.siret')}</p>

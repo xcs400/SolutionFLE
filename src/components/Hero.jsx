@@ -6,20 +6,8 @@ const Hero = () => {
     const { t } = useLanguage();
 
     return (
-        <section id="home" className="hero">
-            <div className="hero-content">
-                <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 1 }}
-                    style={{ marginBottom: '2rem' }}
-                >
-                    <img
-                        src="./Picture2.png"
-                        alt="Solution FLE Logo"
-                        style={{ height: '140px', width: 'auto' }}
-                    />
-                </motion.div>
+        <section id="home" className="hero" style={{ position: 'relative', overflow: 'hidden' }}>
+            <div className="hero-content" style={{ position: 'relative', zIndex: 10 }}>
 
                 <motion.h1
                     className="hero-title"
@@ -52,7 +40,7 @@ const Hero = () => {
                 </motion.div>
 
                 {/* Animated Showcase - Cycling Images Sequential */}
-                <div style={{ marginTop: '4rem', position: 'relative', height: '220px', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+                <div style={{ marginTop: '4rem', position: 'relative', height: '180px', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
                     {[
                         { src: './Firefly1.png', delay: 0 },
                         { src: './Firefly2.png', delay: 4 },

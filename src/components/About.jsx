@@ -7,7 +7,7 @@ const About = () => {
     const highlights = t('about.highlights');
 
     return (
-        <section id="about" className="section section-alt">
+        <section id="about" className="section" style={{ background: 'var(--color-bg)' }}>
             <div className="container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '4rem', alignItems: 'center' }}>
                 <motion.div
                     initial={{ opacity: 0, x: -50 }}
@@ -27,7 +27,7 @@ const About = () => {
                         opacity: 0.2
                     }}></div>
                     <img
-                        src="./IMG_6329.jpg"
+                        src="./aline2.jpeg"
                         alt="Aline Gamblin"
                         style={{
                             width: '100%',

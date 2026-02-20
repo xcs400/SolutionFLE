@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solution FLE — Éditeur de traductions</title>
+    <link rel="icon" type="image/svg+xml" href="/logo_fle.svg" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --bg: #0f1117;
+            --bg-card: #1a1d27;
+            --bg-input: #22252f;
+            --bg-hover: #282b36;
+            --border: #2e3140;
+            --border-focus: #5b8def;
+            --text: #e4e6ed;
+            --text-dim: #8b8fa3;
+            --text-muted: #555972;
+            --accent: #5b8def;
+            --accent-hover: #7ba3f7;
+            --success: #34d399;
+            --success-bg: rgba(52, 211, 153, 0.1);
+            --warning: #fbbf24;
+            --warning-bg: rgba(251, 191, 36, 0.1);
+            --danger: #f87171;
+            --danger-bg: rgba(248, 113, 113, 0.1);
+            --radius: 10px;
+            --radius-lg: 16px;
+            --lang-count: 4;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .editor-header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+
+        .editor-header h1 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .editor-header h1 .badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: var(--accent);
+            color: white;
+            padding: 0.15rem 0.6rem;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--bg-input);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--text-muted);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+        }
+
+        .btn-success {
+            background: var(--success);
+            border-color: var(--success);
+            color: #0a1a10;
+        }
+
+        .btn-success:hover {
+            opacity: 0.9;
+        }
+
+        .btn-danger {
+            background: transparent;
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-bg);
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .toolbar {
+            padding: 1rem 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.65rem 1rem 0.65rem 2.5rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--border-focus);
+        }
+
+        .search-box .search-icon {
+            position: absolute;
+            left: 0.9rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            flex-wrap: wrap;
+        }
+
+        .stats .stat {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .stat-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .stat-dot.ok {
+            background: var(--success);
+        }
+
+        .stat-dot.warn {
+            background: var(--warning);
+        }
+
+        .stat-dot.err {
+            background: var(--danger);
+        }
+
+        .content {
+            padding: 1.5rem 2rem 4rem;
+        }
+
+        .section-group {
+            margin-bottom: 2rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.8rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .section-header:hover {
+            background: var(--bg-hover);
+        }
+
+        .section-header .caret {
+            transition: transform 0.2s;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .section-header.collapsed .caret {
+            transform: rotate(-90deg);
+        }
+
+        .section-header h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .section-header .key-count {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+
+        .section-body {
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .section-body.hidden {
+            display: none;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 160px repeat(var(--lang-count), 1fr);
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+
+        .row:last-child {
+            border-bottom: none;
+        }
+
+        .row:hover {
+            background: var(--bg-hover);
+        }
+
+        .row.highlight {
+            background: rgba(91, 141, 239, 0.06);
+        }
+
+        .row-key {
+            padding: 0.75rem 0.75rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            border-right: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            word-break: break-all;
+        }
+
+        .row-value {
+            padding: 0.4rem;
+            border-right: 1px solid var(--border);
+            position: relative;
+        }
+
+        .row-value:last-child {
+            border-right: none;
+        }
+
+        .row-value textarea,
+        .row-value input[type="text"] {
+            width: 100%;
+            padding: 0.4rem 0.6rem;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.82rem;
+            resize: vertical;
+            outline: none;
+            min-height: 34px;
+            transition: all 0.2s;
+        }
+
+        .row-value textarea:hover,
+        .row-value input[type="text"]:hover {
+            border-color: var(--border);
+        }
+
+        .row-value textarea:focus,
+        .row-value input[type="text"]:focus {
+            border-color: var(--border-focus);
+            background: var(--bg-input);
+            box-shadow: 0 0 0 3px rgba(91, 141, 239, 0.1);
+        }
+
+        .row-value textarea.modified,
+        .row-value input[type="text"].modified {
+            border-left: 3px solid var(--warning);
+        }
+
+        /* Larger font for Arabic/RTL in editor */
+        [dir="rtl"] {
+            font-size: 1.15rem !important;
+            line-height: 1.6;
+        }
+
+        .row-value .lang-tag {
+            position: absolute;
+            top: 0.25rem;
+            right: 0.5rem;
+            font-size: 0.55rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            pointer-events: none;
+        }
+
+        .col-headers {
+            display: grid;
+            grid-template-columns: 160px repeat(var(--lang-count), 1fr);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            margin-bottom: 1.5rem;
+            position: sticky;
+            top: 64px;
+            z-index: 50;
+        }
+
+        .col-header {
+            padding: 0.6rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            border-right: 1px solid var(--border);
+        }
+
+        .col-header:last-child {
+            border-right: none;
+        }
+
+        .col-header .flag {
+            font-size: 1rem;
+            margin-right: 0.3rem;
+        }
+
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .toast {
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideIn 0.3s ease, fadeOut 0.3s ease 3.5s forwards;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .toast-success {
+            background: #065f46;
+            color: #a7f3d0;
+        }
+
+        .toast-error {
+            background: #7f1d1d;
+            color: #fca5a5;
+        }
+
+        .toast-info {
+            background: #1e3a5f;
+            color: #93c5fd;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        .array-container {
+            padding: 0.4rem;
+        }
+
+        .array-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.4rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .array-item .array-index {
+            min-width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            background: var(--bg);
+            border-radius: 6px;
+            margin-top: 0.3rem;
+        }
+
+        .array-item textarea {
+            flex: 1;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 17, 23, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .unsaved-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border-top: 2px solid var(--warning);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 200;
+            animation: slideUp 0.3s ease;
+        }
+
+        .unsaved-bar.hidden {
+            display: none;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .unsaved-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
+            color: var(--warning);
+        }
+
+        @media (max-width: 1100px) {
+            .row {
+                grid-template-columns: 1fr;
+            }
+
+            .col-headers {
+                display: none;
+            }
+
+            .row-key {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                background: var(--bg);
+            }
+
+            .row-value {
+                border-right: none;
+            }
+
+            .toolbar {
+                padding: 1rem;
+            }
+
+            .content {
+                padding: 1rem;
+            }
+
+            .editor-header {
+                padding: 0.8rem 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="editor-header">
+        <h1>
+            ✏️ Éditeur de traductions
+            <span class="badge">i18n</span>
+        </h1>
+        <div class="header-actions">
+            <button class="btn" onclick="reloadData()">🔄 Recharger</button>
+            <button class="btn btn-primary" id="saveBtn" onclick="saveAll()" disabled>💾 Sauvegarder</button>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Rechercher une clé ou un texte..."
+                oninput="filterRows()" />
+        </div>
+        <div class="stats" id="stats"></div>
+    </div>
+
+    <div class="content" id="content">
+        <div class="col-headers" id="colHeaders"></div>
+        <div id="editor"></div>
+    </div>
+
+    <div class="unsaved-bar hidden" id="unsavedBar">
+        <div class="unsaved-info">
+            ⚠️ <span id="changeCount">0</span> modification(s) non sauvegardée(s)
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-danger" onclick="discardChanges()">Annuler</button>
+            <button class="btn btn-success" onclick="saveAll()">💾 Sauvegarder tout</button>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toasts"></div>
+
+    <div class="loading-overlay" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        // ─── Configuration ─────────────────────────────
+        const LANGS = [
+            { code: 'fr', flag: '🇫🇷', name: 'Français' },
+            { code: 'en', flag: '🇬🇧', name: 'English' },
+            { code: 'es', flag: '🇪🇸', name: 'Español' },
+            { code: 'ar', flag: '🇸🇦', name: 'العربية' },
+        ];
+
+        // ─── State ─────────────────────────────────────
+        let original = {};  // { fr: {...}, en: {...}, es: {...}, ar: {...} }
+        let current = {};
+        let changeCount = 0;
+
+        // Set CSS variable for grid columns
+        document.documentElement.style.setProperty('--lang-count', LANGS.length);
+
+        // Build column headers
+        function buildHeaders() {
+            const el = document.getElementById('colHeaders');
+            let html = '<div class="col-header">Clé</div>';
+            LANGS.forEach(l => {
+                html += `<div class="col-header"><span class="flag">${l.flag}</span> ${l.name}</div>`;
+            });
+            el.innerHTML = html;
+        }
+        buildHeaders();
+
+        // ─── Load ──────────────────────────────────────
+        async function loadData() {
+            showLoading(true);
+            try {
+                const responses = await Promise.all(LANGS.map(l => fetch(`/api/locales/${l.code}`)));
+                if (!responses.every(r => r.ok)) throw new Error('Erreur de chargement');
+                const data = await Promise.all(responses.map(r => r.json()));
+                original = {};
+                current = {};
+                LANGS.forEach((l, i) => {
+                    original[l.code] = data[i];
+                    current[l.code] = JSON.parse(JSON.stringify(data[i]));
+                });
+                renderEditor();
+                updateStats();
+                toast('Traductions chargées avec succès', 'success');
+            } catch (err) {
+                toast('Impossible de charger les traductions : ' + err.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // ─── Helpers ───────────────────────────────────
+        function flattenKeys(obj, prefix = '') {
+            const result = [];
+            if (!obj) return result;
+            for (const key of Object.keys(obj)) {
+                const fullKey = prefix ? `${prefix}.${key}` : key;
+                const val = obj[key];
+                if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
+                    result.push(...flattenKeys(val, fullKey));
+                } else {
+                    result.push(fullKey);
+                }
+            }
+            return result;
+        }
+
+        function getByPath(obj, path) {
+            if (!path) return undefined;
+            // Normalize path: replace [n] with .n
+            const normalizedPath = path.replace(/\[(\d+)\]/g, '.$1');
+            return normalizedPath.split('.').reduce((o, k) => (o && o[k] !== undefined ? o[k] : undefined), obj);
+        }
+
+        function setByPath(obj, path, value) {
+            const normalizedPath = path.replace(/\[(\d+)\]/g, '.$1');
+            const keys = normalizedPath.split('.');
+            let cur = obj;
+            for (let i = 0; i < keys.length - 1; i++) {
+                const k = keys[i];
+                if (cur[k] === undefined) {
+                    const nextK = keys[i + 1];
+                    cur[k] = /^\d+$/.test(nextK) ? [] : {};
+                }
+                cur = cur[k];
+            }
+            cur[keys[keys.length - 1]] = value;
+        }
+
+        function groupBySection(keys) {
+            const groups = {};
+            keys.forEach(key => {
+                const section = key.split('.')[0];
+                if (!groups[section]) groups[section] = [];
+                groups[section].push(key);
+            });
+            return groups;
+        }
+
+        // ─── Render ────────────────────────────────────
+        function renderEditor() {
+            const editor = document.getElementById('editor');
+            const refLang = LANGS[0].code; // fr is the reference
+            const allKeys = flattenKeys(original[refLang]);
+            const groups = groupBySection(allKeys);
+
+            let html = '';
+            for (const [section, keys] of Object.entries(groups)) {
+                html += `
+                    <div class="section-group" data-section="${section}">
+                        <div class="section-header" onclick="toggleSection(this)">
+                            <span class="caret">▼</span>
+                            <h3>${section}</h3>
+                            <span class="key-count">${keys.length} clés</span>
+                        </div>
+                        <div class="section-body">
+                `;
+
+                for (const key of keys) {
+                    const refVal = getByPath(current[refLang], key);
+                    const shortKey = key.split('.').slice(1).join('.');
+
+                    if (Array.isArray(refVal)) {
+                        if (typeof refVal[0] === 'string') {
+                            html += renderArrayRow(key, shortKey, refArrToItems(refVal));
+                        } else if (typeof refVal[0] === 'object') {
+                            html += renderObjectArrayRows(key, shortKey, refVal);
+                        }
+                    } else {
+                        html += renderSimpleRow(key, shortKey);
+                    }
+                }
+
+                html += `</div></div>`;
+            }
+
+            editor.innerHTML = html;
+            document.querySelectorAll('textarea').forEach(autoResize);
+        }
+
+        function refArrToItems(arr) {
+            return arr.map((v, i) => ({ index: i, value: v }));
+        }
+
+        function renderSimpleRow(fullKey, shortKey) {
+            const values = LANGS.map(l => String(getByPath(current[l.code], fullKey) ?? ''));
+            const isLong = values.some(v => v.length > 60);
+
+            let html = `<div class="row" data-fullkey="${fullKey}"><div class="row-key">${shortKey}</div>`;
+
+            LANGS.forEach((l, i) => {
+                const val = values[i];
+                const isAr = l.code === 'ar';
+                const dirAttr = isAr ? ' dir="rtl"' : '';
+                html += `<div class="row-value"><span class="lang-tag">${l.code.toUpperCase()}</span>`;
+                if (isLong) {
+                    html += `<textarea data-lang="${l.code}" data-key="${fullKey}" oninput="onEdit(this)"${dirAttr}>${escapeHtml(val)}</textarea>`;
+                } else {
+                    html += `<input type="text" data-lang="${l.code}" data-key="${fullKey}" value="${escapeAttr(val)}" oninput="onEdit(this)"${dirAttr} />`;
+                }
+                html += `</div>`;
+            });
+
+            html += `</div>`;
+            return html;
+        }
+
+        function renderArrayRow(fullKey, shortKey, refItems) {
+            let html = `<div class="row" data-fullkey="${fullKey}"><div class="row-key">${shortKey} <span style="color:var(--accent);font-size:0.65rem">[${refItems.length}]</span></div>`;
+
+            LANGS.forEach(l => {
+                const arr = getByPath(current[l.code], fullKey) || [];
+                const isAr = l.code === 'ar';
+                const dirAttr = isAr ? ' dir="rtl"' : '';
+                html += `<div class="row-value"><span class="lang-tag">${l.code.toUpperCase()}</span><div class="array-container">`;
+                refItems.forEach((_, i) => {
+                    const item = arr[i] ?? '';
+                    html += `<div class="array-item"><span class="array-index">${i}</span><textarea data-lang="${l.code}" data-key="${fullKey}" data-index="${i}" oninput="onEditArray(this)"${dirAttr}>${escapeHtml(String(item))}</textarea></div>`;
+                });
+                html += `</div></div>`;
+            });
+
+            html += `</div>`;
+            return html;
+        }
+
+        function renderObjectArrayRows(fullKey, shortKey, refArr) {
+            let html = '';
+            refArr.forEach((refObj, i) => {
+                const objKeys = Object.keys(refObj);
+                objKeys.forEach(objKey => {
+                    const val = refObj[objKey];
+                    const itemKey = `${fullKey}[${i}].${objKey}`;
+                    const displayKey = `[${i}].${objKey}`;
+
+                    if (Array.isArray(val)) {
+                        html += renderArrayRow(itemKey, displayKey, refArrToItems(val));
+                    } else {
+                        html += renderSimpleRow(itemKey, displayKey);
+                    }
+                });
+            });
+            return html;
+        }
+
+        // ─── Edit handlers ─────────────────────────────
+        function onEdit(el) {
+            const key = el.dataset.key;
+            const lang = el.dataset.lang;
+            const val = el.value;
+
+            setByPath(current[lang], key, val);
+
+            const origVal = String(getByPath(original[lang], key) ?? '');
+            if (val !== origVal) {
+                el.classList.add('modified');
+            } else {
+                el.classList.remove('modified');
+            }
+
+            autoResize(el);
+            countChanges();
+        }
+
+        function onEditArray(el) {
+            const key = el.dataset.key;
+            const lang = el.dataset.lang;
+            const index = parseInt(el.dataset.index);
+            const val = el.value;
+
+            const arr = getByPath(current[lang], key);
+            if (arr) arr[index] = val;
+
+            const origArr = getByPath(original[lang], key);
+            const origVal = origArr ? String(origArr[index] ?? '') : '';
+
+            if (val !== origVal) {
+                el.classList.add('modified');
+            } else {
+                el.classList.remove('modified');
+            }
+
+            autoResize(el);
+            countChanges();
+        }
+
+        // ─── Change tracking ───────────────────────────
+        function countChanges() {
+            const modified = document.querySelectorAll('.modified');
+            changeCount = modified.length;
+            const bar = document.getElementById('unsavedBar');
+            const saveBtn = document.getElementById('saveBtn');
+            document.getElementById('changeCount').textContent = changeCount;
+
+            if (changeCount > 0) {
+                bar.classList.remove('hidden');
+                saveBtn.disabled = false;
+            } else {
+                bar.classList.add('hidden');
+                saveBtn.disabled = true;
+            }
+            updateStats();
+        }
+
+        // ─── Save ──────────────────────────────────────
+        async function saveAll() {
+            if (changeCount === 0) return;
+            showLoading(true);
+            try {
+                const responses = await Promise.all(
+                    LANGS.map(l => fetch(`/api/locales/${l.code}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(current[l.code])
+                    }))
+                );
+
+                if (!responses.every(r => r.ok)) throw new Error('Erreur de sauvegarde');
+
+                LANGS.forEach(l => {
+                    original[l.code] = JSON.parse(JSON.stringify(current[l.code]));
+                });
+                document.querySelectorAll('.modified').forEach(el => el.classList.remove('modified'));
+                const saved = changeCount;
+                countChanges();
+                toast(`${saved} modification(s) sauvegardée(s)`, 'success');
+            } catch (err) {
+                toast('Erreur de sauvegarde : ' + err.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function discardChanges() {
+            LANGS.forEach(l => {
+                current[l.code] = JSON.parse(JSON.stringify(original[l.code]));
+            });
+            renderEditor();
+            countChanges();
+            toast('Modifications annulées', 'info');
+        }
+
+        function reloadData() {
+            if (changeCount > 0 && !confirm('Vous avez des modifications non sauvegardées. Recharger quand même ?')) return;
+            loadData();
+        }
+
+        // ─── Filter ────────────────────────────────────
+        function filterRows() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            document.querySelectorAll('.row').forEach(row => {
+                const key = (row.dataset.fullkey || '').toLowerCase();
+                const texts = Array.from(row.querySelectorAll('textarea, input')).map(el => el.value.toLowerCase()).join(' ');
+                const match = !query || key.includes(query) || texts.includes(query);
+                row.style.display = match ? '' : 'none';
+                row.classList.toggle('highlight', match && !!query);
+            });
+
+            document.querySelectorAll('.section-group').forEach(group => {
+                const visibleRows = group.querySelectorAll('.row:not([style*="display: none"])');
+                group.style.display = visibleRows.length > 0 ? '' : 'none';
+            });
+        }
+
+        function toggleSection(header) {
+            header.classList.toggle('collapsed');
+            header.nextElementSibling.classList.toggle('hidden');
+        }
+
+        // ─── Stats ─────────────────────────────────────
+        function updateStats() {
+            const refLang = LANGS[0].code;
+            const allKeys = flattenKeys(original[refLang] || {});
+            const statsEl = document.getElementById('stats');
+            let html = `<span class="stat"><span class="stat-dot ok"></span>${allKeys.length} clés</span>`;
+            html += `<span class="stat"><span class="stat-dot warn"></span>${changeCount} modifiée(s)</span>`;
+
+            // Check missing keys for each non-reference lang
+            LANGS.slice(1).forEach(l => {
+                const missing = allKeys.filter(k => {
+                    const v = getByPath(current[l.code] || {}, k);
+                    return v === undefined || v === '';
+                });
+                html += `<span class="stat"><span class="stat-dot ${missing.length ? 'err' : 'ok'}"></span>${missing.length} manquante(s) ${l.flag}</span>`;
+            });
+
+            statsEl.innerHTML = html;
+        }
+
+        // ─── Utilities ─────────────────────────────────
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function escapeAttr(str) {
+            return String(str).replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function autoResize(el) {
+            if (el.tagName === 'TEXTAREA') {
+                el.style.height = 'auto';
+                el.style.height = el.scrollHeight + 'px';
+            }
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'flex' : 'none';
+        }
+
+        function toast(message, type = 'info') {
+            const container = document.getElementById('toasts');
+            const el = document.createElement('div');
+            el.className = `toast toast-${type}`;
+            el.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span> ${message}`;
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 4000);
+        }
+
+        window.addEventListener('beforeunload', (e) => {
+            if (changeCount > 0) { e.preventDefault(); e.returnValue = ''; }
+        });
+
+        // ─── Init ──────────────────────────────────────
+        loadData();
+    </script>
+</body>
+
+</html>

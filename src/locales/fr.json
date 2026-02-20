@@ -1,18 +1,19 @@
 {
   "nav": {
     "home": "Accueil",
-    "about": "A propos",
-    "services": "Services",
-    "resources": "Contenu",
+    "about": "Qui suis-je",
+    "services": "Cours de Français ",
+    "resources": "Prestations FLE  FOS  FLI  Alpha",
     "testimonials": "Témoignages",
     "contact": "Contact",
+    "language": "Langue",
     "cta": "Contactez-moi"
   },
   "hero": {
-    "title_line1": "Apprendre le français",
-    "title_line2": "et tout devient possible",
-    "subtitle_html": "Formations personnalisées en Français Langue Étrangère (FLE)<br/>avec <strong>Aline Gamblin</strong>, professeure diplômée DAEFLE.",
-    "cta": "Découvrir les formations",
+    "title_line1": "Apprendre le français avec ",
+    "title_line2": "Aline Gamblin ",
+    "subtitle_html": "Professeure diplomée DAEFLE. <br>Formations personnalisées en Français Langue Étrangère (FLE)<br/>  bla   bla   bla  ",
+    "cta": "Découvrir",
     "image_alt": "Visuel FLE"
   },
   "about": {

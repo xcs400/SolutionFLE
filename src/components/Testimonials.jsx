@@ -26,7 +26,7 @@ const Testimonials = () => {
     };
 
     return (
-        <section id="testimonials" className="section" style={{ background: 'rgba(138, 218, 241, 0.05)' }}>
+        <section id="testimonials" className="section" style={{ background: 'var(--color-bg)' }}>
             <div className="container">
                 <motion.div
                     className="text-center"

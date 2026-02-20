@@ -33,7 +33,7 @@ const Services = () => {
     const serviceItems = t('services.items');
 
     return (
-        <section id="services" className="section bg-white">
+        <section id="services" className="section" style={{ background: 'var(--color-bg)' }}>
             <div className="container">
                 <motion.h2
                     initial={{ opacity: 0, scale: 0.95 }}
