@@ -59,9 +59,9 @@ const Services = () => {
                             </div>
                             <h3 style={{ fontSize: '1.4rem', color: 'var(--color-primary)' }}>{service.title}</h3>
                             <p style={{ flexGrow: 1, marginBottom: '1.5rem', color: '#64748b' }}>{service.desc}</p>
-                            <div className="tag-container">
+                            <div className="tag-container" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                                 {service.tags.map((tag, i) => (
-                                    <span key={i} className="tag" style={{ borderLeft: `3px solid ${serviceColors[index]}` }}>{tag}</span>
+                                    <span key={i} className="tag" style={{ color: 'var(--color-primary)', fontWeight: '500' }}>{tag}</span>
                                 ))}
                             </div>
                         </motion.div>

@@ -25,12 +25,18 @@
 
 body {
   font-family: var(--font-body);
-  background-color: var(--color-bg);
   color: var(--color-text);
   line-height: 1.7;
   overflow-x: hidden;
   position: relative;
   font-size: 16px;
+  background-color: var(--color-bg);
+}
+
+/* Fix for watermark visibility on iOS - Creates a stacking context */
+.App {
+  position: relative;
+  z-index: 1;
 }
 
 [dir="rtl"] body {
@@ -77,7 +83,6 @@ body {
   top: 0;
   left: 0;
   width: 200%;
-  /* Wider to avoid edges during rotation */
   height: 200%;
   top: -50%;
   left: -50%;
@@ -85,12 +90,14 @@ body {
   background-repeat: no-repeat;
   background-position: center;
   background-size: 30%;
-  /* Balanced for the larger container */
   opacity: 0.18;
-  /* Plus marqué pour être bien visible */
   pointer-events: none;
   z-index: -1;
   animation: rotateWatermark 100s linear infinite;
+  /* iOS Fix: Force hardware acceleration and prevent disappearing behind body */
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
 }
 
 @keyframes rotateWatermark {
@@ -290,6 +297,13 @@ header {
   background-size: cover;
   background-position: right center;
   background-attachment: fixed;
+}
+
+/* iOS Fix for fixed background on Hero section */
+@supports (-webkit-touch-callout: none) {
+  .hero {
+    background-attachment: scroll !important;
+  }
 }
 
 .hero-subtitle {
