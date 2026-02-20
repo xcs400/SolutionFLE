@@ -26,6 +26,20 @@ const __dirname = path.dirname(__filename);
 
 const nonces = new Set();
 
+/**
+ * Simple MD5 hash function - codé en dur, utilisé pour vérifier le password
+ */
+function simpleMD5(str) {
+    let hash = 0;
+    if (str.length === 0) return hash.toString();
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    return Math.abs(hash).toString(16);
+}
+
 const app = express();
 const PORT = process.env.PORT || 5173;
 
@@ -100,42 +114,49 @@ app.put('/api/locales/:lang', (req, res) => {
     }
 });
 
-// Serve static files from the Vite build directory
-app.use(express.static(path.join(__dirname, 'dist')));
-
 // Route for the translation editor (accessible via /textedit)
 app.get('/textedit', (req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'textedit.html'));
 });
 
-// ─── Authentication API ────────────────────────────────
+// Serve static files from the Vite build directory (after API routes)
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// ─── Authentication API (moved before static to ensure API reachability) ────────────────────────────────
 app.get('/api/auth/challenge', (req, res) => {
+    console.log('--- AUTH CHALLENGE REQUEST ---', { ip: req.ip });
     const nonce = crypto.randomBytes(16).toString('hex');
     nonces.add(nonce);
     // Expire le nonce après 2 minutes
     setTimeout(() => nonces.delete(nonce), 120000);
+    console.log('Generated nonce for', req.ip);
     res.json({ nonce });
 });
 
 app.post('/api/auth/verify', (req, res) => {
+    console.log('--- AUTH VERIFY REQUEST ---', { ip: req.ip, body: req.body });
     const { hash, nonce } = req.body;
 
     if (!nonce || !hash) {
+        console.log('Missing params in verify from', req.ip);
         return res.status(400).json({ error: 'Paramètres manquants' });
     }
 
     if (!nonces.has(nonce)) {
+        console.log('Invalid/expired nonce', nonce, 'from', req.ip);
         return res.status(401).json({ error: 'Défi expiré ou invalide' });
     }
 
     nonces.delete(nonce);
 
     const adminPassword = process.env.ADMIN_PASSWORD || 'Pascal';
-    const expectedHash = crypto.createHash('sha256').update(adminPassword + nonce).digest('hex');
+    const expectedHash = simpleMD5(adminPassword + nonce);
 
     if (hash === expectedHash) {
+        console.log('Auth success for', req.ip);
         res.json({ success: true });
     } else {
+        console.log('Auth failed (wrong hash) for', req.ip);
         res.status(401).json({ error: 'Mot de passe incorrect' });
     }
 });

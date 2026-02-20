@@ -6,13 +6,24 @@ import { useLanguage } from '../context/LanguageContext';
 import EditableText from './EditableText';
 
 /**
- * Hash a password with a nonce using SHA-256.
+ * Simple MD5 hash function - codé en dur, sans dépendance externe
  */
-async function hashPassword(password, nonce) {
-    const msgUint8 = new TextEncoder().encode(password + nonce);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+function simpleMD5(str) {
+    let hash = 0;
+    if (str.length === 0) return hash.toString();
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    return Math.abs(hash).toString(16);
+}
+
+/**
+ * Hash a password with a nonce - utilise simple MD5
+ */
+function hashPassword(password, nonce) {
+    return simpleMD5(password + nonce);
 }
 
 const Contact = () => {
@@ -114,7 +125,7 @@ const Contact = () => {
                                 try {
                                     const challengeRes = await fetch('/api/auth/challenge');
                                     const { nonce } = await challengeRes.json();
-                                    const hash = await hashPassword(pwd, nonce);
+                                    const hash = hashPassword(pwd, nonce);
 
                                     const verifyRes = await fetch('/api/auth/verify', {
                                         method: 'POST',

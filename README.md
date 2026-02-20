@@ -53,67 +53,56 @@ site/
 └── package.json
 ```
 
+## Administration & Édition en ligne
+
+Le site propose deux modes d'édition des contenus sans avoir à modifier manuellement les fichiers JSON.
+
+### 1. Édition Inline (Directe)
+Ce mode permet de modifier les textes directement sur les pages du site.
+- **Accès** : Cliquez sur le lien **"Edit Inline"** tout en bas de la page (footer).
+- **Sécurité** : Un mot de passe est requis.
+- **Fonctionnement** : 
+  - Les zones éditables apparaissent avec une bordure pointillée bleue.
+  - Cliquez sur un texte pour le transformer en champ d'édition.
+  - La modification est sauvegardée automatiquement sur le serveur dès que vous cliquez en dehors du champ.
+
+### 2. Éditeur Global (`/textedit`)
+Un panneau d'administration complet est disponible pour gérer toutes les langues sur une seule interface.
+- **Accès** : Cliquez sur le lien **"Admin"** dans le footer.
+- **Fonctionnement** : Permet de voir et modifier les traductions FR, EN, ES et AR côte à côte.
+- **Sauvegarde** : Les modifications sont groupées. Un mot de passe est demandé lors du clic sur "Sauvegarder".
+
+### 3. Sécurité du mot de passe
+Le système utilise un mécanisme de **Défi-Réponse (Challenge-Response)** :
+1. Le client demande un jeton unique (nonce) au serveur.
+2. Le mot de passe est haché localement avec ce jeton (SHA-256).
+3. Seul le résultat (hash) est envoyé au serveur.
+*Avantage : Le mot de passe ne transite jamais en clair et le hash intercepté est inutile une fois le jeton expiré.*
+
 ## Internationalisation (i18n)
 
-Le site est **multilingue** (français / anglais). Tous les textes visibles sont externalisés dans des fichiers JSON situés dans `src/locales/`.
-
-### Comment ça marche
-
-1. Les traductions sont stockées dans `src/locales/fr.json` et `src/locales/en.json`
-2. Le `LanguageContext` fournit une fonction `t('clé.imbriquée')` à tous les composants
-3. La langue du navigateur est détectée automatiquement au premier chargement
-4. Le choix de l'utilisateur est sauvegardé dans `localStorage`
-
-### Utilisation dans un composant
-
-```jsx
-import { useLanguage } from '../context/LanguageContext';
-
-const MonComposant = () => {
-    const { t, language } = useLanguage();
-    return <h1>{t('hero.title_line1')}</h1>;
-};
-```
-
-### Ajouter une nouvelle langue
-
-1. Créer `src/locales/xx.json` en copiant `fr.json` et en traduisant les valeurs
-2. Importer le fichier dans `src/context/LanguageContext.jsx` :
-   ```js
-   import xx from '../locales/xx.json';
-   const translations = { fr, en, xx };
-   ```
-3. Ajouter l'entrée dans le tableau `SUPPORTED_LANGUAGES` :
-   ```js
-   { code: 'xx', label: 'XX', flag: '🇪🇸', name: 'Español' }
-   ```
-
-### Structure d'un fichier de traduction
-
-Les clés sont organisées par section/composant :
-
-| Clé racine       | Contenu                                         |
-|-------------------|------------------------------------------------|
-| `nav`             | Liens de navigation + CTA                       |
-| `hero`            | Titre, sous-titre, bouton d'action              |
-| `about`           | Parcours, biographie, points forts               |
-| `services`        | Titre + tableau des 6 prestations               |
-| `resources`       | Titre, sous-titre, messages d'état               |
-| `testimonials`    | Titre + tableau des témoignages                  |
-| `contact`         | Labels, placeholders, messages du formulaire     |
-| `footer`          | Copyright, mentions légales                      |
-| `app`             | Textes globaux (ex: bouton d'appel flottant)     |
+Le site est nativement multilingue (**FR, EN, ES, AR**).
+- Les fichiers sont dans `src/locales/`.
+- Le support de l'Arabe (RTL) est géré automatiquement.
+- Le composant `<EditableText />` gère l'affichage et l'interface d'édition.
 
 ## Variables d'environnement
 
-Créer un fichier `.env` à la racine :
+Le serveur utilise un fichier `.env` à la racine pour les fonctions sensibles :
 
 ```env
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_USER=your@email.com
-SMTP_PASS=your_password
-CONTACT_TO=destination@email.com
+# Identifiants Gmail (Utilisez un "Mot de passe d'application")
+EMAIL_USER=votre-email@gmail.com
+EMAIL_PASS=votre-mot-de-passe-application
+
+# Réception des messages du formulaire
+EMAIL_TO=destination@gmail.com
+
+# Mot de passe d'administration (Édition en ligne)
+ADMIN_PASSWORD=VotreMotDePasseSecret
+
+# Port du serveur
+PORT=5000
 ```
 
 ## Licence
