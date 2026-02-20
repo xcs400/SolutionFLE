@@ -25,11 +25,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const nonces = new Set();
-const authenticatedSessions = new Map(); // sessionId -> { createdAt, expiresAt }
+const authenticatedSessions = new Map();
 
-/**
- * Simple MD5 hash function - codé en dur, utilisé pour vérifier le password
- */
 function simpleMD5(str) {
     let hash = 0;
     if (str.length === 0) return hash.toString();
@@ -41,18 +38,66 @@ function simpleMD5(str) {
     return Math.abs(hash).toString(16);
 }
 
-const app = express();
-const PORT = process.env.PORT || 5173;
+// ─── Parse un fichier .md → { metadata, body } ──────────────────────────────
+// Robuste : gère \n (Unix) et \r\n (Windows)
+function parseMDFile(filepath) {
+    const raw = fs.readFileSync(filepath, 'utf-8');
+    // Normalise les fins de ligne Windows en Unix
+    const content = raw.replace(/\r\n/g, '\n');
 
-// Middleware
+    const metadata = {
+        slug: path.basename(filepath, '.md'),
+        title: 'Untitled',
+        author: 'Unknown',
+        date: new Date().toISOString(),
+        description: '',
+        image: '/logo_Solution.jpg',
+        body: ''
+    };
+
+    const fm = content.match(/^---\n([\s\S]*?)\n---/);
+    if (fm) {
+        fm[1].split('\n').forEach(line => {
+            const [key, ...vals] = line.split(':');
+            if (key && vals.length) {
+                metadata[key.trim()] = vals.join(':').trim().replace(/^["']|["']$/g, '');
+            }
+        });
+        // Tout ce qui est après le bloc ---...---
+        metadata.body = content.slice(fm[0].length).trim();
+    } else {
+        // Pas de frontmatter : tout le fichier est le body
+        metadata.body = content.trim();
+    }
+
+    return metadata;
+}
+
+const app = express();
+const PORT = process.env.PORT ;
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'dist')));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// API Route for RSS Feeds
+// ─── Auth middleware ─────────────────────────────────────────────────────────
+const authMiddleware = (req, res, next) => {
+    const sessionId = req.headers['x-session-id'] || req.query.sid;
+    if (!sessionId || !authenticatedSessions.has(sessionId)) {
+        return res.status(401).json({ error: 'Unauthorized: Please authenticate first' });
+    }
+    const session = authenticatedSessions.get(sessionId);
+    if (Date.now() > session.expiresAt) {
+        authenticatedSessions.delete(sessionId);
+        return res.status(401).json({ error: 'Unauthorized: Session expired' });
+    }
+    next();
+};
+
+// ─── RSS ─────────────────────────────────────────────────────────────────────
 app.get('/api/rss', async (req, res) => {
-    console.log('--- REQUÊTE RSS REÇUE ---');
     try {
-        const feedPromises = RSS_SOURCES.map(async (source) => {
+        const results = await Promise.all(RSS_SOURCES.map(async source => {
             try {
                 const feed = await parser.parseURL(source.url);
                 return {
@@ -65,181 +110,221 @@ app.get('/api/rss', async (req, res) => {
                         content: item.contentSnippet || item.content || item.description
                     }))
                 };
-            } catch (err) {
-                console.error(`Erreur pour le flux ${source.name}:`, err.message);
+            } catch {
                 return { source: source.name, level: source.level, items: [], error: true };
             }
-        });
-
-        const results = await Promise.all(feedPromises);
-        res.status(200).json(results);
-    } catch (error) {
-        console.error('Erreur globale RSS:', error);
+        }));
+        res.json(results);
+    } catch {
         res.status(500).json({ error: "Impossible de récupérer les flux RSS." });
     }
 });
 
-// ─── Locales API (for textedit.html) ────────────────────
+// ─── Locales ─────────────────────────────────────────────────────────────────
 const LOCALES_DIR = path.join(__dirname, 'src', 'locales');
 const VALID_LANGS = ['fr', 'en', 'es', 'ar'];
 
 app.get('/api/locales/:lang', (req, res) => {
     const { lang } = req.params;
-    if (!VALID_LANGS.includes(lang)) {
-        return res.status(400).json({ error: 'Langue non supportée' });
-    }
+    if (!VALID_LANGS.includes(lang)) return res.status(400).json({ error: 'Langue non supportée' });
     const filePath = path.join(LOCALES_DIR, `${lang}.json`);
     try {
-        const content = fs.readFileSync(filePath, 'utf-8');
-        res.json(JSON.parse(content));
-    } catch (err) {
-        console.error(`Erreur lecture ${filePath}:`, err.message);
+        res.json(JSON.parse(fs.readFileSync(filePath, 'utf-8')));
+    } catch {
         res.status(500).json({ error: 'Impossible de lire le fichier de traduction' });
     }
 });
 
 app.put('/api/locales/:lang', (req, res) => {
     const { lang } = req.params;
-    if (!VALID_LANGS.includes(lang)) {
-        return res.status(400).json({ error: 'Langue non supportée' });
-    }
+    if (!VALID_LANGS.includes(lang)) return res.status(400).json({ error: 'Langue non supportée' });
     const filePath = path.join(LOCALES_DIR, `${lang}.json`);
     try {
-        const content = JSON.stringify(req.body, null, 2);
-        fs.writeFileSync(filePath, content, 'utf-8');
-        console.log(`✅ Traduction ${lang}.json sauvegardée`);
+        fs.writeFileSync(filePath, JSON.stringify(req.body, null, 2), 'utf-8');
         res.json({ success: true, message: `${lang}.json sauvegardé` });
-    } catch (err) {
-        console.error(`Erreur écriture ${filePath}:`, err.message);
+    } catch {
         res.status(500).json({ error: 'Impossible de sauvegarder le fichier de traduction' });
     }
 });
 
-// Route for the translation editor (accessible via /textedit) - PROTECTED
-const authMiddleware = (req, res, next) => {
-    const sessionId = req.headers['x-session-id'] || req.query.sid;
-    
-    if (!sessionId || !authenticatedSessions.has(sessionId)) {
-        console.log('Unauthorized access to /textedit from', req.ip);
-        return res.status(401).send('Unauthorized: Please authenticate first');
-    }
-
-    const session = authenticatedSessions.get(sessionId);
-    if (Date.now() > session.expiresAt) {
-        authenticatedSessions.delete(sessionId);
-        console.log('Session expired for', req.ip);
-        return res.status(401).send('Unauthorized: Session expired');
-    }
-
-    console.log('Authorized access to /textedit from', req.ip);
-    next();
-};
-
-app.get('/textedit', authMiddleware, (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'textedit.html'));
-});
-
-// Logout endpoint
-app.post('/api/auth/logout', (req, res) => {
-    const sessionId = req.headers['x-session-id'];
-    if (sessionId && authenticatedSessions.has(sessionId)) {
-        authenticatedSessions.delete(sessionId);
-        console.log('Session logged out:', sessionId);
-    }
-    res.json({ success: true });
-});
-
-// Serve static files from the Vite build directory (after API routes)
-app.use(express.static(path.join(__dirname, 'dist')));
-
-// ─── Authentication API (moved before static to ensure API reachability) ────────────────────────────────
+// ─── Auth ─────────────────────────────────────────────────────────────────────
 app.get('/api/auth/challenge', (req, res) => {
-    console.log('--- AUTH CHALLENGE REQUEST ---', { ip: req.ip });
     const nonce = crypto.randomBytes(16).toString('hex');
     nonces.add(nonce);
-    // Expire le nonce après 2 minutes
     setTimeout(() => nonces.delete(nonce), 120000);
-    console.log('Generated nonce for', req.ip);
     res.json({ nonce });
 });
 
 app.post('/api/auth/verify', (req, res) => {
-    console.log('--- AUTH VERIFY REQUEST ---', { ip: req.ip, body: req.body });
     const { hash, nonce } = req.body;
-
-    if (!nonce || !hash) {
-        console.log('Missing params in verify from', req.ip);
-        return res.status(400).json({ error: 'Paramètres manquants' });
-    }
-
-    if (!nonces.has(nonce)) {
-        console.log('Invalid/expired nonce', nonce, 'from', req.ip);
-        return res.status(401).json({ error: 'Défi expiré ou invalide' });
-    }
-
+    if (!nonce || !hash) return res.status(400).json({ error: 'Paramètres manquants' });
+    if (!nonces.has(nonce)) return res.status(401).json({ error: 'Défi expiré ou invalide' });
     nonces.delete(nonce);
 
-    const adminPassword = process.env.ADMIN_PASSWORD || 'Pascal';
-    const expectedHash = simpleMD5(adminPassword + nonce);
-
+    const expectedHash = simpleMD5((process.env.ADMIN_PASSWORD || 'Pascal') + nonce);
     if (hash === expectedHash) {
-        console.log('Auth success for', req.ip);
-        // Create authenticated session
         const sessionId = crypto.randomBytes(32).toString('hex');
-        const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+        const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
         authenticatedSessions.set(sessionId, { createdAt: Date.now(), expiresAt });
-        // Clean up expired sessions
         setTimeout(() => authenticatedSessions.delete(sessionId), 24 * 60 * 60 * 1000);
         res.json({ success: true, sessionId });
     } else {
-        console.log('Auth failed (wrong hash) for', req.ip);
         res.status(401).json({ error: 'Mot de passe incorrect' });
     }
 });
 
-// API Route for Contact Form
+app.post('/api/auth/logout', (req, res) => {
+    const sessionId = req.headers['x-session-id'];
+    if (sessionId) authenticatedSessions.delete(sessionId);
+    res.json({ success: true });
+});
+
+// ─── Contact ──────────────────────────────────────────────────────────────────
 app.post('/api/contact', async (req, res) => {
     const { name, email, message } = req.body;
+    if (!name || !email || !message) return res.status(400).json({ error: 'Tous les champs sont requis.' });
 
-    // validation
-    if (!name || !email || !message) {
-        return res.status(400).json({ error: 'Tous les champs sont requis.' });
-    }
-
-    // Configure Nodemailer
     const transporter = nodemailer.createTransport({
         service: 'gmail',
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
+        auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
     });
 
-    const mailOptions = {
-        from: process.env.EMAIL_USER, // Gmail requires the authenticated email here
-        to: process.env.EMAIL_TO || 'gamblin.aline@gmail.com',
-        subject: `[Solution FLE] Nouveau message de ${name}`,
-        text: `Nom: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
-        replyTo: email // This allows you to click 'Reply' in your email client
-    };
-
     try {
-        await transporter.sendMail(mailOptions);
-        res.status(200).json({ message: 'Email envoyé avec succès !' });
-    } catch (error) {
-        console.error('Erreur détaillée Nodemailer:', error);
-        res.status(500).json({
-            error: "Erreur technique lors de l'envoi.",
-            details: error.code === 'EAUTH' ? "Identifiants invalides (vérifiez le mot de passe d'application)." : error.message
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: process.env.EMAIL_TO || 'gamblin.aline@gmail.com',
+            subject: `[Solution FLE] Nouveau message de ${name}`,
+            text: `Nom: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+            replyTo: email
         });
+        res.json({ message: 'Email envoyé avec succès !' });
+    } catch (err) {
+        res.status(500).json({ error: "Erreur technique lors de l'envoi", details: err.message });
     }
 });
 
-// For any other request, send the index.html from dist (SPA support)
-app.use((req, res) => {
+// ─── Blog CRUD ────────────────────────────────────────────────────────────────
+const BLOG_DIR = path.join(__dirname, 'content', 'blog');
+
+// Liste tous les articles (avec body)
+app.get('/api/blog', (req, res) => {
+    try {
+        const files = fs.existsSync(BLOG_DIR)
+            ? fs.readdirSync(BLOG_DIR).filter(f => f.endsWith('.md'))
+            : [];
+        const posts = files.map(file => parseMDFile(path.join(BLOG_DIR, file)));
+        res.json(posts.sort((a, b) => new Date(b.date) - new Date(a.date)));
+    } catch {
+        res.status(500).json({ error: 'Impossible de récupérer les articles du blog' });
+    }
+});
+
+// Récupère un article par slug (avec body)
+app.get('/api/blog/:slug', (req, res) => {
+    const filepath = path.join(BLOG_DIR, `${req.params.slug}.md`);
+    if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'Article non trouvé' });
+    try {
+        res.json(parseMDFile(filepath));
+    } catch {
+        res.status(500).json({ error: 'Impossible de lire cet article' });
+    }
+});
+
+// Crée un article
+app.post('/api/blog', authMiddleware, (req, res) => {
+    const { title, author, date, description, image, body } = req.body;
+
+    // ← Rejette aussi la chaîne "undefined" envoyée par le client
+    if (!title || !body || body === 'undefined') {
+        return res.status(400).json({ error: 'Titre et contenu requis' });
+    }
+
+    if (!fs.existsSync(BLOG_DIR)) fs.mkdirSync(BLOG_DIR, { recursive: true });
+
+    const slug = title.toLowerCase()
+        .replace(/[àá]/g, 'a')
+        .replace(/[éèê]/g, 'e')
+        .replace(/[ïî]/g, 'i')
+        .replace(/[ôó]/g, 'o')
+        .replace(/[ùû]/g, 'u')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+    const filepath = path.join(BLOG_DIR, `${slug}.md`);
+    if (fs.existsSync(filepath)) return res.status(409).json({ error: 'Un article avec ce titre existe déjà' });
+
+    const content = `---
+title: "${title}"
+author: "${author || 'Aline Gamblin'}"
+date: "${date || new Date().toISOString().split('T')[0]}"
+description: "${description || ''}"
+image: "${image || '/logo_Solution.jpg'}"
+---
+
+${body}`;
+
+    try {
+        fs.writeFileSync(filepath, content, 'utf-8');
+        res.status(201).json({ success: true, slug, message: `Article "${title}" créé avec succès` });
+    } catch {
+        res.status(500).json({ error: "Impossible de créer l'article" });
+    }
+});
+
+// Modifie un article
+app.put('/api/blog/:slug', authMiddleware, (req, res) => {
+    const { slug } = req.params;
+    const { title, author, date, description, image, body } = req.body;
+
+    // ← Rejette aussi la chaîne "undefined"
+    if (!title || !body || body === 'undefined') {
+        return res.status(400).json({ error: 'Titre et contenu requis' });
+    }
+
+    const filepath = path.join(BLOG_DIR, `${slug}.md`);
+    if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'Article non trouvé' });
+
+    const content = `---
+title: "${title}"
+author: "${author || 'Aline Gamblin'}"
+date: "${date || new Date().toISOString().split('T')[0]}"
+description: "${description || ''}"
+image: "${image || '/logo_Solution.jpg'}"
+---
+
+${body}`;
+
+    try {
+        fs.writeFileSync(filepath, content, 'utf-8');
+        res.json({ success: true, slug, message: `Article "${title}" modifié avec succès` });
+    } catch {
+        res.status(500).json({ error: "Impossible de modifier l'article" });
+    }
+});
+
+// Supprime un article
+app.delete('/api/blog/:slug', authMiddleware, (req, res) => {
+    const { slug } = req.params;
+    const filepath = path.join(BLOG_DIR, `${slug}.md`);
+    if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'Article non trouvé' });
+
+    try {
+        fs.unlinkSync(filepath);
+        res.json({ success: true, message: 'Article supprimé avec succès' });
+    } catch {
+        res.status(500).json({ error: "Impossible de supprimer l'article" });
+    }
+});
+
+// ─── Admin panel ──────────────────────────────────────────────────────────────
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// ─── SPA fallback ─────────────────────────────────────────────────────────────
+app.use((req, res, next) => {
+    if (req.path.match(/\.[a-z0-9]+$/i)) return next();
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-app.listen(PORT, () => {
-    console.log(`Serveur démarré sur le port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`));

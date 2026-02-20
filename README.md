@@ -72,10 +72,19 @@ Un panneau d'administration complet est disponible pour gérer toutes les langue
 - **Fonctionnement** : Permet de voir et modifier les traductions FR, EN, ES et AR côte à côte.
 - **Sauvegarde** : Les modifications sont groupées. Un mot de passe est demandé lors du clic sur "Sauvegarder".
 
-### 3. Sécurité du mot de passe
+### 3. Blog avec TinaCMS (`/admin`)
+Une interface **Git-based CMS** pour créer et modifier les articles du blog sans coder.
+- **Accès** : Cliquez sur le lien **"✏️ TinaCMS"** dans la section Resources, ou allez directement à `/admin`.
+- **Fonctionnement** : 
+  - Créez/modifiez les articles en markdown avec une interface visuelle.
+  - Les articles sont stockés dans `content/blog/` et s'affichent automatiquement dans la section **Blog** du site.
+  - Support du versioning Git optionnel.
+- **Guide complet** : Voir [BLOG_SETUP.md](./BLOG_SETUP.md)
+
+### 4. Sécurité du mot de passe
 Le système utilise un mécanisme de **Défi-Réponse (Challenge-Response)** :
 1. Le client demande un jeton unique (nonce) au serveur.
-2. Le mot de passe est haché localement avec ce jeton (SHA-256).
+2. Le mot de passe est haché localement avec ce jeton (MD5).
 3. Seul le résultat (hash) est envoyé au serveur.
 *Avantage : Le mot de passe ne transite jamais en clair et le hash intercepté est inutile une fois le jeton expiré.*
 
