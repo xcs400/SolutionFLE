@@ -3,20 +3,23 @@
     "home": "Accueil",
     "about": "Qui suis-je",
     "services": "Cours de Français ",
-    "resources": "Prestations FLE  FOS  FLI  Alpha",
-    "testimonials": "Article Blog",
-    "contact": "Contact1",
+    "resources": "FluxRSS",
+    "blog": "Blog",
+    "testimonials": "Témoignages",
+    "contact": "Contact",
     "language": "Langue",
     "cta": "Contactez-moi",
     "logo_part1": "Solution",
-    "logo_part2": "FLE",
-    "blog": "blog",
-    "undefined": "Contact"
+    "logo_part2": "FLE"
+  },
+  "blog": {
+    "title": "Blog & Actualités",
+    "subtitle": "Conseils, ressources et actualités FLE"
   },
   "hero": {
     "title_line1": "Apprendre le français avec ",
     "title_line2": "Aline Gamblin ",
-    "subtitle_html": "Professeure diplomée DAEFLE. <br>Formations personnalisées en Français Langue Étrangère (FLE)<br/>  bla   <br/> ",
+    "subtitle_html": "Professeure diplômée DAEFLE. <br>Formations personnalisées en Français Langue Étrangère (FLE)<br/>Une approche humaine pour votre réussite.",
     "cta": "Découvrir",
     "cta_link": "#services",
     "image_alt": "Visuel FLE"
@@ -54,7 +57,7 @@
       },
       {
         "title": "Formation Groupe",
-        "desc": "Une dynamique collective pour apprendre ensemble dans la convivialité.",
+        "desc": "Une dynamique collective pour apprendre ensemble dans la convivence.",
         "tags": [
           "Etudiants",
           "Expatriés"
@@ -154,8 +157,8 @@
     "error_send": "Erreur lors de l'envoi",
     "error_generic": "Une erreur est survenue. Veuillez réessayer ou m'appeler directement.",
     "success": "Merci ! Votre message a été envoyé avec succès. Je vous recontacterai très bientôt.",
-    "phone_value": "33 6 06 06 06",
-    "email_value": "SolutionFLE@gmail.com"
+    "phone_value": "06 49 16 35 37",
+    "email_value": "solutionFLE@gmail.com"
   },
   "footer": {
     "copyright": "Aline Gamblin - Solution FLE",

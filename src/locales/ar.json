@@ -3,14 +3,18 @@
     "home": "الرئيسية",
     "about": "عن المعلمة",
     "services": "الخدمات",
-    "resources": "المحتوى",
+    "resources": "الموارد",
+    "blog": "المدونة",
     "testimonials": "الشهادات",
     "contact": "اتصل بنا",
     "language": "اللغة",
     "cta": "تواصل معي",
-    "logo_part2": "FLE",
     "logo_part1": "Solution",
-    "blog": "blog"
+    "logo_part2": "FLE"
+  },
+  "blog": {
+    "title": "المدونة والأخبار",
+    "subtitle": "نصائح، موارد وأخبار FLE"
   },
   "hero": {
     "title_line1": "تعلّم الفرنسية",

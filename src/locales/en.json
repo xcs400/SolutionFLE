@@ -2,15 +2,19 @@
   "nav": {
     "home": "Home",
     "about": "Who am I",
-    "services": "Services",
-    "resources": "Content",
-    "testimonials": "Article Blog",
+    "services": "French Lessons",
+    "resources": "FluxRSS",
+    "blog": "Blog",
+    "testimonials": "Testimonials",
     "contact": "Contact",
     "language": "Language",
     "cta": "Contact me",
     "logo_part1": "Solution",
-    "logo_part2": "FLE",
-    "blog": "Blog"
+    "logo_part2": "FLE"
+  },
+  "blog": {
+    "title": "Blog & News",
+    "subtitle": "FLE tips, resources and news"
   },
   "hero": {
     "title_line1": "Learn French",

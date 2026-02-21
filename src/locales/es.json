@@ -1,27 +1,31 @@
 {
   "nav": {
     "home": "Inicio",
-    "about": "Acerca de",
-    "services": "Servicios",
-    "resources": "Contenido",
+    "about": "Quién soy",
+    "services": "Clases de Francés",
+    "resources": "FluxRSS",
+    "blog": "Blog",
     "testimonials": "Testimonios",
     "contact": "Contacto",
     "language": "Idioma",
     "cta": "Contáctame",
     "logo_part1": "Solution",
-    "logo_part2": "FLE",
-    "blog": "Blog"
+    "logo_part2": "FLE"
+  },
+  "blog": {
+    "title": "Blog y Noticias",
+    "subtitle": "Consejos, recursos y noticias de FLE"
   },
   "hero": {
     "title_line1": "Aprende francés",
     "title_line2": "y todo se vuelve posible",
     "subtitle_html": "Formaciones personalizadas en Francés como Lengua Extranjera (FLE)<br/>con <strong>Aline Gamblin</strong>, profesora certificada DAEFLE.",
-    "cta": "Descubrir las formaciones",
+    "cta": "Descubrir",
     "cta_link": "#services",
     "image_alt": "Visual FLE"
   },
   "about": {
-    "title": "Mi Trayectoria",
+    "title": "Quién soy?",
     "name": "Aline GAMBLIN",
     "role": "Profesora de FLE certificada DAEFLE",
     "bio": "Apasionada por la transmisión de la lengua y la cultura francesa, acompaño desde hace varios años a un público internacional diverso en su búsqueda del dominio lingüístico.",
@@ -29,7 +33,7 @@
       "Enseñanza personalizada y flexible",
       "Inmersión cultural y talleres prácticos",
       "Pedagogía activa centrada en el alumno",
-      "Acompaضamiento amable y estructurado"
+      "Acompañamiento amable y estructurado"
     ]
   },
   "services": {
@@ -102,7 +106,7 @@
         "name": "Maria Garcia",
         "country": "España",
         "level": "Principiante ← Intermedio",
-        "text": "¡Aline es una profesora excepcional! Sus clases son estructuradas, dinámicas y adaptadas a mi ritmo. En 6 meses, he progresado mucho más de lo que imaginaba. ¡Recomiendo totalmente Solution FLE!"
+        "text": "¡Aline est une professeure exceptionnelle ! Ses cours sont structurés, dynamiques et adaptés à mon rythme. En 6 mois, j'ai progressé bien plus que je ne l'aurais imaginé. Je recommande vivement Solution FLE !"
       },
       {
         "name": "Yuki Tanaka",
@@ -143,7 +147,7 @@
     "form_title": "Envíame un mensaje",
     "label_name": "Tu nombre",
     "label_email": "Tu email",
-    "label_message": "Tu mensaje",
+    "label_message": "Tu message",
     "placeholder_name": "Juan Pérez",
     "placeholder_email": "juan@ejemplo.com",
     "placeholder_message": "Describe tus objetivos de aprendizaje...",
@@ -159,5 +163,8 @@
   "footer": {
     "copyright": "Aline Gamblin - Solution FLE",
     "siret": "Diplomada DAEFLE - SIRET 804 466 282 00014"
+  },
+  "app": {
+    "call_now": "Llamar ahora"
   }
 }

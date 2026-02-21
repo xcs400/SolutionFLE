@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { Pencil } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import EditableText from './EditableText';
 
@@ -29,19 +31,20 @@ function parseMarkdown(text) {
 
 const Blog = () => {
     const { t } = useLanguage();
+    const navigate = useNavigate();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
 
     // Authenticate before accessing admin panel
     const handleAdminAccess = (e) => {
         e.preventDefault();
-        
-        const token = Cookies.get('admin-token');
+
+        const token = Cookies.get('ident');
         if (!token) {
             alert('Accès refusé. Veuillez vous authentifier via le menu Admin.');
             return;
         }
-        
+
         window.location.href = '/admin';
     };
 
@@ -62,6 +65,27 @@ const Blog = () => {
         loadPosts();
     }, []);
 
+    // Restore scroll position after returning from a post
+    useEffect(() => {
+        const savedScroll = localStorage.getItem('blog-home-scroll');
+        if (savedScroll && !loading && posts.length > 0) {
+            // Wait slightly for components to re-render
+            setTimeout(() => {
+                window.scrollTo({
+                    top: parseInt(savedScroll, 10),
+                    behavior: 'instant'
+                });
+                localStorage.removeItem('blog-home-scroll');
+            }, 100);
+        }
+    }, [loading, posts]);
+
+    const saveScroll = (e, slug) => {
+        if (e) e.preventDefault();
+        localStorage.setItem('blog-home-scroll', window.scrollY.toString());
+        navigate(`/blog/${slug}`);
+    };
+
     return (
         <section id="blog" className="section" style={{ background: 'var(--color-bg)' }}>
             <div className="container">
@@ -73,12 +97,12 @@ const Blog = () => {
                 >
                     <h2>
                         <EditableText tag="span" translationKey="blog.title">
-                            Blog & Actualités
+                            {t('blog.title')}
                         </EditableText>
                     </h2>
                     <p style={{ fontSize: '1.1rem', color: '#64748b', marginTop: '1rem' }}>
                         <EditableText tag="span" translationKey="blog.subtitle">
-                            Conseils, ressources et actualités FLE
+                            {t('blog.subtitle')}
                         </EditableText>
                     </p>
                 </motion.div>
@@ -152,6 +176,7 @@ const Blog = () => {
                                     e.currentTarget.style.transform = 'translateY(0)';
                                     e.currentTarget.style.boxShadow = 'none';
                                 }}
+                                onClick={() => saveScroll(null, post.slug)}
                             >
                                 {post.image && (
                                     <img
@@ -185,6 +210,7 @@ const Blog = () => {
                                     </p>
                                     <a
                                         href={`/blog/${post.slug}`}
+                                        onClick={(e) => saveScroll(e, post.slug)}
                                         style={{
                                             marginTop: '1rem',
                                             display: 'inline-block',
@@ -202,31 +228,43 @@ const Blog = () => {
                     </div>
                 )}
 
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    style={{ textAlign: 'center', marginTop: '3rem' }}
-                >
-                    <a
-                        href="#"
-                        onClick={handleAdminAccess}
-                        style={{
-                            display: 'inline-block',
-                            padding: '1rem 2rem',
-                            background: 'var(--color-secondary)',
-                            color: 'white',
-                            borderRadius: '8px',
-                            textDecoration: 'none',
-                            fontWeight: '600',
-                            transition: 'all 0.3s'
-                        }}
-                        onMouseEnter={(e) => e.target.style.opacity = '0.8'}
-                        onMouseLeave={(e) => e.target.style.opacity = '1'}
+                {Cookies.get('ident') && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true }}
+                        style={{ textAlign: 'center', marginTop: '3rem' }}
                     >
-                        Accéder à l'éditeur TinaCMS
-                    </a>
-                </motion.div>
+                        <a
+                            href="#"
+                            onClick={handleAdminAccess}
+                            title="Accéder à l'éditeur"
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '40px',
+                                height: '40px',
+                                background: 'rgba(255,255,255,0.1)',
+                                color: 'var(--color-primary)',
+                                borderRadius: '50%',
+                                textDecoration: 'none',
+                                transition: 'all 0.3s',
+                                border: '1px solid rgba(255,255,255,0.1)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'var(--color-primary)';
+                                e.currentTarget.style.color = 'white';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                                e.currentTarget.style.color = 'var(--color-primary)';
+                            }}
+                        >
+                            <Pencil size={18} />
+                        </a>
+                    </motion.div>
+                )}
             </div>
         </section>
     );

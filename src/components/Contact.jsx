@@ -94,55 +94,6 @@ const Contact = () => {
                             </p>
                         </div>
                     </div>
-                    <div style={{ textAlign: 'center', marginTop: '3rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                        <a
-                            href="#"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                const token = Cookies.get('admin-token');
-                                if (!token) {
-                                    alert('Accès refusé. Veuillez vous authentifier via le menu Admin.');
-                                    return;
-                                }
-                                window.location.href = '/textedit';
-                            }}
-                            style={{
-                                fontSize: '0.85rem',
-                                color: 'var(--color-secondary)',
-                                textDecoration: 'none',
-                                cursor: 'pointer',
-                                transition: 'all 0.3s',
-                                opacity: 0.4,
-                                fontWeight: '600'
-                            }}
-                            onMouseEnter={(e) => e.target.style.opacity = '1'}
-                            onMouseLeave={(e) => e.target.style.opacity = '0.4'}
-                        >
-                            Admin
-                        </a>
-                        <div style={{ marginTop: '0.5rem' }}>
-                            <a
-                                href="#"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    toggleEditMode();
-                                }}
-                                style={{
-                                    fontSize: '0.85rem',
-                                    color: editMode ? 'var(--color-red)' : 'var(--color-secondary)',
-                                    textDecoration: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.3s',
-                                    opacity: editMode ? 1 : 0.4,
-                                    fontWeight: '600'
-                                }}
-                                onMouseEnter={(e) => e.target.style.opacity = '1'}
-                                onMouseLeave={(e) => e.target.style.opacity = editMode ? 1 : 0.4}
-                            >
-                                {editMode ? 'Quitter le mode édition' : 'Edit Inline'}
-                            </a>
-                        </div>
-                    </div>
                 </div>
             </footer>
         </section>

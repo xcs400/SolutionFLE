@@ -626,9 +626,8 @@
             if (parts.length === 2) return parts.pop().split(';').shift();
         }
 
-        // ─── Security: Check authentication ─────────────────────────────
         const urlParams = new URLSearchParams(window.location.search);
-        const sessionId = urlParams.get('sid') || getCookie('ident');
+        const sessionId = urlParams.get('id') || getCookie('ident');
         if (!sessionId) {
             document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; color:#f87171; background:#0f1117;"><div><p style="font-size:1.5rem; font-weight:bold; margin-bottom:1rem;">🚫 Accès refusé</p><p>Veuillez vous authentifier via le menu Admin sur la page d\'accueil.</p><p style="margin-top:2rem;"><a href="/" style="display:inline-block; padding:0.8rem 1.5rem; background:#5b8def; color:white; text-decoration:none; border-radius:8px; font-weight:bold;">Retour à l\'accueil</a></p></div></div>';
             throw new Error('No sessionId provided');
@@ -922,8 +921,7 @@
             if (changeCount === 0) return;
 
             // Verifie le cookie admin au lieu de demander un mot de passe
-            const adminToken = document.cookie.split('; ').find(row => row.startsWith('admin-token='));
-            if (!adminToken) {
+            if (!sessionId) {
                 alert('Accès refusé. Veuillez vous authentifier via le menu Admin.');
                 return;
             }
@@ -934,7 +932,10 @@
                 const responses = await Promise.all(
                     LANGS.map(l => fetch(`/api/locales/${l.code}`, {
                         method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-session-id': sessionId
+                        },
                         body: JSON.stringify(current[l.code])
                     }))
                 );

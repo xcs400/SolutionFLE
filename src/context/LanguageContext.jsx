@@ -136,9 +136,13 @@ export const LanguageProvider = ({ children }) => {
             const currentLangData = { ...translations[language] };
             setNestedValue(currentLangData, key, newValue);
 
+            const token = Cookies.get('ident');
             const response = await fetch(`/api/locales/${language}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-session-id': token
+                },
                 body: JSON.stringify(currentLangData)
             });
 
@@ -164,7 +168,7 @@ export const LanguageProvider = ({ children }) => {
         }
 
         // Verifie le cookie admin au lieu de demander un mot de passe
-        const token = Cookies.get('admin-token');
+        const token = Cookies.get('ident');
         if (!token) {
             alert('Acces refuse. Veuillez vous authentifier via le menu Admin.');
             return;

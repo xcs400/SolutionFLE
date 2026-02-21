@@ -786,7 +786,7 @@
         async function checkAuth() {
             if (!sessionId) return false;
             try {
-                const res = await fetch('/api/blog', { headers: { 'x-session-id': sessionId } });
+                const res = await fetch('/api/auth/check', { headers: { 'x-session-id': sessionId } });
                 return res.ok;
             } catch { return false; }
         }
@@ -837,7 +837,14 @@
                 }
             });
 
-            loadArticles();
+            await loadArticles();
+
+            // Check if we should auto-edit an article
+            const params = new URLSearchParams(window.location.search);
+            const editSlug = params.get('edit');
+            if (editSlug) {
+                editArticle(editSlug);
+            }
         }
 
         // ── Articles ───────────────────────────────────────────────────────────────

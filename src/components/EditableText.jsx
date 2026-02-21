@@ -46,16 +46,34 @@ const EditableText = ({ tag, translationKey, children, style, className, isHtml 
                 value={value}
                 onChange={handleChange}
                 onBlur={handleBlur}
+                onFocus={(e) => {
+                    e.target.style.height = 'auto';
+                    e.target.style.height = e.target.scrollHeight + 'px';
+                }}
+                onInput={(e) => {
+                    e.target.style.height = 'auto';
+                    e.target.style.height = e.target.scrollHeight + 'px';
+                }}
                 autoFocus
                 style={{
+                    display: 'block',
                     width: '100%',
-                    padding: '8px',
+                    minWidth: '250px', // Évite l'effet "colonne étroite"
+                    minHeight: '45px',
+                    padding: '12px',
                     borderRadius: '8px',
-                    border: '2px solid var(--color-secondary)',
+                    border: '2px solid var(--color-strong-blue)',
+                    background: 'white',
+                    color: '#1e293b',
+                    boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
+                    ...style,
+                    // Styles de texte forcés après le spread pour garder la lisibilité
                     fontFamily: 'inherit',
                     fontSize: 'inherit',
                     lineHeight: 'inherit',
-                    ...style
+                    overflow: 'hidden',
+                    resize: 'none',
+                    zIndex: 1000
                 }}
             />
         );

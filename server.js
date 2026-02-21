@@ -17,9 +17,8 @@ const parser = new Parser({
 });
 
 const RSS_SOURCES = [
-    { name: 'RFI - Journal en Français Facile', level: 'A2-B1', url: 'https://www.rfi.fr/fr/podcasts/journal-fran%C3%A7ais-facile/podcast' },
-    { name: 'TV5MONDE - Apprendre le Français', level: 'A1-B2', url: 'https://apprendre.tv5monde.com/fr/rss' },
-    { name: 'La Clé des Langues', level: 'Tous niveaux-Toutes Langues', url: 'https://cle.ens-lyon.fr/rss.xml' }
+    //   { name: 'RFI - Journal en Français Facile', level: 'A2-B1', url: 'https://www.rfi.fr/fr/podcasts/journal-fran%C3%A7ais-facile/podcast' },
+    { name: 'TV5MONDE - Apprendre le Français', level: 'A1-B2', url: 'https://apprendre.tv5monde.com/fr/rss' }
 ];
 
 const __filename = fileURLToPath(import.meta.url);
@@ -78,6 +77,7 @@ const app = express();
 const PORT = process.env.PORT;
 app.use(cors());
 app.use(express.json());
+app.get('/favicon.ico', (req, res) => res.sendFile(path.join(__dirname, 'public', 'Logo_Solution.jpg')));
 app.use(express.static(path.join(__dirname, 'dist')));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -148,7 +148,7 @@ app.get('/api/locales/:lang', (req, res) => {
     }
 });
 
-app.put('/api/locales/:lang', (req, res) => {
+app.put('/api/locales/:lang', authMiddleware, (req, res) => {
     const { lang } = req.params;
     if (!VALID_LANGS.includes(lang)) return res.status(400).json({ error: 'Langue non supportée' });
     const filePath = path.join(LOCALES_DIR, `${lang}.json`);
@@ -187,8 +187,12 @@ app.post('/api/auth/verify', (req, res) => {
 });
 
 app.post('/api/auth/logout', (req, res) => {
-    const sessionId = req.headers['x-session-id'];
+    const sessionId = req.headers['x-session-id'] || getCookie(req, 'ident');
     if (sessionId) authenticatedSessions.delete(sessionId);
+    res.json({ success: true });
+});
+
+app.get('/api/auth/check', authMiddleware, (req, res) => {
     res.json({ success: true });
 });
 

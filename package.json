@@ -13,8 +13,10 @@
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
+    "easymde": "^2.20.0",
     "express": "^5.2.1",
     "framer-motion": "^12.34.0",
+    "js-cookie": "^3.0.5",
     "js-sha256": "^0.11.1",
     "lucide-react": "^0.563.0",
     "multer": "^2.0.2",
@@ -22,6 +24,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.0",
+    "react-simplemde-editor": "^5.2.0",
     "rss-parser": "^3.13.0",
     "tinacms": "^3.5.0"
   },

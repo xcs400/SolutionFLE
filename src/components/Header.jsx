@@ -35,14 +35,35 @@ const Header = () => {
 
     const toggleMenu = () => setIsOpen(!isOpen);
 
+    // Vérifier la session au chargement (ma faute, il faut refaire une session au chargement !)
+    React.useEffect(() => {
+        const check = async () => {
+            const token = Cookies.get('ident');
+            if (!token) return;
+            try {
+                const res = await fetch('/api/auth/check', {
+                    headers: { 'x-session-id': token }
+                });
+                if (!res.ok) {
+                    Cookies.remove('ident');
+                    // Facultatif : recharger si on veut forcer la mise à jour des icônes admin
+                    // window.location.reload(); 
+                }
+            } catch (err) {
+                console.log('Session check skipped (offline?)');
+            }
+        };
+        check();
+    }, []);
+
     const links = [
         //  { name: t('nav.home'), href: '#home' },
-        { name: t('nav.about'), href: '#about' },
-        { name: t('nav.services'), href: '#services' },
-        { name: t('nav.resources'), href: '#resources' },
-        { name: t('nav.blog'), href: '#blog' },
-        { name: t('nav.testimonials'), href: '#testimonials' },
-        { name: t('nav.contact'), href: '#contact' },
+        { name: t('nav.about'), href: '#about', key: 'about' },
+        { name: t('nav.services'), href: '#services', key: 'services' },
+        { name: t('nav.resources'), href: '#resources', key: 'resources' },
+        { name: t('nav.blog'), href: '#blog', key: 'blog' },
+        { name: t('nav.testimonials'), href: '#testimonials', key: 'testimonials' },
+        { name: t('nav.contact'), href: '#contact', key: 'contact' },
     ];
 
     const currentLangData = supportedLanguages.find(l => l.code === currentLang);
@@ -82,27 +103,17 @@ const Header = () => {
     };
 
     return (
-        <header>
-            {/* Top Contact Bar - FIXED */}
-            <div className="top-banner" style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100%',
-                backgroundColor: 'var(--color-primary)',
-                color: 'white',
-                padding: '0.4rem 0',
-                fontSize: '0.85rem',
-                zIndex: 1100,
-                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
-            }}>
+        <header className="main-header" style={{ width: '100%', zIndex: 1100 }}>
+            {/* Top Contact Bar - FIXED on all devices */}
+            <div className="top-banner">
                 <div className="container" style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    padding: '0 1rem'
+                    padding: '0 1rem',
+                    width: '100%'
                 }}>
-                    <a href="#home" style={{ color: 'white', opacity: 0.9 }}>
+                    <a href="#home" style={{ color: 'white', opacity: 0.9, display: 'flex', alignItems: 'center' }}>
                         <Home size={24} />
                     </a>
 
@@ -115,50 +126,61 @@ const Header = () => {
                         <a href="tel:+33649163537" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '600' }}>
                             <Phone size={12} /> <EditableText tag="span" translationKey="contact.phone_value">{t('contact.phone_value') || '06 49 16 35 37'}</EditableText>
                         </a>
-                        <a href="mailto:solutionFLE@gmail.com" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '600' }}>
+                        <a href="mailto:solutionFLE@gmail.com" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '600', fontSize: '0.8rem' }}>
                             <Mail size={12} /> <EditableText tag="span" translationKey="contact.email_value">{t('contact.email_value') || 'solutionFLE@gmail.com'}</EditableText>
                         </a>
                     </div>
 
-                    <button className="mobile-menu-toggle" onClick={toggleMenu} aria-label="Toggle menu" style={{ color: 'white', background: 'none', border: 'none', cursor: 'pointer' }}>
-                        {isOpen ? <X size={28} /> : <Menu size={28} />}
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <button className="mobile-only" onClick={toggleMenu} aria-label="Toggle menu" style={{ color: 'white', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem' }}>
+                            {isOpen ? <X size={28} /> : <Menu size={28} />}
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* Main Header Area */}
-            <div className="header-main" style={{ marginTop: '55px', padding: '0.8rem 0', background: 'white' }}>
-                <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 1rem' }}>
-                    <a href="#home" className="logo" style={{ display: 'flex', alignItems: 'center', gap: '1rem', textDecoration: 'none' }}>
-                        <img
-                            src="./LogoOfficiel.png"
-                            alt="Solution FLE Logo"
-                            className="logo-img"
-                        />
-                        <div className="logo-content" style={{ display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem', marginBottom: '4px' }}>
-                                <span className="logo-text" style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem', color: '#7f7f7f' }}>
-                                    <span style={{ fontWeight: '800' }}>
-                                        <EditableText tag="span" translationKey="nav.logo_part1">{t('nav.logo_part1') || 'Solution'}</EditableText>
+            {/* Main Header Area - FIXED on PC, SCROLL on Mobile */}
+            <div className="header-main" style={{ padding: '0.8rem 0' }}>
+                <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 1rem', maxWidth: '1200px', margin: '0 auto' }}>
+                    <div className="logo-group" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                        <a href="#home" className="logo" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
+                            <img
+                                src="./LogoOfficiel.png"
+                                alt="Solution FLE Logo"
+                                className="logo-img"
+                            />
+                            <div className="logo-content" style={{ display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.4rem', marginBottom: '4px' }}>
+                                    <span className="logo-text" style={{ display: 'flex', alignItems: 'flex-end', gap: '0.4rem', color: '#7f7f7f' }}>
+                                        <span style={{ fontWeight: '800' }}>
+                                            <EditableText tag="span" translationKey="nav.logo_part1">{t('nav.logo_part1') || 'Solution'}</EditableText>
+                                        </span>
+                                        <span className="desktop-only" style={{ fontWeight: '300', opacity: 0.5, fontSize: '1.8rem', paddingBottom: '2px' }}>|</span>
+                                        <span style={{ fontWeight: '800' }}>
+                                            <EditableText tag="span" translationKey="nav.logo_part2">{t('nav.logo_part2') || 'FLE'}</EditableText>
+                                        </span>
                                     </span>
-                                    <span style={{ fontWeight: '300', opacity: 0.5, fontSize: '1.8rem', paddingBottom: '2px' }}>|</span>
-                                    <span style={{ fontWeight: '800' }}>
-                                        <EditableText tag="span" translationKey="nav.logo_part2">{t('nav.logo_part2') || 'FLE'}</EditableText>
-                                    </span>
-                                </span>
-                                <img
-                                    src="./Picture2.png"
-                                    alt="Ampoule"
-                                    style={{ height: '52px', width: 'auto', marginBottom: '-5px' }}
-                                />
+                                    <img
+                                        src="./Picture2.png"
+                                        alt="Ampoule"
+                                        className="desktop-only"
+                                        style={{ height: '52px', width: 'auto', marginBottom: '-5px' }}
+                                    />
+                                </div>
                             </div>
+                        </a>
+
+                        {/* Right logo - visible on all devices */}
+                        <div style={{ alignItems: 'center', display: 'flex' }}>
+                            <img src="./Logo_Solution.jpg" alt="Secondary Logo" style={{ height: '40px', opacity: 0.8 }} />
                         </div>
-                    </a>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                    </div>
+
+                    <div className="desktop-only" style={{ alignItems: 'center' }}>
                         <nav className="nav-links" style={{ display: 'flex', alignItems: 'center' }}>
-                            {links.map((link, idx) => (
+                            {links.map((link) => (
                                 <a key={link.href} href={link.href} style={{ textDecoration: 'none', color: 'var(--color-primary)', fontWeight: 700, marginLeft: '1.5rem' }}>
-                                    <EditableText tag="span" translationKey={`nav.${link.name === t('nav.blog') ? 'blog' : ['about', 'services', 'resources', 'testimonials', 'contact'][idx]}`}>{link.name}</EditableText>
+                                    <EditableText tag="span" translationKey={`nav.${link.key}`}>{link.name}</EditableText>
                                 </a>
                             ))}
 
@@ -296,23 +318,19 @@ const Header = () => {
                         exit={{ height: 0, opacity: 0 }}
                         className="mobile-nav"
                         style={{
-                            position: 'fixed',
-                            top: '55px',
-                            left: 0,
-                            width: '100%',
-                            zIndex: 1050,
                             background: 'white',
                             boxShadow: '0 10px 20px rgba(0,0,0,0.1)',
-                            overflow: 'hidden'
+                            overflowY: 'auto',
+                            maxHeight: 'calc(100vh - 50px)',
                         }}
                     >
-                        {links.map((link, idx) => (
+                        {links.map((link) => (
                             <a
                                 key={link.href}
                                 href={link.href}
                                 onClick={() => setIsOpen(false)}
                                 style={{
-                                    padding: '1.2rem 2rem',
+                                    padding: '0.8rem 2rem',
                                     display: 'block',
                                     borderBottom: '1px solid rgba(0,0,0,0.05)',
                                     textDecoration: 'none',
@@ -320,7 +338,7 @@ const Header = () => {
                                     fontWeight: 700
                                 }}
                             >
-                                <EditableText tag="span" translationKey={`nav.${['about', 'services', 'resources', 'testimonials', 'contact'][idx]}`}>{link.name}</EditableText>
+                                <EditableText tag="span" translationKey={`nav.${link.key}`}>{link.name}</EditableText>
                             </a>
                         ))}
 
@@ -330,7 +348,7 @@ const Header = () => {
                                 onClick={() => setIsLangOpen(!isLangOpen)}
                                 style={{
                                     width: '100%',
-                                    padding: '1.2rem 2rem',
+                                    padding: '0.8rem 2rem',
                                     textAlign: 'left',
                                     background: 'none',
                                     border: 'none',
@@ -352,18 +370,7 @@ const Header = () => {
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: 'auto', opacity: 1 }}
                                         exit={{ height: 0, opacity: 0 }}
-                                        style={{
-                                            position: 'absolute',
-                                            top: '100%',
-                                            right: 0,
-                                            marginTop: '1rem',
-                                            background: 'white',
-                                            boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-                                            borderRadius: '12px',
-                                            padding: '0.5rem',
-                                            minWidth: '150px',
-                                            zIndex: 1001
-                                        }}
+                                        style={{ background: '#f8fafc', padding: '0.5rem 0' }}
                                     >
                                         {supportedLanguages.map(lang => (
                                             <button
@@ -390,6 +397,87 @@ const Header = () => {
                                                 <span>{lang.name}</span>
                                             </button>
                                         ))}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Admin/Login Accordion Mobile */}
+                        <div style={{ borderBottom: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                            <button
+                                onClick={() => setShowLogin(!showLogin)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.8rem 2rem',
+                                    textAlign: 'left',
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'var(--color-primary)',
+                                    fontWeight: 700,
+                                    fontSize: '1.1rem',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center'
+                                }}
+                            >
+                                <span>{isAdmin() ? 'Admin' : 'Login'}</span>
+                                <motion.span animate={{ rotate: showLogin ? 180 : 0 }}>▾</motion.span>
+                            </button>
+
+                            <AnimatePresence>
+                                {showLogin && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        style={{ background: '#f8fafc', padding: '1.5rem 2rem' }}
+                                    >
+                                        {!isAdmin() ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                <input
+                                                    type="password"
+                                                    value={loginPwd}
+                                                    onChange={e => setLoginPwd(e.target.value)}
+                                                    placeholder="Mot de passe admin"
+                                                    style={{ padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd', fontSize: '1rem', width: '100%' }}
+                                                />
+                                                <button
+                                                    className="btn btn-primary"
+                                                    disabled={loadingLogin}
+                                                    onClick={handleLogin}
+                                                    style={{ fontWeight: 700, fontSize: '1rem', padding: '0.8rem' }}
+                                                >
+                                                    Connexion
+                                                </button>
+                                                {loginError && <span style={{ color: '#f87171', fontSize: '0.9rem' }}>{loginError}</span>}
+                                            </div>
+                                        ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                                                <a href="/textedit" style={{ color: 'var(--color-primary)', fontWeight: 700, textDecoration: 'none', fontSize: '1.1rem' }}>TextEdit</a>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        toggleEditMode();
+                                                        setIsOpen(false);
+                                                    }}
+                                                    style={{
+                                                        background: 'none', border: 'none', textAlign: 'left', padding: 0,
+                                                        color: editMode ? 'var(--color-red)' : 'var(--color-primary)',
+                                                        fontWeight: 700, fontSize: '1.1rem', cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    {editMode ? 'Quitter le mode édition' : 'InlineEdit'}
+                                                </button>
+                                                <a href="/admin" style={{ color: 'var(--color-primary)', fontWeight: 700, textDecoration: 'none', fontSize: '1.1rem' }}>BlogEdit</a>
+                                                <button
+                                                    className="btn btn-ghost"
+                                                    onClick={handleLogout}
+                                                    style={{ fontWeight: 700, fontSize: '1.1rem', color: '#f87171', textAlign: 'left', padding: 0 }}
+                                                >
+                                                    Logout
+                                                </button>
+                                            </div>
+                                        )}
                                     </motion.div>
                                 )}
                             </AnimatePresence>
