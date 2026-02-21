@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import Cookies from 'js-cookie';
 
 // Static fallbacks (used immediately while API loads)
 import frStatic from '../locales/fr.json';
@@ -156,42 +157,20 @@ export const LanguageProvider = ({ children }) => {
         return value;
     }, [language, translations]);
 
-    const toggleEditMode = useCallback(async () => {
+    const toggleEditMode = useCallback(() => {
         if (editMode) {
             setEditMode(false);
             return;
         }
 
-        const pwd = prompt('Mot de passe pour éditer en ligne :');
-        if (!pwd) return;
-
-        try {
-            // 1. Demander un challenge au serveur
-            const challengeRes = await fetch('/api/auth/challenge');
-            const { nonce } = await challengeRes.json();
-
-            // 2. Calculer le hash localement
-            const hash = hashPassword(pwd, nonce);
-
-            // 3. Vérifier le hash sur le serveur
-            const verifyRes = await fetch('/api/auth/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ hash, nonce })
-            });
-
-            const result = await verifyRes.json();
-            if (result.success) {
-                setEditMode(true);
-                setSessionId(result.sessionId);
-                localStorage.setItem('solutionfle-sessionId', result.sessionId);
-            } else {
-                alert(result.error || 'Accès refusé');
-            }
-        } catch (err) {
-            console.error('Erreur authentification:', err);
-            alert('Erreur technique lors de la vérification');
+        // Verifie le cookie admin au lieu de demander un mot de passe
+        const token = Cookies.get('admin-token');
+        if (!token) {
+            alert('Acces refuse. Veuillez vous authentifier via le menu Admin.');
+            return;
         }
+
+        setEditMode(true);
     }, [editMode]);
 
     return (

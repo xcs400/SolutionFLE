@@ -4,12 +4,14 @@
     "about": "Qui suis-je",
     "services": "Cours de Français ",
     "resources": "Prestations FLE  FOS  FLI  Alpha",
-    "testimonials": "Témoignages",
-    "contact": "Contact",
+    "testimonials": "Article Blog",
+    "contact": "Contact1",
     "language": "Langue",
     "cta": "Contactez-moi",
     "logo_part1": "Solution",
-    "logo_part2": "FLE"
+    "logo_part2": "FLE",
+    "blog": "blog",
+    "undefined": "Contact"
   },
   "hero": {
     "title_line1": "Apprendre le français avec ",

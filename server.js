@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import Parser from 'rss-parser';
 import crypto from 'crypto';
+import multer from 'multer';
 
 dotenv.config();
 
@@ -74,15 +75,27 @@ function parseMDFile(filepath) {
 }
 
 const app = express();
-const PORT = process.env.PORT ;
+const PORT = process.env.PORT;
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'dist')));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Helper pour lire un cookie
+function getCookie(req, name) {
+    const rc = req.headers.cookie;
+    if (!rc) return null;
+    const list = {};
+    rc.split(';').forEach(cookie => {
+        const parts = cookie.split('=');
+        list[parts.shift().trim()] = decodeURI(parts.join('='));
+    });
+    return list[name];
+}
+
 // ─── Auth middleware ─────────────────────────────────────────────────────────
 const authMiddleware = (req, res, next) => {
-    const sessionId = req.headers['x-session-id'] || req.query.sid;
+    const sessionId = req.headers['x-session-id'] || req.query.sid || getCookie(req, 'ident');
     if (!sessionId || !authenticatedSessions.has(sessionId)) {
         return res.status(401).json({ error: 'Unauthorized: Please authenticate first' });
     }
@@ -206,6 +219,33 @@ app.post('/api/contact', async (req, res) => {
 // ─── Blog CRUD ────────────────────────────────────────────────────────────────
 const BLOG_DIR = path.join(__dirname, 'content', 'blog');
 
+
+const IMAGES_DIR = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(IMAGES_DIR)) fs.mkdirSync(IMAGES_DIR, { recursive: true });
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, IMAGES_DIR),
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        const name = file.originalname.replace(/\.[^/.]+$/, '')
+            .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        const unique = `${name}-${Date.now()}${ext}`;
+        cb(null, unique);
+    }
+});
+
+const upload = multer({
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
+    fileFilter: (req, file, cb) => {
+        const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+        cb(null, allowed.includes(file.mimetype));
+    }
+});
+
+
+
+
 // Liste tous les articles (avec body)
 app.get('/api/blog', (req, res) => {
     try {
@@ -316,9 +356,35 @@ app.delete('/api/blog/:slug', authMiddleware, (req, res) => {
     }
 });
 
+
+// Liste les images uploadées
+app.get('/api/images', authMiddleware, (req, res) => {
+    try {
+        const files = fs.readdirSync(IMAGES_DIR)
+            .filter(f => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f))
+            .map(f => ({ name: f, url: `/uploads/${f}` }))
+            .reverse(); // plus récentes en premier
+        res.json(files);
+    } catch {
+        res.status(500).json({ error: 'Impossible de lister les images' });
+    }
+});
+
+// Upload une image
+app.post('/api/images/upload', authMiddleware, upload.single('image'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'Aucun fichier valide' });
+    res.json({ success: true, url: `/uploads/${req.file.filename}`, name: req.file.filename });
+});
+
+
+
 // ─── Admin panel ──────────────────────────────────────────────────────────────
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+app.get('/textedit', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'textedit.html'));
 });
 
 // ─── SPA fallback ─────────────────────────────────────────────────────────────
@@ -326,5 +392,6 @@ app.use((req, res, next) => {
     if (req.path.match(/\.[a-z0-9]+$/i)) return next();
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
+
 
 app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`));

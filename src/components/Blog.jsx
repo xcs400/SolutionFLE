@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Cookies from 'js-cookie';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 import EditableText from './EditableText';
@@ -31,52 +32,17 @@ const Blog = () => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Simple MD5 hash function (same as server)
-    function simpleMD5(str) {
-        let hash = 0;
-        if (str.length === 0) return hash.toString();
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash;
-        }
-        return Math.abs(hash).toString(16);
-    }
-
     // Authenticate before accessing admin panel
-    const handleAdminAccess = async (e) => {
+    const handleAdminAccess = (e) => {
         e.preventDefault();
-
-        const pwd = prompt('Mot de passe pour accéder au panneau d\'administration:');
-        if (!pwd) return;
-
-        try {
-            // 1. Get challenge
-            const challengeRes = await fetch('/api/auth/challenge');
-            const { nonce } = await challengeRes.json();
-
-            // 2. Calculate hash
-            const hash = simpleMD5(pwd + nonce);
-
-            // 3. Verify auth
-            const verifyRes = await fetch('/api/auth/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ hash, nonce })
-            });
-
-            const result = await verifyRes.json();
-            if (result.success) {
-                // Store sessionId and navigate to admin
-                localStorage.setItem('solutionfle-sessionId', result.sessionId);
-                window.location.href = '/admin';
-            } else {
-                alert(result.error || 'Accès refusé');
-            }
-        } catch (err) {
-            console.error('Auth error:', err);
-            alert('Erreur technique lors de l\'authentification');
+        
+        const token = Cookies.get('admin-token');
+        if (!token) {
+            alert('Accès refusé. Veuillez vous authentifier via le menu Admin.');
+            return;
         }
+        
+        window.location.href = '/admin';
     };
 
     useEffect(() => {

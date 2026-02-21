@@ -620,17 +620,23 @@
     </div>
 
     <script>
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
         // ─── Security: Check authentication ─────────────────────────────
         const urlParams = new URLSearchParams(window.location.search);
-        const sessionId = urlParams.get('sid') || localStorage.getItem('solutionfle-sessionId');
+        const sessionId = urlParams.get('sid') || getCookie('ident');
         if (!sessionId) {
-            document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; color:#f87171;"><div><p style="font-size:1.2rem; font-weight:bold;">Accès refusé</p><p>Veuillez vous authentifier d\'abord</p></div></div>';
+            document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; color:#f87171; background:#0f1117;"><div><p style="font-size:1.5rem; font-weight:bold; margin-bottom:1rem;">🚫 Accès refusé</p><p>Veuillez vous authentifier via le menu Admin sur la page d\'accueil.</p><p style="margin-top:2rem;"><a href="/" style="display:inline-block; padding:0.8rem 1.5rem; background:#5b8def; color:white; text-decoration:none; border-radius:8px; font-weight:bold;">Retour à l\'accueil</a></p></div></div>';
             throw new Error('No sessionId provided');
         }
-        
+
         // Wrap fetch to add session header
         const originalFetch = window.fetch;
-        window.fetch = function(...args) {
+        window.fetch = function (...args) {
             const [resource, config] = args;
             const finalConfig = config || {};
             if (!finalConfig.headers) finalConfig.headers = {};
@@ -915,27 +921,16 @@
         async function saveAll() {
             if (changeCount === 0) return;
 
-            const pwd = prompt('Confirmez le mot de passe pour sauvegarder :');
-            if (!pwd) return;
+            // Verifie le cookie admin au lieu de demander un mot de passe
+            const adminToken = document.cookie.split('; ').find(row => row.startsWith('admin-token='));
+            if (!adminToken) {
+                alert('Accès refusé. Veuillez vous authentifier via le menu Admin.');
+                return;
+            }
 
             showLoading(true);
             try {
-                // 1. Get challenge
-                const challengeRes = await fetch('/api/auth/challenge');
-                const { nonce } = await challengeRes.json();
-                const hash = await hashPassword(pwd, nonce);
-
-                // 2. Verify challenge
-                const verifyRes = await fetch('/api/auth/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ hash, nonce })
-                });
-
-                const authResult = await verifyRes.json();
-                if (!authResult.success) throw new Error(authResult.error || 'Authentification échouée');
-
-                // 3. Perform save
+                // Perform save directly without re-authentication
                 const responses = await Promise.all(
                     LANGS.map(l => fetch(`/api/locales/${l.code}`, {
                         method: 'PUT',

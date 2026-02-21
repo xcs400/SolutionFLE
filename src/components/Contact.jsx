@@ -1,30 +1,10 @@
 import React from 'react';
+import Cookies from 'js-cookie';
 import { Mail, Phone, MapPin, Linkedin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ContactForm from './ContactForm';
 import { useLanguage } from '../context/LanguageContext';
 import EditableText from './EditableText';
-
-/**
- * Simple MD5 hash function - codé en dur, sans dépendance externe
- */
-function simpleMD5(str) {
-    let hash = 0;
-    if (str.length === 0) return hash.toString();
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
-    }
-    return Math.abs(hash).toString(16);
-}
-
-/**
- * Hash a password with a nonce - utilise simple MD5
- */
-function hashPassword(password, nonce) {
-    return simpleMD5(password + nonce);
-}
 
 const Contact = () => {
     const { t, editMode, toggleEditMode } = useLanguage();
@@ -117,34 +97,14 @@ const Contact = () => {
                     <div style={{ textAlign: 'center', marginTop: '3rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
                         <a
                             href="#"
-                            onClick={async (e) => {
+                            onClick={(e) => {
                                 e.preventDefault();
-                                const pwd = prompt('Mot de passe admin :');
-                                if (!pwd) return;
-
-                                try {
-                                    const challengeRes = await fetch('/api/auth/challenge');
-                                    const { nonce } = await challengeRes.json();
-                                    const hash = hashPassword(pwd, nonce);
-
-                                    const verifyRes = await fetch('/api/auth/verify', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ hash, nonce })
-                                    });
-
-                                    const result = await verifyRes.json();
-                                    if (result.success) {
-                                        const sid = result.sessionId;
-                                        localStorage.setItem('solutionfle-sessionId', sid);
-                                        window.open(`/textedit?sid=${sid}`, '_blank');
-                                    } else {
-                                        alert(result.error || 'Accès refusé');
-                                    }
-                                } catch (err) {
-                                    console.error('Erreur authentification:', err);
-                                    alert('Erreur technique');
+                                const token = Cookies.get('admin-token');
+                                if (!token) {
+                                    alert('Accès refusé. Veuillez vous authentifier via le menu Admin.');
+                                    return;
                                 }
+                                window.location.href = '/textedit';
                             }}
                             style={{
                                 fontSize: '0.85rem',

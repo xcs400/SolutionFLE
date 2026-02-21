@@ -4,12 +4,13 @@
     "about": "Who am I",
     "services": "Services",
     "resources": "Content",
-    "testimonials": "Testimonials",
+    "testimonials": "Article Blog",
     "contact": "Contact",
     "language": "Language",
     "cta": "Contact me",
     "logo_part1": "Solution",
-    "logo_part2": "FLE"
+    "logo_part2": "FLE",
+    "blog": "Blog"
   },
   "hero": {
     "title_line1": "Learn French",
