@@ -245,49 +245,51 @@ h2::after {
 .btn {
   display: inline-flex;
   align-items: center;
-  padding: 1.2rem 7rem;
-  color: #002654 !important;
-  border: 2px solid #002654;
-  border-radius: 16px;
-  text-decoration: none;
+  justify-content: center;
+  padding: 1.4rem 5rem;
+  color: var(--color-primary) !important;
+  background: #ffffff;
+  /* Premium French Flag Border Trick */
+  background-image: linear-gradient(#fff, #fff),
+    linear-gradient(to right, #002395 33%, #ffffff 33.33%, #ffffff 66.66%, #ed2939 66.66%);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  border: 5px solid transparent;
+  border-radius: 100px;
+
+  text-decoration: none !important;
   font-weight: 800;
-  font-size: 1.2rem;
-  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  font-size: 1.15rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 10px 30px rgba(0, 35, 149, 0.12);
+  cursor: pointer;
   position: relative;
   overflow: hidden;
-  z-index: 1;
-}
-
-.btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, #002654 0%, #002654 33.33%, #ffffff 33.33%, #ffffff 66.66%, #ed2939 66.66%, #ed2939 100%);
-  z-index: -1;
-  animation: bgFade 2s infinite alternate;
-}
-
-@keyframes bgFade {
-  0% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-  }
 }
 
 .btn:hover {
-  transform: translateY(-5px) scale(1.05);
-  box-shadow: 0 20px 40px rgba(0, 38, 84, 0.2);
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 20px 40px rgba(0, 35, 149, 0.2);
+  filter: brightness(1.05);
+}
+
+.btn:active {
+  transform: translateY(-2px) scale(0.98);
+}
+
+/* Version avec fond bleu pour les appels à l'action critiques */
+.btn-primary {
+  background: var(--color-primary);
+  color: #ffffff !important;
+  background-image: linear-gradient(var(--color-primary), var(--color-primary)),
+    linear-gradient(to right, #002395 33%, #ffffff 33.33%, #ffffff 66.66%, #ed2939 66.66%);
+  box-shadow: 0 10px 30px rgba(235, 41, 57, 0.15);
 }
 
 .card {
-  background: rgba(255, 255, 255, 0.9);
+  background: #ffffff;
   backdrop-filter: blur(12px);
   padding: 3.5rem;
   border-radius: 32px;

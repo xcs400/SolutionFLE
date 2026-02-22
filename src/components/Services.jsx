@@ -7,6 +7,7 @@ import {
     Clock,
     MapPin
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 import EditableText from './EditableText';
@@ -31,6 +32,7 @@ const serviceColors = [
 
 const Services = () => {
     const { t } = useLanguage();
+    const navigate = useNavigate();
     const serviceItems = t('services.items');
 
     return (
@@ -53,7 +55,13 @@ const Services = () => {
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
                             viewport={{ once: true }}
-                            style={{ borderTop: `6px solid ${serviceColors[index]}` }}
+                            style={{
+                                borderTop: `6px solid ${serviceColors[index]}`,
+                                cursor: 'pointer',
+                                transition: 'all 0.3s ease'
+                            }}
+                            onClick={() => navigate(`/service/A${index + 1}`)}
+                            whileHover={{ y: -10, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
                         >
                             <div className="feature-icon" style={{ background: `${serviceColors[index]}15`, color: serviceColors[index] }}>
                                 {serviceIcons[index]}

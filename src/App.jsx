@@ -11,6 +11,8 @@ import Testimonials from './components/Testimonials';
 import Contact from './components/Contact';
 import { useLanguage } from './context/LanguageContext';
 
+import ServicePage from './components/ServicePage';
+
 // Page principale (one-page)
 const HomePage = () => (
     <div className="App">
@@ -34,6 +36,7 @@ function App() {
             <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
+                <Route path="/service/:slug" element={<ServicePage />} />
                 {/* Toute autre URL → page d'accueil */}
                 <Route path="*" element={<HomePage />} />
             </Routes>

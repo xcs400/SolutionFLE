@@ -140,9 +140,9 @@ const BlogPost = () => {
         <motion.main
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            style={{ minHeight: '100vh', padding: '6rem 1rem 4rem', background: 'var(--color-bg)' }}
+            style={{ minHeight: '100vh', padding: '6rem 1rem 4rem', background: '#ffffff' }}
         >
-            <article style={{ maxWidth: '800px', margin: '0 auto', position: 'relative' }}>
+            <article className="card" style={{ maxWidth: '850px', margin: '0 auto', position: 'relative', borderTop: '8px solid var(--color-secondary)' }}>
                 {/* Navigation Précédent / Suivant - Tout en haut */}
                 <div style={{
                     display: 'flex',

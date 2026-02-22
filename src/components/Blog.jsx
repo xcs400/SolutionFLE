@@ -86,8 +86,16 @@ const Blog = () => {
         navigate(`/blog/${slug}`);
     };
 
+    const blogColors = [
+        'var(--color-secondary)',
+        'var(--color-green)',
+        'var(--color-red)',
+        'var(--color-yellow)',
+        'var(--color-strong-blue)'
+    ];
+
     return (
-        <section id="blog" className="section" style={{ background: 'var(--color-bg)' }}>
+        <section id="blog" className="section" style={{ background: '#ffffff' }}>
             <div className="container">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -160,21 +168,12 @@ const Blog = () => {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: idx * 0.1 }}
+                                className="card"
                                 style={{
-                                    background: 'rgba(255,255,255,0.05)',
-                                    borderRadius: '15px',
                                     overflow: 'hidden',
-                                    border: '1px solid rgba(255,255,255,0.1)',
                                     cursor: 'pointer',
-                                    transition: 'all 0.3s',
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(-5px)';
-                                    e.currentTarget.style.boxShadow = '0 10px 30px rgba(91, 141, 239, 0.2)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = 'none';
+                                    padding: 0,
+                                    borderTop: `6px solid ${blogColors[idx % blogColors.length]}`
                                 }}
                                 onClick={() => saveScroll(null, post.slug)}
                             >

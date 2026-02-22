@@ -222,6 +222,11 @@ app.post('/api/contact', async (req, res) => {
 
 // ─── Blog CRUD ────────────────────────────────────────────────────────────────
 const BLOG_DIR = path.join(__dirname, 'content', 'blog');
+const SERVICES_PAGES_DIR = path.join(__dirname, 'content', 'services_pages');
+
+// Ensure directories exist
+if (!fs.existsSync(BLOG_DIR)) fs.mkdirSync(BLOG_DIR, { recursive: true });
+if (!fs.existsSync(SERVICES_PAGES_DIR)) fs.mkdirSync(SERVICES_PAGES_DIR, { recursive: true });
 
 
 const IMAGES_DIR = path.join(__dirname, 'public', 'uploads');
@@ -346,6 +351,47 @@ ${body}`;
     }
 });
 
+// ─── Services Pages CRUD (Articles A1-A6) ───────────────────────────────────
+
+app.get('/api/services-pages', (req, res) => {
+    try {
+        const files = fs.existsSync(SERVICES_PAGES_DIR)
+            ? fs.readdirSync(SERVICES_PAGES_DIR).filter(f => f.endsWith('.md'))
+            : [];
+        const posts = files.map(file => parseMDFile(path.join(SERVICES_PAGES_DIR, file)));
+        res.json(posts);
+    } catch {
+        res.status(500).json({ error: 'Impossible de récupérer les pages de services' });
+    }
+});
+
+app.get('/api/services-pages/:slug', (req, res) => {
+    const filepath = path.join(SERVICES_PAGES_DIR, `${req.params.slug}.md`);
+    if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'Page non trouvée' });
+    try {
+        res.json(parseMDFile(filepath));
+    } catch {
+        res.status(500).json({ error: 'Impossible de lire cette page' });
+    }
+});
+
+app.put('/api/services-pages/:slug', authMiddleware, (req, res) => {
+    const { slug } = req.params;
+    const { title, body } = req.body;
+
+    if (!title || !body) return res.status(400).json({ error: 'Titre et contenu requis' });
+    const filepath = path.join(SERVICES_PAGES_DIR, `${slug}.md`);
+
+    // Simple markdown content storage
+    const content = `---\ntitle: "${title}"\n---\n\n${body}`;
+    try {
+        fs.writeFileSync(filepath, content, 'utf-8');
+        res.json({ success: true, message: 'Page mise à jour' });
+    } catch {
+        res.status(500).json({ error: 'Erreur lors de la sauvegarde' });
+    }
+});
+
 // Supprime un article
 app.delete('/api/blog/:slug', authMiddleware, (req, res) => {
     const { slug } = req.params;
@@ -389,6 +435,10 @@ app.get('/admin', (req, res) => {
 
 app.get('/textedit', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'textedit.html'));
+});
+
+app.get('/service_editor.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'service_editor.html'));
 });
 
 // ─── SPA fallback ─────────────────────────────────────────────────────────────
