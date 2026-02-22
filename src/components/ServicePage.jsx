@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Cookies from 'js-cookie';
 import { Pencil, Save, X } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 // Simple Markdown parser (reused and slightly improved)
 function parseMarkdown(text) {
@@ -57,6 +58,7 @@ function parseMarkdown(text) {
 const ServicePage = () => {
     const { slug } = useParams();
     const navigate = useNavigate();
+    const { currentLang } = useLanguage();
     const [page, setPage] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
@@ -69,7 +71,8 @@ const ServicePage = () => {
     useEffect(() => {
         const load = async () => {
             try {
-                const res = await fetch(`/api/services-pages/${slug}`);
+                const lang = currentLang || 'fr';
+                const res = await fetch(`/api/services-pages/${slug}?lang=${lang}`);
                 if (!res.ok) throw new Error('Page non trouvée');
                 const data = await res.json();
                 setPage(data);
@@ -82,7 +85,7 @@ const ServicePage = () => {
         };
         load();
         window.scrollTo(0, 0);
-    }, [slug]);
+    }, [slug, currentLang]);
 
     // Handler pour accéder à l'éditeur dédié aux services
     const handleEdit = () => {
@@ -91,8 +94,7 @@ const ServicePage = () => {
             alert('Accès refusé. Veuillez vous authentifier via le menu Admin.');
             return;
         }
-        // Utilisation de l'éditeur dédié
-        window.location.href = `/service_editor.html?edit=${slug}`;
+        window.location.href = `/service_editor.html?edit=${slug}&lang=${currentLang || 'fr'}`;
     };
 
     const handleBack = () => {

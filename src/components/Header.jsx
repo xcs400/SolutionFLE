@@ -476,9 +476,10 @@ const Header = () => {
                                                         setIsOpen(false);
                                                     }}
                                                     style={{
-                                                        background: 'none', border: 'none', textAlign: 'left', padding: 0,
+                                                        background: 'none', border: 'none', textAlign: 'left', padding: 0, margin: 0,
                                                         color: editMode ? 'var(--color-red)' : 'var(--color-primary)',
-                                                        fontWeight: 700, fontSize: '1.1rem', cursor: 'pointer'
+                                                        fontWeight: 700, fontSize: '1.1rem', cursor: 'pointer',
+                                                        display: 'block', width: '100%'
                                                     }}
                                                 >
                                                     {editMode ? 'Quitter le mode édition' : 'InlineEdit'}

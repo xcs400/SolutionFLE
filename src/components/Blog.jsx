@@ -30,7 +30,7 @@ function parseMarkdown(text) {
 }
 
 const Blog = () => {
-    const { t } = useLanguage();
+    const { t, currentLang } = useLanguage();
     const navigate = useNavigate();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -49,10 +49,9 @@ const Blog = () => {
     };
 
     useEffect(() => {
-        // Load blog posts from /api/blog
         const loadPosts = async () => {
             try {
-                const response = await fetch('/api/blog');
+                const response = await fetch(`/api/blog?lang=${currentLang || 'fr'}`);
                 if (response.ok) {
                     const data = await response.json();
                     setPosts(data);
@@ -63,7 +62,7 @@ const Blog = () => {
             setLoading(false);
         };
         loadPosts();
-    }, []);
+    }, [currentLang]);
 
     // Restore scroll position after returning from a post
     useEffect(() => {

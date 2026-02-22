@@ -649,6 +649,28 @@
             cursor: pointer;
         }
 
+        .lang-btn {
+            background: var(--surface);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 0.4rem 0.9rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--muted);
+            transition: all 0.2s;
+        }
+
+        .lang-btn.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(108, 143, 255, 0.08);
+        }
+
+        .lang-btn.has-content {
+            color: var(--success);
+        }
+
         @media (max-width: 900px) {
             .layout {
                 grid-template-columns: 1fr;
@@ -730,6 +752,23 @@
                     <input type="text" id="f-title" placeholder="Titre de l'article..." />
                 </div>
 
+                <!-- Sélecteur de langue -->
+                <div class="field">
+                    <label>Langue de version</label>
+                    <div id="langSelector" style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                        <button type="button" onclick="setLang('fr')" id="lang-btn-fr" class="lang-btn active"
+                            title="Français">🇫🇷 FR</button>
+                        <button type="button" onclick="setLang('en')" id="lang-btn-en" class="lang-btn"
+                            title="English">🇬🇧 EN</button>
+                        <button type="button" onclick="setLang('es')" id="lang-btn-es" class="lang-btn"
+                            title="Español">🇪🇸 ES</button>
+                        <button type="button" onclick="setLang('ar')" id="lang-btn-ar" class="lang-btn"
+                            title="العربية">🇸🇦 AR</button>
+                    </div>
+                    <small style="color:var(--muted);margin-top:0.3rem;display:block">Chaque langue est un fichier
+                        séparé. FR est la version par défaut (fallback).</small>
+                </div>
+
                 <div class="status-toggle">
                     <input type="checkbox" id="f-published" checked />
                     <label for="f-published">Visible sur le site (Publié)</label>
@@ -789,7 +828,8 @@
         // ── State ──────────────────────────────────────────────────────────────────
         let sessionId = getCookie('ident') || '';
         let editingSlug = null;
-        let articles = [];
+        let currentLang = 'fr';
+        let articles = []; // toutes les versions (pour detecter les langues dispo)
         let easyMDE = null;
         let galleryMode = 'cover'; // 'cover' | 'editor'
         let selectedImageUrl = null;
@@ -867,8 +907,19 @@
 
         // ── Articles ───────────────────────────────────────────────────────────────
         async function loadArticles() {
-            const res = await fetch('/api/blog');
+            // Charge toutes les langues pour afficher les indicateurs de traduction
+            const res = await fetch('/api/blog?lang=' + currentLang, { headers: { 'x-session-id': sessionId } });
             articles = await res.json();
+            // Charge aussi les autres langues pour détecter lesquelles existent
+            const allLangs = ['fr', 'en', 'es', 'ar'];
+            const langSets = await Promise.all(allLangs.map(l =>
+                fetch('/api/blog?lang=' + l, { headers: { 'x-session-id': sessionId } })
+                    .then(r => r.json()).then(data => ({ lang: l, slugs: data.map(a => a.slug) }))
+            ));
+            // Attache les langues disponibles à chaque article
+            articles.forEach(a => {
+                a.availableLangs = allLangs.filter(l => langSets.find(s => s.lang === l && s.slugs.includes(a.slug)));
+            });
             renderNav();
         }
 
@@ -878,12 +929,27 @@
                 list.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);padding:0.5rem">Aucun article</p>';
                 return;
             }
-            list.innerHTML = articles.map(a => `
-        <div class="nav-article ${editingSlug === a.slug ? 'active' : ''}" onclick="editArticle('${a.slug}')">
-            <span class="nav-article-title">${a.title}</span>
-            <button class="nav-del" onclick="event.stopPropagation();deleteArticle('${a.slug}','${a.title.replace(/'/g, "\\'")}')">✕</button>
-        </div>
-    `).join('');
+            const flagMap = { fr: '🇫🇷', en: '🇬🇧', es: '🇪🇸', ar: '🇸🇦' };
+            list.innerHTML = articles.map(a => {
+                const flags = (a.availableLangs || ['fr']).map(l => `<span title="${l}" style="font-size:0.8rem;cursor:pointer" onclick="event.stopPropagation();editArticle('${a.slug}','${l}')">${flagMap[l]}</span>`).join(' ');
+                return `
+                <div class="nav-article ${editingSlug === a.slug ? 'active' : ''}" onclick="editArticle('${a.slug}','${currentLang}')">
+                    <span class="nav-article-title">${a.title}</span>
+                    <span style="display:flex;align-items:center;gap:0.4rem">
+                        ${flags}
+                        <button class="nav-del" onclick="event.stopPropagation();deleteArticle('${a.slug}','${a.title.replace(/'/g, "\\'")}')">✕</button>
+                    </span>
+                </div>`;
+            }).join('');
+        }
+
+        function setLang(lang) {
+            currentLang = lang;
+            ['fr', 'en', 'es', 'ar'].forEach(l => {
+                document.getElementById('lang-btn-' + l).classList.toggle('active', l === lang);
+            });
+            // Si on édite déjà un article, recharge dans la nouvelle langue
+            if (editingSlug) editArticle(editingSlug, lang);
         }
 
         function newArticle() {
@@ -902,9 +968,27 @@
             renderNav();
         }
 
-        async function editArticle(slug) {
-            const res = await fetch(`/api/blog/${slug}`);
-            if (!res.ok) { showToast('Article introuvable', 'error'); return; }
+        async function editArticle(slug, lang) {
+            if (lang) {
+                currentLang = lang;
+                ['fr', 'en', 'es', 'ar'].forEach(l => document.getElementById('lang-btn-' + l).classList.toggle('active', l === lang));
+            }
+            const res = await fetch(`/api/blog/${slug}?lang=${currentLang}`);
+            if (!res.ok) {
+                // Version inexistante dans cette langue : vide le formulaire pour créer
+                editingSlug = slug;
+                document.getElementById('f-title').value = '';
+                document.getElementById('f-author').value = 'Aline Gamblin';
+                document.getElementById('f-description').value = '';
+                document.getElementById('f-image').value = '/logo_Solution.jpg';
+                document.getElementById('f-published').checked = true;
+                easyMDE.value('');
+                document.getElementById('topbarTitle').textContent = `🆕 Nouvelle version ${currentLang.toUpperCase()}`;
+                document.getElementById('editorArea').style.display = 'flex';
+                document.getElementById('emptyState').style.display = 'none';
+                renderNav();
+                return;
+            }
             const a = await res.json();
 
             editingSlug = slug;
@@ -935,6 +1019,7 @@
                 description: document.getElementById('f-description').value,
                 image: document.getElementById('f-image').value || '/logo_Solution.jpg',
                 published: document.getElementById('f-published').checked,
+                lang: currentLang,
                 body
             };
 
@@ -970,8 +1055,10 @@
         }
 
         async function deleteArticle(slug, title) {
-            if (!confirm(`Supprimer "${title}" ?`)) return;
-            const res = await fetch(`/api/blog/${slug}`, {
+            const choice = confirm(`Supprimer "${title}" ?\n\nOK = supprimer TOUTES les langues\nAnnuler = supprimer seulement ${currentLang.toUpperCase()}`);
+            if (choice === null) return;
+            const langParam = choice ? 'all' : currentLang;
+            const res = await fetch(`/api/blog/${slug}?lang=${langParam}`, {
                 method: 'DELETE',
                 headers: { 'x-session-id': sessionId }
             });

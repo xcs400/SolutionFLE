@@ -41,13 +41,43 @@ function simpleMD5(str) {
 
 // ─── Parse un fichier .md → { metadata, body } ──────────────────────────────
 // Robuste : gère \n (Unix) et \r\n (Windows)
+const VALID_BLOG_LANGS = ['fr', 'en', 'es', 'ar'];
+
+// Retourne le chemin du fichier MD pour un slug+lang, avec fallback fr
+function resolveFilePath(dir, baseSlug, lang) {
+    const l = VALID_BLOG_LANGS.includes(lang) ? lang : 'fr';
+    const langFile = path.join(dir, `${baseSlug}.${l}.md`);
+    const frFile = path.join(dir, `${baseSlug}.fr.md`);
+    const legacyFile = path.join(dir, `${baseSlug}.md`);
+    if (fs.existsSync(langFile)) return langFile;
+    if (fs.existsSync(frFile)) return frFile;   // fallback fr
+    if (fs.existsSync(legacyFile)) return legacyFile; // ancien format sans langue
+    return null;
+}
+
+// Extrait le slug de base (ignore l'extension de langue)
+function baseSlugOf(filename) {
+    // ex: mon-article.fr.md -> mon-article
+    // ex: mon-article.md   -> mon-article
+    const noExt = path.basename(filename, '.md');
+    return noExt.replace(/\.(fr|en|es|ar)$/, '');
+}
+
+// Extrait la langue du nom de fichier (ou null si absent)
+function langOf(filename) {
+    const noExt = path.basename(filename, '.md');
+    const m = noExt.match(/\.(fr|en|es|ar)$/);
+    return m ? m[1] : 'fr'; // legacy = fr
+}
+
 function parseMDFile(filepath) {
     const raw = fs.readFileSync(filepath, 'utf-8');
-    // Normalise les fins de ligne Windows en Unix
     const content = raw.replace(/\r\n/g, '\n');
 
+    const filename = path.basename(filepath);
     const metadata = {
-        slug: path.basename(filepath, '.md'),
+        slug: baseSlugOf(filename),
+        lang: langOf(filename),
         title: 'Untitled',
         author: 'Unknown',
         date: new Date().toISOString(),
@@ -71,10 +101,8 @@ function parseMDFile(filepath) {
                 }
             }
         });
-        // Tout ce qui est après le bloc ---...---
         metadata.body = content.slice(fm[0].length).trim();
     } else {
-        // Pas de frontmatter : tout le fichier est le body
         metadata.body = content.trim();
     }
 
@@ -263,30 +291,43 @@ const upload = multer({
 
 
 
-// Liste tous les articles (avec body)
+// Liste tous les articles — dédupliqués par slug de base, dans la langue demandée
 app.get('/api/blog', (req, res) => {
     try {
         const isAdmin = authenticatedSessions.has(req.headers['x-session-id'] || getCookie(req, 'ident'));
+        const lang = VALID_BLOG_LANGS.includes(req.query.lang) ? req.query.lang : 'fr';
+
         const files = fs.existsSync(BLOG_DIR)
             ? fs.readdirSync(BLOG_DIR).filter(f => f.endsWith('.md'))
             : [];
-        let posts = files.map(file => parseMDFile(path.join(BLOG_DIR, file)));
 
-        // Filter out unpublished posts if not admin
-        if (!isAdmin) {
-            posts = posts.filter(p => p.published);
+        // Déduplique : pour chaque slug de base, on garde la version dans la langue demandée (ou fr en fallback)
+        const slugMap = {}; // baseSlug -> { fr: filepath, en: filepath, ... }
+        for (const f of files) {
+            const base = baseSlugOf(f);
+            const l = langOf(f);
+            if (!slugMap[base]) slugMap[base] = {};
+            slugMap[base][l] = path.join(BLOG_DIR, f);
         }
 
+        let posts = Object.entries(slugMap).map(([, versions]) => {
+            const filepath = versions[lang] || versions['fr'] || Object.values(versions)[0];
+            return parseMDFile(filepath);
+        });
+
+        if (!isAdmin) posts = posts.filter(p => p.published);
+
         res.json(posts.sort((a, b) => new Date(b.date) - new Date(a.date)));
-    } catch {
+    } catch (e) {
         res.status(500).json({ error: 'Impossible de récupérer les articles du blog' });
     }
 });
 
-// Récupère un article par slug (avec body)
+// Récupère un article par slug (avec body), dans la langue demandée
 app.get('/api/blog/:slug', (req, res) => {
-    const filepath = path.join(BLOG_DIR, `${req.params.slug}.md`);
-    if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'Article non trouvé' });
+    const lang = VALID_BLOG_LANGS.includes(req.query.lang) ? req.query.lang : 'fr';
+    const filepath = resolveFilePath(BLOG_DIR, req.params.slug, lang);
+    if (!filepath) return res.status(404).json({ error: 'Article non trouvé' });
     try {
         res.json(parseMDFile(filepath));
     } catch {
@@ -294,11 +335,11 @@ app.get('/api/blog/:slug', (req, res) => {
     }
 });
 
-// Crée un article
+// Crée un article (dans la langue spécifiée)
 app.post('/api/blog', authMiddleware, (req, res) => {
-    const { title, author, date, description, image, body, published } = req.body;
+    const { title, author, date, description, image, body, published, lang } = req.body;
+    const language = VALID_BLOG_LANGS.includes(lang) ? lang : 'fr';
 
-    // ← Rejette aussi la chaîne "undefined" envoyée par le client
     if (!title || !body || body === 'undefined') {
         return res.status(400).json({ error: 'Titre et contenu requis' });
     }
@@ -306,16 +347,12 @@ app.post('/api/blog', authMiddleware, (req, res) => {
     if (!fs.existsSync(BLOG_DIR)) fs.mkdirSync(BLOG_DIR, { recursive: true });
 
     const slug = title.toLowerCase()
-        .replace(/[àá]/g, 'a')
-        .replace(/[éèê]/g, 'e')
-        .replace(/[ïî]/g, 'i')
-        .replace(/[ôó]/g, 'o')
-        .replace(/[ùû]/g, 'u')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
+        .replace(/[àáâ]/g, 'a').replace(/[éèêë]/g, 'e')
+        .replace(/[ïî]/g, 'i').replace(/[ôó]/g, 'o').replace(/[ùûü]/g, 'u')
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
-    const filepath = path.join(BLOG_DIR, `${slug}.md`);
-    if (fs.existsSync(filepath)) return res.status(409).json({ error: 'Un article avec ce titre existe déjà' });
+    const filepath = path.join(BLOG_DIR, `${slug}.${language}.md`);
+    if (fs.existsSync(filepath)) return res.status(409).json({ error: 'Un article avec ce titre existe déjà dans cette langue' });
 
     const content = `---
 title: "${title}"
@@ -323,6 +360,7 @@ author: "${author || 'Aline Gamblin'}"
 date: "${date || new Date().toISOString().split('T')[0]}"
 description: "${description || ''}"
 image: "${image || '/logo_Solution.jpg'}"
+lang: "${language}"
 published: ${published !== undefined ? published : true}
 ---
 
@@ -330,24 +368,27 @@ ${body}`;
 
     try {
         fs.writeFileSync(filepath, content, 'utf-8');
-        res.status(201).json({ success: true, slug, message: `Article "${title}" créé avec succès` });
+        res.status(201).json({ success: true, slug, lang: language, message: `Article "${title}" créé (${language})` });
     } catch {
         res.status(500).json({ error: "Impossible de créer l'article" });
     }
 });
 
-// Modifie un article
+// Modifie un article (dans la langue spécifiée)
 app.put('/api/blog/:slug', authMiddleware, (req, res) => {
     const { slug } = req.params;
-    const { title, author, date, description, image, body, published } = req.body;
+    const { title, author, date, description, image, body, published, lang } = req.body;
+    const language = VALID_BLOG_LANGS.includes(lang) ? lang : 'fr';
 
-    // ← Rejette aussi la chaîne "undefined"
     if (!title || !body || body === 'undefined') {
         return res.status(400).json({ error: 'Titre et contenu requis' });
     }
 
-    const filepath = path.join(BLOG_DIR, `${slug}.md`);
-    if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'Article non trouvé' });
+    const filepath = resolveFilePath(BLOG_DIR, slug, language);
+    if (!filepath) return res.status(404).json({ error: 'Article non trouvé' });
+
+    // Chemin cible (toujours avec suffixe de langue)
+    const targetPath = path.join(BLOG_DIR, `${slug}.${language}.md`);
 
     const content = `---
 title: "${title}"
@@ -355,14 +396,19 @@ author: "${author || 'Aline Gamblin'}"
 date: "${date || new Date().toISOString().split('T')[0]}"
 description: "${description || ''}"
 image: "${image || '/logo_Solution.jpg'}"
+lang: "${language}"
 published: ${published !== undefined ? published : true}
 ---
 
 ${body}`;
 
     try {
-        fs.writeFileSync(filepath, content, 'utf-8');
-        res.json({ success: true, slug, message: `Article "${title}" modifié avec succès` });
+        // Si l'ancien fichier est sans suffixe lang, on le renomme
+        if (filepath !== targetPath && fs.existsSync(filepath)) {
+            fs.renameSync(filepath, targetPath);
+        }
+        fs.writeFileSync(targetPath, content, 'utf-8');
+        res.json({ success: true, slug, lang: language, message: `Article "${title}" modifié (${language})` });
     } catch {
         res.status(500).json({ error: "Impossible de modifier l'article" });
     }
@@ -373,14 +419,27 @@ ${body}`;
 app.get('/api/services-pages', (req, res) => {
     try {
         const isAdmin = authenticatedSessions.has(req.headers['x-session-id'] || getCookie(req, 'ident'));
+        const lang = VALID_BLOG_LANGS.includes(req.query.lang) ? req.query.lang : 'fr';
+
         const files = fs.existsSync(SERVICES_PAGES_DIR)
             ? fs.readdirSync(SERVICES_PAGES_DIR).filter(f => f.endsWith('.md'))
             : [];
-        let posts = files.map(file => parseMDFile(path.join(SERVICES_PAGES_DIR, file)));
 
-        if (!isAdmin) {
-            posts = posts.filter(p => p.published);
+        // Déduplique par slug de base
+        const slugMap = {};
+        for (const f of files) {
+            const base = baseSlugOf(f);
+            const l = langOf(f);
+            if (!slugMap[base]) slugMap[base] = {};
+            slugMap[base][l] = path.join(SERVICES_PAGES_DIR, f);
         }
+
+        let posts = Object.entries(slugMap).map(([, versions]) => {
+            const filepath = versions[lang] || versions['fr'] || Object.values(versions)[0];
+            return parseMDFile(filepath);
+        });
+
+        if (!isAdmin) posts = posts.filter(p => p.published);
 
         res.json(posts);
     } catch {
@@ -389,8 +448,9 @@ app.get('/api/services-pages', (req, res) => {
 });
 
 app.get('/api/services-pages/:slug', (req, res) => {
-    const filepath = path.join(SERVICES_PAGES_DIR, `${req.params.slug}.md`);
-    if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'Page non trouvée' });
+    const lang = VALID_BLOG_LANGS.includes(req.query.lang) ? req.query.lang : 'fr';
+    const filepath = resolveFilePath(SERVICES_PAGES_DIR, req.params.slug, lang);
+    if (!filepath) return res.status(404).json({ error: 'Page non trouvée' });
     try {
         res.json(parseMDFile(filepath));
     } catch {
@@ -400,29 +460,44 @@ app.get('/api/services-pages/:slug', (req, res) => {
 
 app.put('/api/services-pages/:slug', authMiddleware, (req, res) => {
     const { slug } = req.params;
-    const { title, body, published } = req.body;
+    const { title, body, published, lang } = req.body;
+    const language = VALID_BLOG_LANGS.includes(lang) ? lang : 'fr';
 
     if (!title || !body) return res.status(400).json({ error: 'Titre et contenu requis' });
-    const filepath = path.join(SERVICES_PAGES_DIR, `${slug}.md`);
 
-    // Simple markdown content storage
-    const content = `---\ntitle: "${title}"\npublished: ${published !== undefined ? published : true}\n---\n\n${body}`;
+    const targetPath = path.join(SERVICES_PAGES_DIR, `${slug}.${language}.md`);
+    const legacyPath = path.join(SERVICES_PAGES_DIR, `${slug}.md`);
+
+    const content = `---\ntitle: "${title}"\nlang: "${language}"\npublished: ${published !== undefined ? published : true}\n---\n\n${body}`;
     try {
-        fs.writeFileSync(filepath, content, 'utf-8');
+        // Migration: si l'ancien fichier existe sans suffixe, on le renomme
+        if (!fs.existsSync(targetPath) && fs.existsSync(legacyPath) && language === 'fr') {
+            fs.renameSync(legacyPath, targetPath);
+        }
+        fs.writeFileSync(targetPath, content, 'utf-8');
         res.json({ success: true, message: 'Page mise à jour' });
     } catch {
         res.status(500).json({ error: 'Erreur lors de la sauvegarde' });
     }
 });
 
-// Supprime un article
+// Supprime un article (une langue, ou toutes les versions si ?lang=all)
 app.delete('/api/blog/:slug', authMiddleware, (req, res) => {
     const { slug } = req.params;
-    const filepath = path.join(BLOG_DIR, `${slug}.md`);
-    if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'Article non trouvé' });
+    const lang = req.query.lang;
 
     try {
-        fs.unlinkSync(filepath);
+        if (lang === 'all') {
+            // Supprime toutes les versions linguistiques
+            for (const l of [...VALID_BLOG_LANGS, '']) {
+                const fp = l ? path.join(BLOG_DIR, `${slug}.${l}.md`) : path.join(BLOG_DIR, `${slug}.md`);
+                if (fs.existsSync(fp)) fs.unlinkSync(fp);
+            }
+        } else {
+            const filepath = resolveFilePath(BLOG_DIR, slug, lang || 'fr');
+            if (!filepath) return res.status(404).json({ error: 'Article non trouvé' });
+            fs.unlinkSync(filepath);
+        }
         res.json({ success: true, message: 'Article supprimé avec succès' });
     } catch {
         res.status(500).json({ error: "Impossible de supprimer l'article" });

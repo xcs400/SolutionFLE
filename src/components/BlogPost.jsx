@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext';
 
 function parseMarkdown(text) {
     if (!text) return '';
@@ -67,6 +68,7 @@ function parseMarkdown(text) {
 const BlogPost = () => {
     const { slug } = useParams();
     const navigate = useNavigate();
+    const { currentLang } = useLanguage();
     const [post, setPost] = useState(null);
     const [prevPost, setPrevPost] = useState(null);
     const [nextPost, setNextPost] = useState(null);
@@ -77,14 +79,15 @@ const BlogPost = () => {
         const load = async () => {
             try {
                 setLoading(true);
-                // Charger l'article actuel
-                const res = await fetch(`/api/blog/${slug}`);
+                const lang = currentLang || 'fr';
+                // Charger l'article actuel dans la langue courante
+                const res = await fetch(`/api/blog/${slug}?lang=${lang}`);
                 if (!res.ok) throw new Error('Article non trouvé');
                 const data = await res.json();
                 setPost(data);
 
-                // Charger tous les articles pour la navigation
-                const resAll = await fetch('/api/blog');
+                // Charger tous les articles pour la navigation (dans la même langue)
+                const resAll = await fetch(`/api/blog?lang=${lang}`);
                 if (resAll.ok) {
                     const allPosts = await resAll.json();
                     const index = allPosts.findIndex(p => p.slug === slug);
@@ -100,7 +103,7 @@ const BlogPost = () => {
         };
         load();
         window.scrollTo(0, 0);
-    }, [slug]);
+    }, [slug, currentLang]);
 
 
     // Handler pour accéder à l'éditeur (vérifie juste le cookie admin)

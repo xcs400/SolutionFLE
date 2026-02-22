@@ -31,13 +31,13 @@ const serviceColors = [
 ];
 
 const Services = () => {
-    const { t } = useLanguage();
+    const { t, currentLang } = useLanguage();
     const navigate = useNavigate();
     const serviceItems = t('services.items');
     const [publishedData, setPublishedData] = React.useState(null);
 
     React.useEffect(() => {
-        fetch('/api/services-pages')
+        fetch(`/api/services-pages?lang=${currentLang || 'fr'}`)
             .then(res => res.json())
             .then(data => {
                 setPublishedData(data);
@@ -46,7 +46,7 @@ const Services = () => {
                 console.error("Error fetching services status", err);
                 setPublishedData([]);
             });
-    }, []);
+    }, [currentLang]);
 
     return (
         <section id="services" className="section" style={{ background: 'var(--color-bg)' }}>

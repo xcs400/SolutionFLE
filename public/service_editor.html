@@ -649,6 +649,24 @@
             cursor: pointer;
         }
 
+        .lang-btn {
+            background: var(--surface);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 0.4rem 0.9rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--muted);
+            transition: all 0.2s;
+        }
+
+        .lang-btn.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(108, 143, 255, 0.08);
+        }
+
         @media (max-width: 900px) {
             .layout {
                 grid-template-columns: 1fr;
@@ -731,6 +749,23 @@
                     <input type="text" id="f-title" placeholder="Titre..." />
                 </div>
 
+                <!-- Sélecteur de langue -->
+                <div class="field">
+                    <label>Langue de version</label>
+                    <div id="langSelector" style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                        <button type="button" onclick="setLang('fr')" id="lang-btn-fr" class="lang-btn active"
+                            title="Français">🇫🇷 FR</button>
+                        <button type="button" onclick="setLang('en')" id="lang-btn-en" class="lang-btn"
+                            title="English">🇬🇧 EN</button>
+                        <button type="button" onclick="setLang('es')" id="lang-btn-es" class="lang-btn"
+                            title="Español">🇪🇸 ES</button>
+                        <button type="button" onclick="setLang('ar')" id="lang-btn-ar" class="lang-btn"
+                            title="العربية">🇸🇦 AR</button>
+                    </div>
+                    <small style="color:var(--muted);margin-top:0.3rem;display:block">Chaque langue est un fichier
+                        séparé. FR = version par défaut (fallback).</small>
+                </div>
+
                 <div class="status-toggle">
                     <input type="checkbox" id="f-published" checked />
                     <label for="f-published">Visible sur le site (Publié)</label>
@@ -759,9 +794,10 @@
         // ── State ──────────────────────────────────────────────────────────────────
         let sessionId = getCookie('ident') || '';
         let editingSlug = null;
+        let currentLang = 'fr';
         let articles = [];
         let easyMDE = null;
-        let galleryMode = 'editor'; // 'cover' | 'editor'
+        let galleryMode = 'editor';
         let selectedImageUrl = null;
 
         // ── Auth ───────────────────────────────────────────────────────────────────
@@ -827,6 +863,10 @@
             // Check if we should auto-edit an article
             const params = new URLSearchParams(window.location.search);
             const editSlug = params.get('edit');
+            const urlLang = params.get('lang');
+            if (urlLang && ['fr', 'en', 'es', 'ar'].includes(urlLang)) {
+                setLang(urlLang);
+            }
             if (editSlug) {
                 editArticle(editSlug);
             }
@@ -834,34 +874,72 @@
 
         // ── Prestations ──────────────────────────────────────────────────────────────
         async function loadArticles() {
-            const res = await fetch('/api/services-pages');
+            const res = await fetch('/api/services-pages?lang=' + currentLang, { headers: { 'x-session-id': sessionId } });
             articles = await res.json();
+            // Détecter les langues disponibles pour chaque service
+            const allLangs = ['fr', 'en', 'es', 'ar'];
+            const langSets = await Promise.all(allLangs.map(l =>
+                fetch('/api/services-pages?lang=' + l, { headers: { 'x-session-id': sessionId } })
+                    .then(r => r.json()).then(data => ({ lang: l, slugs: data.map(a => a.slug) }))
+            ));
+            articles.forEach(a => {
+                a.availableLangs = allLangs.filter(l => langSets.find(s => s.lang === l && s.slugs.includes(a.slug)));
+            });
             renderNav();
         }
 
         function renderNav() {
             const list = document.getElementById('navList');
-            list.innerHTML = articles.map(a => `
-        <div class="nav-article ${editingSlug === a.slug ? 'active' : ''}" onclick="editArticle('${a.slug}')">
-            <span class="nav-article-title">${a.title}</span>
-        </div>
-    `).join('');
+            const flagMap = { fr: '🇫🇷', en: '🇬🇧', es: '🇪🇸', ar: '🇸🇦' };
+            list.innerHTML = articles.map(a => {
+                const flags = (a.availableLangs || ['fr']).map(l =>
+                    `<span title="${l}" style="font-size:0.8rem;cursor:pointer" onclick="event.stopPropagation();editArticle('${a.slug}','${l}')">${flagMap[l]}</span>`
+                ).join(' ');
+                return `
+                <div class="nav-article ${editingSlug === a.slug ? 'active' : ''}" onclick="editArticle('${a.slug}','${currentLang}')">
+                    <span class="nav-article-title">${a.title}</span>
+                    <span style="display:flex;align-items:center;gap:0.4rem">${flags}</span>
+                </div>`;
+            }).join('');
+        }
+
+        function setLang(lang) {
+            currentLang = lang;
+            ['fr', 'en', 'es', 'ar'].forEach(l => {
+                document.getElementById('lang-btn-' + l).classList.toggle('active', l === lang);
+            });
+            if (editingSlug) editArticle(editingSlug, lang);
         }
 
         function newArticle() {
             // Pas de creation libre pour les services (A1-A6 fixes)
         }
 
-        async function editArticle(slug) {
-            const res = await fetch(`/api/services-pages/${slug}`);
-            if (!res.ok) { showToast('Page introuvable', 'error'); return; }
+        async function editArticle(slug, lang) {
+            if (lang) {
+                currentLang = lang;
+                ['fr', 'en', 'es', 'ar'].forEach(l => document.getElementById('lang-btn-' + l).classList.toggle('active', l === lang));
+            }
+            const res = await fetch(`/api/services-pages/${slug}?lang=${currentLang}`);
+            if (!res.ok) {
+                // Version inexistante dans cette langue : formulaire vide pour créer
+                editingSlug = slug;
+                document.getElementById('f-title').value = '';
+                document.getElementById('f-published').checked = true;
+                easyMDE.value('');
+                document.getElementById('topbarTitle').textContent = `🆕 Nouvelle version ${currentLang.toUpperCase()} — ${slug}`;
+                document.getElementById('editorArea').style.display = 'flex';
+                document.getElementById('emptyState').style.display = 'none';
+                renderNav();
+                return;
+            }
             const a = await res.json();
 
             editingSlug = slug;
             document.getElementById('f-title').value = a.title;
             document.getElementById('f-published').checked = a.published !== false;
             easyMDE.value(a.body || '');
-            document.getElementById('topbarTitle').textContent = `✏️ ${a.title}`;
+            document.getElementById('topbarTitle').textContent = `✏️ ${a.title} [${currentLang.toUpperCase()}]`;
             document.getElementById('editorArea').style.display = 'flex';
             document.getElementById('emptyState').style.display = 'none';
             renderNav();
@@ -877,7 +955,8 @@
             const payload = {
                 title,
                 body,
-                published: document.getElementById('f-published').checked
+                published: document.getElementById('f-published').checked,
+                lang: currentLang
             };
 
             const saveBtn = document.getElementById('saveBtn');
