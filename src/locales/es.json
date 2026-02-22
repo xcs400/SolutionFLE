@@ -19,7 +19,7 @@
   "hero": {
     "title_line1": "Aprende francés con",
     "title_line2": "Aline Gamblin",
-    "subtitle_html": "Profesora titulada DAEFLE<br>Francés como lengua extranjera - Alfabetización - Cursos de perfeccionamiento de francés<br>Cursos individuales o en minigrupo a domicilio<br/>Sesiones de formación en el centro o en la empresa",
+    "subtitle_html": "Profesora titulada DAEFLE<br>Francés como lengua extranjera - Alfabetización - Cursos de perfeccionamiento de francés<br>Cursos individuales o en minigrupo a domicilio<br/>Sesiones de formación in situ o en empresas",
     "cta": "Descubrir",
     "cta_link": "#services",
     "image_alt": "Visual FLE"
@@ -48,15 +48,15 @@
         ]
       },
       {
-        "title": "Conversación",
-        "desc": "Desarrolla tu fluidez oral y tu confianza a través de intercambios temáticos.",
+        "title": "Pronunciación",
+        "desc": "Explorar juntos la música y los sonidos del francés para ayudarle a hablar y escribir mejor.",
         "tags": [
           "Grupos reducidos / Todos los niveles",
           "Este curso le ofrece la oportunidad de probar las características específicas del francés hablado y mejorar su pronunciación y ortografía utilizando el método Verbo-tonale.\n\n"
         ]
       },
       {
-        "title": "Entrenamiento Grupal",
+        "title": "Cursos para minigrupos",
         "desc": "FLE - Aprendizaje en minigrupos, para que las clases sean más dinámicas al tiempo que se proporciona apoyo individual.",
         "tags": [
           "Primer paso A1.1 → Autonomía B2",

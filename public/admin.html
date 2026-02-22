@@ -649,6 +649,51 @@
             cursor: pointer;
         }
 
+        /* ── Context Menu ── */
+        .context-menu {
+            position: fixed;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem 0;
+            z-index: 10000;
+            min-width: 200px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        .context-menu.visible {
+            display: block;
+        }
+
+        .context-menu-item {
+            padding: 0.6rem 1rem;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .context-menu-item:hover {
+            background: var(--card);
+        }
+
+        .context-menu-item.disabled {
+            color: var(--muted);
+            cursor: not-allowed;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        .context-menu-item.loading {
+            color: var(--muted);
+            pointer-events: none;
+        }
+
         .lang-btn {
             background: var(--surface);
             border: 2px solid transparent;
@@ -808,7 +853,12 @@
 
                 <!-- Markdown editor -->
                 <div class="field editor-wrapper">
-                    <label>Contenu (Markdown)</label>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem">
+                        <label>Contenu (Markdown)</label>
+                        <button type="button" class="btn btn-ghost" style="padding:0.4rem 0.8rem;font-size:0.8rem" onclick="showTranslateMenuEditor(event)">
+                            🌐 Traduire contenu
+                        </button>
+                    </div>
                     <textarea id="f-body"></textarea>
                 </div>
             </div>
@@ -823,6 +873,21 @@
     <div class="toast" id="toast"></div>
     <input type="file" id="hidden-file-input" accept="image/*" />
 
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item" data-lang="fr" onclick="translateField('fr')">
+            🇫🇷 Traduire depuis Français
+        </div>
+        <div class="context-menu-item" data-lang="en" onclick="translateField('en')">
+            🇬🇧 Traduire depuis English
+        </div>
+        <div class="context-menu-item" data-lang="es" onclick="translateField('es')">
+            🇪🇸 Traduire depuis Español
+        </div>
+        <div class="context-menu-item disabled" title="Arabe non supporté comme langue source">
+            🇸🇦 Traduire depuis العربية (non supporté en source)
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
     <script>
         // ── State ──────────────────────────────────────────────────────────────────
@@ -833,6 +898,7 @@
         let easyMDE = null;
         let galleryMode = 'cover'; // 'cover' | 'editor'
         let selectedImageUrl = null;
+        let hasUnsavedChanges = false;
 
         // ── Auth ───────────────────────────────────────────────────────────────────
         function getCookie(name) {
@@ -903,6 +969,8 @@
             if (editSlug) {
                 editArticle(editSlug);
             }
+
+            initChangeTracking();
         }
 
         // ── Articles ───────────────────────────────────────────────────────────────
@@ -944,6 +1012,16 @@
         }
 
         function setLang(lang) {
+            // Check for unsaved changes before switching language
+            if (hasUnsavedChanges && editingSlug) {
+                const confirmed = confirm(
+                    '⚠️ Vous avez des modifications non sauvegardées.\n\n' +
+                    'Si vous changez de langue sans sauvegarder, vos modifications seront perdues.\n\n' +
+                    'Voulez-vous continuer ?'
+                );
+                if (!confirmed) return;
+            }
+
             currentLang = lang;
             ['fr', 'en', 'es', 'ar'].forEach(l => {
                 document.getElementById('lang-btn-' + l).classList.toggle('active', l === lang);
@@ -987,6 +1065,8 @@
                 document.getElementById('editorArea').style.display = 'flex';
                 document.getElementById('emptyState').style.display = 'none';
                 renderNav();
+                hasUnsavedChanges = false;
+                updateSaveButtonState();
                 return;
             }
             const a = await res.json();
@@ -1003,6 +1083,8 @@
             document.getElementById('editorArea').style.display = 'flex';
             document.getElementById('emptyState').style.display = 'none';
             renderNav();
+            hasUnsavedChanges = false;
+            updateSaveButtonState();
         }
 
         async function save() {
@@ -1043,6 +1125,7 @@
                     if (!editingSlug) editingSlug = data.slug;
                     document.getElementById('topbarTitle').textContent = `✏️ ${title}`;
                     await loadArticles();
+                    hasUnsavedChanges = false;
                 } else {
                     showToast(data.error || 'Erreur', 'error');
                 }
@@ -1050,8 +1133,48 @@
                 showToast('Erreur réseau : ' + e.message, 'error');
             } finally {
                 saveBtn.disabled = false;
-                saveBtn.textContent = '💾 Sauvegarder';
+                updateSaveButtonState();
             }
+        }
+
+        function updateSaveButtonState() {
+            const saveBtn = document.getElementById('saveBtn');
+            if (hasUnsavedChanges) {
+                saveBtn.textContent = '* 💾 Sauvegarder';
+                saveBtn.style.backgroundColor = '#ff9800';
+                saveBtn.style.color = '#fff';
+            } else {
+                saveBtn.textContent = '💾 Sauvegarder';
+                saveBtn.style.backgroundColor = '';
+                saveBtn.style.color = '';
+            }
+        }
+
+        function initChangeTracking() {
+            const titleField = document.getElementById('f-title');
+            const authorField = document.getElementById('f-author');
+            const descriptionField = document.getElementById('f-description');
+            const dateField = document.getElementById('f-date');
+            const imageField = document.getElementById('f-image');
+            const publishedField = document.getElementById('f-published');
+
+            titleField.addEventListener('input', () => { hasUnsavedChanges = true; updateSaveButtonState(); });
+            authorField.addEventListener('input', () => { hasUnsavedChanges = true; updateSaveButtonState(); });
+            descriptionField.addEventListener('input', () => { hasUnsavedChanges = true; updateSaveButtonState(); });
+            dateField.addEventListener('change', () => { hasUnsavedChanges = true; updateSaveButtonState(); });
+            imageField.addEventListener('input', () => { hasUnsavedChanges = true; updateSaveButtonState(); });
+            publishedField.addEventListener('change', () => { hasUnsavedChanges = true; updateSaveButtonState(); });
+            
+            if (easyMDE && easyMDE.codemirror) {
+                easyMDE.codemirror.on('change', () => { hasUnsavedChanges = true; updateSaveButtonState(); });
+            }
+
+            window.addEventListener('beforeunload', (e) => {
+                if (hasUnsavedChanges && editingSlug) {
+                    e.preventDefault();
+                    e.returnValue = '';
+                }
+            });
         }
 
         async function deleteArticle(slug, title) {
@@ -1154,6 +1277,220 @@
                 }
             } catch (e) {
                 showToast('Erreur : ' + e.message, 'error');
+            }
+        }
+
+        // ── Translation (DeepL) ────────────────────────────────────────────────────
+        let contextMenuTarget = null;
+        let contextMenuData = { fieldId: null, targetLang: null };
+
+        function showContextMenu(e) {
+            e.preventDefault();
+            const target = e.target;
+            
+            if ((target.tagName === 'TEXTAREA' || target.tagName === 'INPUT') && target.id && currentLang) {
+                contextMenuTarget = target;
+                contextMenuData.fieldId = target.id;
+                contextMenuData.targetLang = currentLang;
+                
+                const menu = document.getElementById('contextMenu');
+                menu.style.left = e.clientX + 'px';
+                menu.style.top = e.clientY + 'px';
+                menu.classList.add('visible');
+            }
+        }
+
+        function hideContextMenu() {
+            const menu = document.getElementById('contextMenu');
+            menu.classList.remove('visible');
+        }
+
+        async function translateField(sourceLang) {
+            const { fieldId, targetLang } = contextMenuData;
+            hideContextMenu();
+
+            if (!fieldId || !targetLang) {
+                showToast('Erreur: données manquantes', 'error');
+                return;
+            }
+
+            if (sourceLang === targetLang) {
+                showToast('Impossible de traduire vers la même langue', 'warning');
+                return;
+            }
+
+            const el = document.getElementById(fieldId);
+            if (!el) return;
+
+            const sourceText = el.value || el.textContent;
+            if (!sourceText || !String(sourceText).trim()) {
+                showToast(`Texte source (${sourceLang.toUpperCase()}) vide`, 'warning');
+                return;
+            }
+
+            const menu = document.getElementById('contextMenu');
+            const items = menu.querySelectorAll('.context-menu-item');
+            items.forEach(item => {
+                if (item.dataset.lang === sourceLang) {
+                    item.classList.add('loading');
+                    item.innerHTML = '⏳ Traduction en cours...';
+                }
+            });
+
+            try {
+                const response = await fetch('/api/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-session-id': sessionId
+                    },
+                    body: JSON.stringify({
+                        text: String(sourceText),
+                        sourceLang: sourceLang,
+                        targetLang: targetLang
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Erreur de traduction');
+                }
+
+                const data = await response.json();
+                const translated = data.translated;
+
+                if (el.tagName === 'TEXTAREA') {
+                    el.value = translated;
+                } else {
+                    el.value = translated;
+                }
+
+                showToast(`✨ ${sourceLang.toUpperCase()} → ${targetLang.toUpperCase()}`, 'success');
+            } catch (error) {
+                console.error('Translation error:', error);
+                showToast('❌ ' + error.message, 'error');
+            } finally {
+                items.forEach(item => {
+                    item.classList.remove('loading');
+                    const lang = item.dataset.lang;
+                    if (item.classList.contains('disabled')) {
+                        item.innerHTML = `🇸🇦 Traduire depuis العربية (non supporté en source)`;
+                    } else {
+                        item.innerHTML = `${['🇫🇷', '🇬🇧', '🇪🇸'][['fr', 'en', 'es'].indexOf(lang)]} Traduire depuis ${lang.toUpperCase()}`;
+                    }
+                });
+                contextMenuTarget = null;
+                contextMenuData = { fieldId: null, targetLang: null };
+            }
+        }
+
+        document.addEventListener('contextmenu', showContextMenu);
+        document.addEventListener('click', hideContextMenu);
+
+        // ── Translate Markdown Editor ──────────────────────────────────────────────
+        async function showTranslateMenuEditor(buttonEvent) {
+            buttonEvent.preventDefault();
+            buttonEvent.stopPropagation();
+
+            // Get the button element and show menu under it
+            const button = buttonEvent.target.closest('button');
+            const menu = document.getElementById('contextMenu');
+            const rect = button.getBoundingClientRect();
+            
+            menu.style.left = rect.left + 'px';
+            menu.style.top = (rect.bottom + 5) + 'px';
+            menu.classList.add('visible');
+            
+            // Mark that we're translating the editor
+            menu.dataset.editorMode = 'true';
+        }
+
+        // Override translateField to handle editor mode
+        const originalTranslateField = window.translateField;
+        window.translateField = async function(sourceLang) {
+            const menu = document.getElementById('contextMenu');
+            
+            // If in editor mode
+            if (menu.dataset.editorMode === 'true') {
+                menu.dataset.editorMode = 'false';
+                delete menu.dataset.editorMode;
+                await translateEditorContent(sourceLang);
+                hideContextMenu();
+                return;
+            }
+            
+            // Otherwise use original function
+            return originalTranslateField.call(this, sourceLang);
+        };
+
+        async function translateEditorContent(sourceLang) {
+            const targetLang = currentLang;
+
+            if (sourceLang === targetLang) {
+                showToast('Impossible de traduire vers la même langue', 'warning');
+                return;
+            }
+
+            // Get content from EasyMDE (or textarea if not initialized)
+            const sourceText = easyMDE ? easyMDE.value() : document.getElementById('f-body').value;
+            
+            if (!sourceText || !String(sourceText).trim()) {
+                showToast(`Contenu (${sourceLang.toUpperCase()}) vide`, 'warning');
+                return;
+            }
+
+            const menu = document.getElementById('contextMenu');
+            const items = menu.querySelectorAll('.context-menu-item');
+            items.forEach(item => {
+                if (item.dataset.lang === sourceLang) {
+                    item.classList.add('loading');
+                    item.innerHTML = '⏳ Traduction en cours...';
+                }
+            });
+
+            try {
+                const response = await fetch('/api/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-session-id': sessionId
+                    },
+                    body: JSON.stringify({
+                        text: String(sourceText),
+                        sourceLang: sourceLang,
+                        targetLang: targetLang
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Erreur de traduction');
+                }
+
+                const data = await response.json();
+                const translated = data.translated;
+
+                // Replace in EasyMDE or textarea
+                if (easyMDE) {
+                    easyMDE.value(translated);
+                } else {
+                    document.getElementById('f-body').value = translated;
+                }
+
+                showToast(`✨ ${sourceLang.toUpperCase()} → ${targetLang.toUpperCase()} (Markdown)`, 'success');
+            } catch (error) {
+                console.error('Translation error:', error);
+                showToast('❌ ' + error.message, 'error');
+            } finally {
+                items.forEach(item => {
+                    item.classList.remove('loading');
+                    const lang = item.dataset.lang;
+                    if (item.classList.contains('disabled')) {
+                        item.innerHTML = `🇸🇦 Traduire depuis العربية (non supporté en source)`;
+                    } else {
+                        item.innerHTML = `${['🇫🇷', '🇬🇧', '🇪🇸'][['fr', 'en', 'es'].indexOf(lang)]} Traduire depuis ${lang.toUpperCase()}`;
+                    }
+                });
             }
         }
 
