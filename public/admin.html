@@ -635,6 +635,20 @@
             display: none;
         }
 
+        .status-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .status-toggle input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
         @media (max-width: 900px) {
             .layout {
                 grid-template-columns: 1fr;
@@ -711,10 +725,14 @@
             </div>
 
             <div class="editor-area" id="editorArea">
-                <!-- Titre -->
                 <div class="field">
                     <label>Titre *</label>
                     <input type="text" id="f-title" placeholder="Titre de l'article..." />
+                </div>
+
+                <div class="status-toggle">
+                    <input type="checkbox" id="f-published" checked />
+                    <label for="f-published">Visible sur le site (Publié)</label>
                 </div>
 
                 <!-- Auteur + Date -->
@@ -875,6 +893,7 @@
             document.getElementById('f-date').valueAsDate = new Date();
             document.getElementById('f-description').value = '';
             document.getElementById('f-image').value = '/logo_Solution.jpg';
+            document.getElementById('f-published').checked = true;
             updateImgPreview();
             easyMDE.value('');
             document.getElementById('topbarTitle').textContent = 'Nouvel article';
@@ -893,7 +912,7 @@
             document.getElementById('f-author').value = a.author;
             document.getElementById('f-date').value = a.date ? a.date.substring(0, 10) : '';
             document.getElementById('f-description').value = a.description || '';
-            document.getElementById('f-image').value = a.image || '';
+            document.getElementById('f-published').checked = a.published !== false;
             updateImgPreview();
             easyMDE.value(a.body || '');
             document.getElementById('topbarTitle').textContent = `✏️ ${a.title}`;
@@ -915,6 +934,7 @@
                 date: document.getElementById('f-date').value || new Date().toISOString().split('T')[0],
                 description: document.getElementById('f-description').value,
                 image: document.getElementById('f-image').value || '/logo_Solution.jpg',
+                published: document.getElementById('f-published').checked,
                 body
             };
 

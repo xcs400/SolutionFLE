@@ -144,6 +144,24 @@ const BlogPost = () => {
         >
             <article className="card" style={{ maxWidth: '850px', margin: '0 auto', position: 'relative', borderTop: '8px solid var(--color-secondary)' }}>
                 {/* Navigation Précédent / Suivant - Tout en haut */}
+                {post.published === false && Cookies.get('ident') && (
+                    <div style={{
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid #ef4444',
+                        color: '#ef4444',
+                        padding: '0.8rem 1.2rem',
+                        borderRadius: '10px',
+                        marginBottom: '1.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.6rem',
+                        fontWeight: '700',
+                        fontSize: '0.9rem'
+                    }}>
+                        <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                        CET ARTICLE EST ACTUELLEMENT DÉVALIDÉ (MASQUÉ POUR LES VISITEURS)
+                    </div>
+                )}
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',

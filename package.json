@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "adm-zip": "^0.5.16",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "easymde": "^2.20.0",

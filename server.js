@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import Parser from 'rss-parser';
 import crypto from 'crypto';
 import multer from 'multer';
+import AdmZip from 'adm-zip';
 
 dotenv.config();
 
@@ -52,6 +53,7 @@ function parseMDFile(filepath) {
         date: new Date().toISOString(),
         description: '',
         image: '/logo_Solution.jpg',
+        published: true,
         body: ''
     };
 
@@ -60,7 +62,13 @@ function parseMDFile(filepath) {
         fm[1].split('\n').forEach(line => {
             const [key, ...vals] = line.split(':');
             if (key && vals.length) {
-                metadata[key.trim()] = vals.join(':').trim().replace(/^["']|["']$/g, '');
+                const k = key.trim();
+                const v = vals.join(':').trim().replace(/^["']|["']$/g, '');
+                if (k === 'published') {
+                    metadata.published = v === 'true';
+                } else {
+                    metadata[k] = v;
+                }
             }
         });
         // Tout ce qui est après le bloc ---...---
@@ -258,10 +266,17 @@ const upload = multer({
 // Liste tous les articles (avec body)
 app.get('/api/blog', (req, res) => {
     try {
+        const isAdmin = authenticatedSessions.has(req.headers['x-session-id'] || getCookie(req, 'ident'));
         const files = fs.existsSync(BLOG_DIR)
             ? fs.readdirSync(BLOG_DIR).filter(f => f.endsWith('.md'))
             : [];
-        const posts = files.map(file => parseMDFile(path.join(BLOG_DIR, file)));
+        let posts = files.map(file => parseMDFile(path.join(BLOG_DIR, file)));
+
+        // Filter out unpublished posts if not admin
+        if (!isAdmin) {
+            posts = posts.filter(p => p.published);
+        }
+
         res.json(posts.sort((a, b) => new Date(b.date) - new Date(a.date)));
     } catch {
         res.status(500).json({ error: 'Impossible de récupérer les articles du blog' });
@@ -281,7 +296,7 @@ app.get('/api/blog/:slug', (req, res) => {
 
 // Crée un article
 app.post('/api/blog', authMiddleware, (req, res) => {
-    const { title, author, date, description, image, body } = req.body;
+    const { title, author, date, description, image, body, published } = req.body;
 
     // ← Rejette aussi la chaîne "undefined" envoyée par le client
     if (!title || !body || body === 'undefined') {
@@ -308,6 +323,7 @@ author: "${author || 'Aline Gamblin'}"
 date: "${date || new Date().toISOString().split('T')[0]}"
 description: "${description || ''}"
 image: "${image || '/logo_Solution.jpg'}"
+published: ${published !== undefined ? published : true}
 ---
 
 ${body}`;
@@ -323,7 +339,7 @@ ${body}`;
 // Modifie un article
 app.put('/api/blog/:slug', authMiddleware, (req, res) => {
     const { slug } = req.params;
-    const { title, author, date, description, image, body } = req.body;
+    const { title, author, date, description, image, body, published } = req.body;
 
     // ← Rejette aussi la chaîne "undefined"
     if (!title || !body || body === 'undefined') {
@@ -339,6 +355,7 @@ author: "${author || 'Aline Gamblin'}"
 date: "${date || new Date().toISOString().split('T')[0]}"
 description: "${description || ''}"
 image: "${image || '/logo_Solution.jpg'}"
+published: ${published !== undefined ? published : true}
 ---
 
 ${body}`;
@@ -355,10 +372,16 @@ ${body}`;
 
 app.get('/api/services-pages', (req, res) => {
     try {
+        const isAdmin = authenticatedSessions.has(req.headers['x-session-id'] || getCookie(req, 'ident'));
         const files = fs.existsSync(SERVICES_PAGES_DIR)
             ? fs.readdirSync(SERVICES_PAGES_DIR).filter(f => f.endsWith('.md'))
             : [];
-        const posts = files.map(file => parseMDFile(path.join(SERVICES_PAGES_DIR, file)));
+        let posts = files.map(file => parseMDFile(path.join(SERVICES_PAGES_DIR, file)));
+
+        if (!isAdmin) {
+            posts = posts.filter(p => p.published);
+        }
+
         res.json(posts);
     } catch {
         res.status(500).json({ error: 'Impossible de récupérer les pages de services' });
@@ -377,13 +400,13 @@ app.get('/api/services-pages/:slug', (req, res) => {
 
 app.put('/api/services-pages/:slug', authMiddleware, (req, res) => {
     const { slug } = req.params;
-    const { title, body } = req.body;
+    const { title, body, published } = req.body;
 
     if (!title || !body) return res.status(400).json({ error: 'Titre et contenu requis' });
     const filepath = path.join(SERVICES_PAGES_DIR, `${slug}.md`);
 
     // Simple markdown content storage
-    const content = `---\ntitle: "${title}"\n---\n\n${body}`;
+    const content = `---\ntitle: "${title}"\npublished: ${published !== undefined ? published : true}\n---\n\n${body}`;
     try {
         fs.writeFileSync(filepath, content, 'utf-8');
         res.json({ success: true, message: 'Page mise à jour' });
@@ -426,6 +449,30 @@ app.post('/api/images/upload', authMiddleware, upload.single('image'), (req, res
     res.json({ success: true, url: `/uploads/${req.file.filename}`, name: req.file.filename });
 });
 
+// ─── Backup ──────────────────────────────────────────────────────────────────
+app.get('/api/admin/backup', authMiddleware, (req, res) => {
+    try {
+        const zip = new AdmZip();
+
+        // Add content
+        if (fs.existsSync(BLOG_DIR)) zip.addLocalFolder(BLOG_DIR, 'blog');
+        if (fs.existsSync(SERVICES_PAGES_DIR)) zip.addLocalFolder(SERVICES_PAGES_DIR, 'services_pages');
+        if (fs.existsSync(LOCALES_DIR)) zip.addLocalFolder(LOCALES_DIR, 'locales');
+        if (fs.existsSync(IMAGES_DIR)) zip.addLocalFolder(IMAGES_DIR, 'uploads');
+
+        const zipBuffer = zip.toBuffer();
+        const date = new Date().toISOString().split('T')[0];
+        const filename = `backup-solution-fle-${date}.zip`;
+
+        res.set('Content-Type', 'application/zip');
+        res.set('Content-Disposition', `attachment; filename=${filename}`);
+        res.set('Content-Length', zipBuffer.length);
+        res.send(zipBuffer);
+    } catch (e) {
+        console.error('Backup error:', e);
+        res.status(500).json({ error: 'Erreur lors de la génération de la sauvegarde' });
+    }
+});
 
 
 // ─── Admin panel ──────────────────────────────────────────────────────────────

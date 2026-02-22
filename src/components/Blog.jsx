@@ -173,10 +173,28 @@ const Blog = () => {
                                     overflow: 'hidden',
                                     cursor: 'pointer',
                                     padding: 0,
-                                    borderTop: `6px solid ${blogColors[idx % blogColors.length]}`
+                                    borderTop: `6px solid ${blogColors[idx % blogColors.length]}`,
+                                    position: 'relative'
                                 }}
                                 onClick={() => saveScroll(null, post.slug)}
                             >
+                                {post.published === false && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '1rem',
+                                        right: '1rem',
+                                        background: 'rgba(239, 68, 68, 0.9)',
+                                        color: 'white',
+                                        padding: '0.3rem 0.8rem',
+                                        borderRadius: '20px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: '800',
+                                        zIndex: 10,
+                                        boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
+                                    }}>
+                                        DÉVALIDÉ
+                                    </div>
+                                )}
                                 {post.image && (
                                     <img
                                         src={post.image}

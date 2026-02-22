@@ -96,10 +96,23 @@ const Header = () => {
         setLoadingLogin(false);
     };
 
-    // Handler logout
     const handleLogout = () => {
         Cookies.remove('ident');
         window.location.reload();
+    };
+
+    const handleBackup = async (e) => {
+        if (e) e.preventDefault();
+        const token = Cookies.get('ident');
+        if (!token) return alert("Session expirée");
+
+        try {
+            // Ouvrir dans un nouvel onglet ou déclencher le download
+            const url = `/api/admin/backup?sid=${token}`;
+            window.location.href = url;
+        } catch (err) {
+            alert("Erreur lors de la sauvegarde");
+        }
     };
 
     return (
@@ -141,9 +154,10 @@ const Header = () => {
 
             {/* Main Header Area - FIXED on PC, SCROLL on Mobile */}
             <div className="header-main" style={{ padding: '0.8rem 0' }}>
-                <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 1rem', maxWidth: '1200px', margin: '0 auto' }}>
-                    <div className="logo-group" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                        <a href="#home" className="logo" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
+                <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 2rem', maxWidth: 'none', width: '100%', margin: '0' }}>
+                    <div className="logo-group" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexShrink: 0 }}>
+
+                        <a href="#home" className="logo" style={{ marginRight: '1rem', display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
                             <img
                                 src="./LogoOfficiel.png"
                                 alt="Solution FLE Logo"
@@ -155,7 +169,7 @@ const Header = () => {
                                         <span style={{ fontWeight: '800' }}>
                                             <EditableText tag="span" translationKey="nav.logo_part1">{t('nav.logo_part1') || 'Solution'}</EditableText>
                                         </span>
-                                        <span className="desktop-only" style={{ fontWeight: '300', opacity: 0.5, fontSize: '1.8rem', paddingBottom: '2px' }}>|</span>
+                                        <span style={{ fontWeight: '300', opacity: 0.5, fontSize: '1.8rem', paddingBottom: '2px' }}>|</span>
                                         <span style={{ fontWeight: '800' }}>
                                             <EditableText tag="span" translationKey="nav.logo_part2">{t('nav.logo_part2') || 'FLE'}</EditableText>
                                         </span>
@@ -163,30 +177,24 @@ const Header = () => {
                                     <img
                                         src="./Picture2.png"
                                         alt="Ampoule"
-                                        className="desktop-only"
                                         style={{ height: '52px', width: 'auto', marginBottom: '-5px' }}
                                     />
                                 </div>
                             </div>
                         </a>
-
-                        {/* Right logo - visible on all devices */}
-                        <div style={{ alignItems: 'center', display: 'flex' }}>
-                            <img src="./Logo_Solution.jpg" alt="Secondary Logo" style={{ height: '40px', opacity: 0.8 }} />
-                        </div>
                     </div>
 
-                    <div className="desktop-only" style={{ alignItems: 'center' }}>
-                        <nav className="nav-links" style={{ display: 'flex', alignItems: 'center' }}>
+                    <div className="desktop-only" style={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'space-between' }}>
+                        <nav className="nav-links" style={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'space-evenly' }}>
                             {links.map((link) => (
-                                <a key={link.href} href={link.href} style={{ textDecoration: 'none', color: 'var(--color-primary)', fontWeight: 700, marginLeft: '1.5rem' }}>
+                                <a key={link.href} href={link.href} style={{ textDecoration: 'none', color: 'var(--color-primary)', fontWeight: 700 }}>
                                     <EditableText tag="span" translationKey={`nav.${link.key}`}>{link.name}</EditableText>
                                 </a>
                             ))}
 
 
                             {/* Language Dropdown Desktop */}
-                            <div style={{ position: 'relative', display: 'inline-block', marginLeft: '1.5rem' }}>
+                            <div style={{ position: 'relative', display: 'inline-block' }}>
                                 <button
                                     onClick={() => setIsLangOpen(!isLangOpen)}
                                     style={{
@@ -257,7 +265,7 @@ const Header = () => {
 
                         </nav>
                         {/* Admin menu déroulant */}
-                        <div style={{ position: 'relative', display: 'inline-block', marginLeft: '1.5rem' }}>
+                        <div style={{ position: 'relative', display: 'inline-block' }}>
                             <button
                                 onClick={() => setShowLogin(!showLogin)}
                                 style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontWeight: 700, fontSize: '1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
@@ -298,6 +306,13 @@ const Header = () => {
                                                     {editMode ? 'Quitter le mode édition' : 'InlineEdit'}
                                                 </a>
                                                 <a href="/admin" style={{ color: 'var(--color-primary)', fontWeight: 700, textDecoration: 'none', fontSize: '1rem' }}>BlogEdit</a>
+                                                <a
+                                                    href="#"
+                                                    onClick={handleBackup}
+                                                    style={{ color: 'var(--color-green)', fontWeight: 700, textDecoration: 'none', fontSize: '1rem' }}
+                                                >
+                                                    📦 Sauvegarde (ZIP)
+                                                </a>
                                                 <button className="btn btn-ghost" onClick={handleLogout} style={{ fontWeight: 700, fontSize: '1rem', color: '#f87171' }}>Logout</button>
                                             </div>
                                         )}
@@ -469,6 +484,13 @@ const Header = () => {
                                                     {editMode ? 'Quitter le mode édition' : 'InlineEdit'}
                                                 </button>
                                                 <a href="/admin" style={{ color: 'var(--color-primary)', fontWeight: 700, textDecoration: 'none', fontSize: '1.1rem' }}>BlogEdit</a>
+                                                <a
+                                                    href="#"
+                                                    onClick={handleBackup}
+                                                    style={{ color: 'var(--color-green)', fontWeight: 700, textDecoration: 'none', fontSize: '1.1rem' }}
+                                                >
+                                                    📦 Sauvegarde (ZIP)
+                                                </a>
                                                 <button
                                                     className="btn btn-ghost"
                                                     onClick={handleLogout}

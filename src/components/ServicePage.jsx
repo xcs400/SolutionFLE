@@ -133,6 +133,25 @@ const ServicePage = () => {
                     </button>
                 )}
 
+                {page.published === false && isAdmin() && (
+                    <div style={{
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid #ef4444',
+                        color: '#ef4444',
+                        padding: '0.8rem 1.2rem',
+                        borderRadius: '10px',
+                        marginBottom: '1.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.6rem',
+                        fontWeight: '700',
+                        fontSize: '0.9rem'
+                    }}>
+                        <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                        CETTE PRESTATION EST ACTUELLEMENT DÉVALIDÉ (MASQUÉE POUR LES VISITEURS)
+                    </div>
+                )}
+
                 <>
                     <h1 style={{ fontSize: '3rem', color: 'var(--color-primary)', marginBottom: '2rem' }}>{page.title}</h1>
                     <div

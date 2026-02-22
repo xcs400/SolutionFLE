@@ -635,6 +635,20 @@
             display: none;
         }
 
+        .status-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .status-toggle input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
         @media (max-width: 900px) {
             .layout {
                 grid-template-columns: 1fr;
@@ -715,6 +729,11 @@
                 <div class="field">
                     <label>Titre de la prestation</label>
                     <input type="text" id="f-title" placeholder="Titre..." />
+                </div>
+
+                <div class="status-toggle">
+                    <input type="checkbox" id="f-published" checked />
+                    <label for="f-published">Visible sur le site (Publié)</label>
                 </div>
 
 
@@ -840,6 +859,7 @@
 
             editingSlug = slug;
             document.getElementById('f-title').value = a.title;
+            document.getElementById('f-published').checked = a.published !== false;
             easyMDE.value(a.body || '');
             document.getElementById('topbarTitle').textContent = `✏️ ${a.title}`;
             document.getElementById('editorArea').style.display = 'flex';
@@ -856,7 +876,8 @@
 
             const payload = {
                 title,
-                body
+                body,
+                published: document.getElementById('f-published').checked
             };
 
             const saveBtn = document.getElementById('saveBtn');
