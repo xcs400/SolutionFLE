@@ -543,6 +543,50 @@
             color: var(--warning);
         }
 
+        .context-menu {
+            position: fixed;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 0.5rem 0;
+            z-index: 10000;
+            min-width: 200px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        .context-menu.visible {
+            display: block;
+        }
+
+        .context-menu-item {
+            padding: 0.6rem 1rem;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .context-menu-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .context-menu-item.disabled {
+            color: var(--text-muted);
+            cursor: not-allowed;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        .context-menu-item.loading {
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
         @media (max-width: 1100px) {
             .row {
                 grid-template-columns: 1fr;
@@ -614,6 +658,21 @@
     </div>
 
     <div class="toast-container" id="toasts"></div>
+
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item" data-lang="fr" onclick="translateCell('fr')">
+            🇫🇷 Traduire depuis Français
+        </div>
+        <div class="context-menu-item" data-lang="en" onclick="translateCell('en')">
+            🇬🇧 Traduire depuis English
+        </div>
+        <div class="context-menu-item" data-lang="es" onclick="translateCell('es')">
+            🇪🇸 Traduire depuis Español
+        </div>
+        <div class="context-menu-item disabled" title="Arabe non supporté comme langue source">
+            🇸🇦 Traduire depuis العربية (non supporté en source)
+        </div>
+    </div>
 
     <div class="loading-overlay" id="loading">
         <div class="spinner"></div>
@@ -1046,6 +1105,147 @@
         window.addEventListener('beforeunload', (e) => {
             if (changeCount > 0) { e.preventDefault(); e.returnValue = ''; }
         });
+
+        // ─── Context Menu & Translation ────────────────
+        let contextMenuTarget = null;
+        let contextMenuData = { key: null, index: null, targetLang: null };
+
+        function showContextMenu(e) {
+            e.preventDefault();
+            const target = e.target;
+            
+            // Check if right-clicked on a textarea/input in lang cells
+            if ((target.tagName === 'TEXTAREA' || target.tagName === 'INPUT') && 
+                target.dataset.lang && target.dataset.key) {
+                contextMenuTarget = target;
+                contextMenuData.key = target.dataset.key;
+                contextMenuData.index = target.dataset.index || null;  // Capture array index if exists
+                contextMenuData.targetLang = target.dataset.lang;
+                
+                const menu = document.getElementById('contextMenu');
+                menu.style.left = e.clientX + 'px';
+                menu.style.top = e.clientY + 'px';
+                menu.classList.add('visible');
+            }
+        }
+
+        function hideContextMenu() {
+            const menu = document.getElementById('contextMenu');
+            menu.classList.remove('visible');
+        }
+
+        async function translateCell(sourceLang) {
+            const { key, index, targetLang } = contextMenuData;
+            hideContextMenu();
+
+            if (!key || !targetLang) {
+                toast('Erreur: données manquantes', 'error');
+                return;
+            }
+
+            // Can't translate from target to itself
+            if (sourceLang === targetLang) {
+                toast('Impossible de traduire vers la même langue', 'warning');
+                return;
+            }
+
+            // Build full key with index if it's an array element
+            let fullKey = key;
+            if (index !== null && index !== undefined) {
+                fullKey = `${key}[${index}]`;
+            }
+
+            const sourceText = getByPath(current[sourceLang], fullKey);
+
+            if (!sourceText || !String(sourceText).trim()) {
+                toast(`Texte source (${sourceLang.toUpperCase()}) vide`, 'warning');
+                return;
+            }
+
+            // Set menu items to loading state
+            const menu = document.getElementById('contextMenu');
+            const items = menu.querySelectorAll('.context-menu-item');
+            items.forEach(item => {
+                if (item.dataset.lang === sourceLang) {
+                    item.classList.add('loading');
+                    item.innerHTML = '⏳ Traduction en cours...';
+                }
+            });
+
+            try {
+                const response = await fetch('/api/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-session-id': sessionId
+                    },
+                    body: JSON.stringify({
+                        text: String(sourceText),
+                        sourceLang: sourceLang,
+                        targetLang: targetLang
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Erreur de traduction');
+                }
+
+                const data = await response.json();
+                const translated = data.translated;
+
+                // Update the target field
+                setByPath(current[targetLang], fullKey, translated);
+                
+                // Find and update the corresponding input/textarea
+                let targetElement;
+                if (index !== null && index !== undefined) {
+                    // For array elements, match by key and index
+                    targetElement = document.querySelector(
+                        `textarea[data-lang="${targetLang}"][data-key="${key}"][data-index="${index}"], 
+                        input[data-lang="${targetLang}"][data-key="${key}"][data-index="${index}"]`
+                    );
+                } else {
+                    // For simple fields
+                    targetElement = document.querySelector(
+                        `textarea[data-lang="${targetLang}"][data-key="${key}"], 
+                        input[data-lang="${targetLang}"][data-key="${key}"]`
+                    );
+                }
+                
+                if (targetElement) {
+                    targetElement.value = translated;
+                    targetElement.classList.add('modified');
+                    autoResize(targetElement);
+                }
+
+                countChanges();
+                const srcFlag = LANGS.find(l => l.code === sourceLang)?.flag || '?';
+                const tgtFlag = LANGS.find(l => l.code === targetLang)?.flag || '?';
+                toast(`✨ ${srcFlag} → ${tgtFlag}`, 'success');
+            } catch (error) {
+                console.error('Translation error:', error);
+                toast('❌ ' + error.message, 'error');
+            } finally {
+                // Restore menu items
+                items.forEach(item => {
+                    item.classList.remove('loading');
+                    const lang = item.dataset.lang;
+                    const flag = LANGS.find(l => l.code === lang)?.flag || '?';
+                    if (item.classList.contains('disabled')) {
+                        item.innerHTML = `${flag} Traduire depuis ${lang.toUpperCase()} (non supporté en source)`;
+                    } else {
+                        item.innerHTML = `${flag} Traduire depuis ${lang.toUpperCase()}`;
+                    }
+                });
+                contextMenuTarget = null;
+                contextMenuData = { key: null, index: null, targetLang: null };
+            }
+        }
+
+        // Add context menu event listeners to dynamically rendered content
+        document.addEventListener('contextmenu', showContextMenu);
+        document.addEventListener('click', hideContextMenu);
 
         // ─── Init ──────────────────────────────────────
         loadData();

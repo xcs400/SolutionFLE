@@ -17,9 +17,9 @@
     "subtitle": "FLE tips, resources and news"
   },
   "hero": {
-    "title_line1": "Learn French",
-    "title_line2": "and everything becomes possible",
-    "subtitle_html": "Personalized French as a Foreign Language (FLE) training<br/>with <strong>Aline Gamblin</strong>, DAEFLE certified teacher.",
+    "title_line1": "Learn French with",
+    "title_line2": "Aline Gamblin",
+    "subtitle_html": "DAEFLE qualified teacher<br>French as a foreign language - Literacy - French refresher courses<br>Individual or mini-group courses at my home<br/>On-site or in-company training sessions",
     "cta": "Discover",
     "cta_link": "#services",
     "image_alt": "FLE Visual"
@@ -43,48 +43,48 @@
         "title": "All Levels",
         "desc": "Complete support from beginner to advanced with a structured method.",
         "tags": [
-          "Beginner → Advanced",
-          "Support"
+          "Contractors or training centers",
+          "Together, we draw up a training plan for your employees to enable them to progress professionally.\n\n\n"
         ]
       },
       {
         "title": "Conversation",
-        "desc": "Develop your oral fluency and confidence through thematic exchanges.",
+        "desc": "Explore together the music and sounds of French to speak and write better.",
         "tags": [
-          "Workshops",
-          "Phonetics"
+          "Small groups / All levels",
+          "This apprenticeship allows you to experiment with the specificities of spoken French, and to improve your pronunciation and spelling using the Verbo-tonale method.\n\n"
         ]
       },
       {
         "title": "Group Training",
-        "desc": "A collective dynamic to learn together in a friendly environment.",
+        "desc": "FLE - Learning in mini-groups, to energize the course while providing individualized support.",
         "tags": [
-          "Students",
-          "Expats"
+          "First step A1.1 → Autonomy B2",
+          "An approach that focuses on language-based communication for everyday action, using oral and written comprehension and production skills."
         ]
       },
       {
         "title": "Private Lessons",
-        "desc": "Total focus on your specific needs for accelerated progress.",
+        "desc": "FLE - Individual face-to-face lessons for complete personalized support.",
         "tags": [
-          "Individual",
-          "Custom"
+          "Discovery A1.1 → Autonomy B2",
+          " An approach that focuses on language-based communication for everyday action, using oral and written comprehension and production skills.\n\n"
         ]
       },
       {
-        "title": "Flexibility",
-        "desc": "Sessions whose duration and pace adapt to your schedule.",
+        "title": "Literacy workshops",
+        "desc": "Entering the written word in French for non-native speakers of French who have not attended school in their country of origin.",
         "tags": [
-          "À la carte",
-          "Fast"
+          "Discovery - Infra A1",
+          "These workshops provide a gentle but thorough and practical introduction to reading and writing."
         ]
       },
       {
-        "title": "Immersion",
-        "desc": "Outings and practical workshops to practice French in real-life situations.",
+        "title": "Refresher course",
+        "desc": "RAN - Revise or deepen the fundamentals for French-speaking students.",
         "tags": [
-          "Visits",
-          "Daily life"
+          "All levels",
+          "Refresher sessions are ideal for preparing for training, exams or professional advancement."
         ]
       }
     ]

@@ -17,9 +17,9 @@
     "subtitle": "Consejos, recursos y noticias de FLE"
   },
   "hero": {
-    "title_line1": "Aprende francés",
-    "title_line2": "y todo se vuelve posible",
-    "subtitle_html": "Formaciones personalizadas en Francés como Lengua Extranjera (FLE)<br/>con <strong>Aline Gamblin</strong>, profesora certificada DAEFLE.",
+    "title_line1": "Aprende francés con",
+    "title_line2": "Aline Gamblin",
+    "subtitle_html": "Profesora titulada DAEFLE<br>Francés como lengua extranjera - Alfabetización - Cursos de perfeccionamiento de francés<br>Cursos individuales o en minigrupo a domicilio<br/>Sesiones de formación en el centro o en la empresa",
     "cta": "Descubrir",
     "cta_link": "#services",
     "image_alt": "Visual FLE"
@@ -43,48 +43,48 @@
         "title": "Todos los niveles",
         "desc": "Acompañamiento completo desde principiante hasta avanzado con un método estructurado.",
         "tags": [
-          "Principiante ← Avanzado",
-          "Apoyo"
+          "Contratistas o centros de formación",
+          "Juntos, elaboramos un plan de formación para sus empleados que les ayude a progresar profesionalmente.\n\n\n"
         ]
       },
       {
         "title": "Conversación",
         "desc": "Desarrolla tu fluidez oral y tu confianza a través de intercambios temáticos.",
         "tags": [
-          "Talleres",
-          "Fonética"
+          "Grupos reducidos / Todos los niveles",
+          "Este curso le ofrece la oportunidad de probar las características específicas del francés hablado y mejorar su pronunciación y ortografía utilizando el método Verbo-tonale.\n\n"
         ]
       },
       {
         "title": "Entrenamiento Grupal",
-        "desc": "Dinámica de grupo para aprender juntos en un ambiente agradable.",
+        "desc": "FLE - Aprendizaje en minigrupos, para que las clases sean más dinámicas al tiempo que se proporciona apoyo individual.",
         "tags": [
-          "Estudiantes",
-          "Expatriados"
+          "Primer paso A1.1 → Autonomía B2",
+          "Un enfoque que se centra en la comunicación a través del lenguaje, utilizando las destrezas de comprensión y producción oral y escrita en la vida cotidiana."
         ]
       },
       {
         "title": "Clases Particulares",
-        "desc": "Atención total a tus necesidades específicas para un progreso rápido.",
+        "desc": "FLE - Clases individuales presenciales para un apoyo personalizado completo.",
         "tags": [
-          "Individual",
-          "A medida"
+          "Descubrimiento A1.1 → Autonomía B2",
+          " Un enfoque que se centra en la comunicación a través del lenguaje, utilizando las destrezas de comprensión y producción oral y escrita en la vida cotidiana.\n\n"
         ]
       },
       {
-        "title": "Flexibilidad",
-        "desc": "Sesiones cuya duración y ritmo se adaptan a tu agenda.",
+        "title": "Talleres de alfabetización",
+        "desc": "Familiarizarse con la palabra escrita en francés para los francófonos no nativos que no están escolarizados en su país de origen.",
         "tags": [
-          "A la carta",
-          "Rápido"
+          "Descubrimiento - Infra A1",
+          "Estos talleres ofrecen una introducción suave pero completa y práctica a la lectura y la escritura."
         ]
       },
       {
-        "title": "Inmersión",
-        "desc": "Salidas y talleres prácticos para practicar francés en situaciones reales.",
+        "title": "Curso de reciclaje",
+        "desc": "RAN - Revisar o mejorar lo básico para los francófonos educados en francés.",
         "tags": [
-          "Visitas",
-          "Cotidiano"
+          "Todos los niveles",
+          "Las sesiones de repaso son ideales para preparar cursos de formación, exámenes o desarrollo profesional."
         ]
       }
     ]

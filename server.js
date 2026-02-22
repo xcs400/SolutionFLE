@@ -232,6 +232,93 @@ app.get('/api/auth/check', authMiddleware, (req, res) => {
     res.json({ success: true });
 });
 
+// ─── Translate (DeepL) ────────────────────────────────────────────────────────
+app.post('/api/translate', authMiddleware, async (req, res) => {
+    const { text, sourceLang, targetLang } = req.body;
+    
+    if (!text || !targetLang || !sourceLang) {
+        return res.status(400).json({ error: 'Text, sourceLang and targetLang are required' });
+    }
+    
+    const apiKey = process.env.DEEPL_API_KEY;
+    if (!apiKey) {
+        return res.status(500).json({ error: 'DeepL API key not configured' });
+    }
+    
+    // DeepL Free: Arabe est supporté EN CIBLE mais PAS en SOURCE
+    const supportedSourceLangs = ['fr', 'en', 'es'];
+    const langMapSource = { 
+        "fr": "FR", 
+        "en": "EN-US", 
+        "es": "ES"
+    };
+    
+    const langMapTarget = {
+        "fr": "FR",
+        "en": "EN-US",
+        "es": "ES",
+        "ar": "AR"
+    };
+    
+    // Check if source language is supported
+    if (!supportedSourceLangs.includes(sourceLang)) {
+        return res.status(400).json({ 
+            error: `Language '${sourceLang}' not supported as source. Supported: ${supportedSourceLangs.join(', ')}`
+        });
+    }
+    
+    // Check if target language is supported
+    if (!Object.keys(langMapTarget).includes(targetLang)) {
+        return res.status(400).json({ 
+            error: `Language '${targetLang}' not supported as target.`
+        });
+    }
+    
+    if (sourceLang === targetLang) {
+        return res.status(400).json({ 
+            error: 'Source and target languages must be different'
+        });
+    }
+    
+    const source = langMapSource[sourceLang];
+    const target = langMapTarget[targetLang];
+    
+    try {
+        const response = await fetch('https://api-free.deepl.com/v2/translate', {
+            method: 'POST',
+            headers: {
+                'Authorization': `DeepL-Auth-Key ${apiKey}`,
+                'Content-Type': 'application/json',
+                'User-Agent': 'Solution-FLE-Translator/1.0'
+            },
+            body: JSON.stringify({
+                text: [text],
+                source_lang: source,
+                target_lang: target
+            }),
+            timeout: 30000
+        });
+        
+        if (!response.ok) {
+            const error = await response.text();
+            console.error('DeepL API error:', error);
+            return res.status(response.status).json({ error: 'Translation service error: ' + error });
+        }
+        
+        const data = await response.json();
+        if (data.translations && data.translations[0]) {
+            const translated = data.translations[0].text;
+            console.log(`[TRANSLATE] ${sourceLang.toUpperCase()} → ${targetLang.toUpperCase()} (${text.length} chars)`);
+            res.json({ success: true, translated });
+        } else {
+            res.status(500).json({ error: 'Invalid response from translation service' });
+        }
+    } catch (error) {
+        console.error('Translation error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ─── Contact ──────────────────────────────────────────────────────────────────
 app.post('/api/contact', async (req, res) => {
     const { name, email, message } = req.body;

@@ -2,7 +2,7 @@
   "nav": {
     "home": "Accueil",
     "about": "Qui suis-je",
-    "services": "Cours de Français ",
+    "services": "Les cours de Français ",
     "resources": "FluxRSS",
     "blog": "Blog",
     "testimonials": "Témoignages",
@@ -18,8 +18,8 @@
   },
   "hero": {
     "title_line1": "Apprendre le français avec ",
-    "title_line2": "Aline Gamblin ",
-    "subtitle_html": "Professeure diplômée DAEFLE. <br>Formations personnalisées en Français Langue Étrangère (FLE)<br/>Une approche humaine pour votre réussite.",
+    "title_line2": "Aline Gamblin",
+    "subtitle_html": "Professeure diplômée DAEFLE<br>Français langue étrangère - Alphabétisation - Remise à niveau en français<br>Cours individuels ou en mini-groupe à mon domicile<br/>Sessions de formations en centre ou en entreprise",
     "cta": "Découvrir",
     "cta_link": "#services",
     "image_alt": "Visuel FLE"
@@ -40,51 +40,51 @@
     "title": "Mes Prestations",
     "items": [
       {
-        "title": "Tous Niveaux",
-        "desc": "Accompagnement complet de débutant à avancé avec une méthode structurée.",
+        "title": "Session en entreprise",
+        "desc": "FOS - Construire avec vous une formation sur-mesure adaptée à vos besoins professionnels.",
         "tags": [
-          "Débutant → Avancé",
-          "Soutien"
+          "Entrepreneurs ou centres de formation",
+          "Nous élaborons ensemble un plan de formation pour vos employés afin de leur permettre de progresser professionnellement. \n\n\n"
         ]
       },
       {
-        "title": "Conversation",
-        "desc": "Développez votre aisance orale et votre confiance à travers des échanges thématiques.",
+        "title": "Prononciation",
+        "desc": "Explorer ensemble la musique et les sons du français pour mieux parler et mieux écrire.",
         "tags": [
-          "Ateliers",
-          "Phonétique"
+          "Petits groupes / Tous niveaux",
+          "Cet apprentissage permet d'expérimenter les spécificités du français oral afin d’améliorer sa prononciation et son orthographe grâce à la méthode Verbo-tonale. \n\n"
         ]
       },
       {
-        "title": "Formation Groupe",
-        "desc": "Une dynamique collective pour apprendre ensemble dans la convivence.",
+        "title": "Cours en mini-groupe",
+        "desc": "FLE - Apprendre en mini-groupe, pour dynamiser le cours tout en permettant un accompagnement individualisé. ",
         "tags": [
-          "Etudiants",
-          "Expatriés"
+          "Premier pas A1.1 → Autonomie B2",
+          "Une approche qui met l’accent sur la communication par le langage pour agir au quotidien en utilisant les compétences de compréhension et production, orale et écrite. "
         ]
       },
       {
-        "title": "Cours Particuliers",
-        "desc": "Focus total sur vos besoins spécifiques pour une progression accélérée.",
+        "title": "Cours particuliers",
+        "desc": "FLE - Des cours individuels en face à face pour un accompagnement complet personnalisé.",
         "tags": [
-          "Individuel",
-          "Sur-mesure"
+          "Découverte A1.1 → Autonomie B2",
+          " Une approche qui met l’accent sur la communication par le langage pour agir au quotidien en utilisant les compétences de compréhension et production, orale et écrite. \n\n"
         ]
       },
       {
-        "title": "Flexibilité",
-        "desc": "Des séances dont la durée et le rythme s'adaptent à votre emploi du temps.",
+        "title": "Ateliers d'alphabétisation",
+        "desc": "Entrer dans l'écrit en français pour des personnes allophones non-scolarisée dans leur pays d'origine.",
         "tags": [
-          "À la carte",
-          "Rapide"
+          "Découverte - Infra A1",
+          "Ces ateliers permettent d'apprivoiser la lecture et l'écriture en douceur mais en profondeur et de manière très concrète."
         ]
       },
       {
-        "title": "Immersion",
-        "desc": "Sorties et ateliers pratiques pour pratiquer le français en situation réelle.",
+        "title": "Remise à niveau",
+        "desc": "RAN - Réviser ou approfondir les fondamentaux pour des personnes francophones scolarisées en français.",
         "tags": [
-          "Visites",
-          "Quotidien"
+          "Tous niveaux",
+          "Les sessions de remise à niveaux sont idéales pour préparer une entrée en formation, un examen ou pour progresser professionnellement."
         ]
       }
     ]
