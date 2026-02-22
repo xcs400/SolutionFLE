@@ -132,7 +132,9 @@
         "level": "Intermédiaire",
         "text": "Les cours particuliers sont vraiment personnalisés. Aline écoute mes besoins et ajuste son enseignement en conséquence. Excellent rapport qualité-prix !"
       }
-    ]
+    ],
+    "play_auto": "play",
+    "pause_auto": "pause"
   },
   "contact": {
     "title": "Contactez-moi",
