@@ -31,6 +31,7 @@ const Header = () => {
     const [loginPwd, setLoginPwd] = useState('');
     const [loginError, setLoginError] = useState('');
     const [loadingLogin, setLoadingLogin] = useState(false);
+    const [importModalFile, setImportModalFile] = useState(null); // fichier ZIP en attente d'import
     const { t, language: currentLang, changeLanguage, supportedLanguages, editMode, toggleEditMode } = useLanguage();
 
     const toggleMenu = () => setIsOpen(!isOpen);
@@ -101,17 +102,61 @@ const Header = () => {
         window.location.reload();
     };
 
+    const importRef = React.useRef(null);
+
     const handleBackup = async (e) => {
         if (e) e.preventDefault();
         const token = Cookies.get('ident');
         if (!token) return alert("Session expirée");
 
         try {
-            // Ouvrir dans un nouvel onglet ou déclencher le download
             const url = `/api/admin/backup?sid=${token}`;
             window.location.href = url;
         } catch (err) {
             alert("Erreur lors de la sauvegarde");
+        }
+    };
+
+    const handleImport = (e) => {
+        if (e) e.preventDefault();
+        const token = Cookies.get('ident');
+        if (!token) return alert("Session expirée");
+        // Ouvre le sélecteur de fichier
+        importRef.current && importRef.current.click();
+    };
+
+    const handleImportFile = (file) => {
+        if (!file) return;
+        // Ouvre la modale de confirmation à 3 boutons
+        setImportModalFile(file);
+        if (importRef.current) importRef.current.value = '';
+    };
+
+    const doImport = async (mode) => {
+        const file = importModalFile;
+        setImportModalFile(null); // ferme la modale
+        if (!file || mode === 'cancel') return;
+
+        const token = Cookies.get('ident');
+        const formData = new FormData();
+        formData.append('backup', file);
+        formData.append('mode', mode);
+
+        try {
+            const res = await fetch('/api/admin/restore', {
+                method: 'POST',
+                headers: { 'x-session-id': token },
+                body: formData
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert(`✅ ${data.message}`);
+                window.location.reload();
+            } else {
+                alert(`❌ Erreur : ${data.error}`);
+            }
+        } catch {
+            alert('Erreur réseau lors de la restauration.');
         }
     };
 
@@ -313,6 +358,20 @@ const Header = () => {
                                                 >
                                                     📦 Sauvegarde (ZIP)
                                                 </a>
+                                                <a
+                                                    href="#"
+                                                    onClick={handleImport}
+                                                    style={{ color: '#f59e0b', fontWeight: 700, textDecoration: 'none', fontSize: '1rem' }}
+                                                >
+                                                    📥 Importer ZIP
+                                                </a>
+                                                <input
+                                                    ref={importRef}
+                                                    type="file"
+                                                    accept=".zip"
+                                                    style={{ display: 'none' }}
+                                                    onChange={(e) => handleImportFile(e.target.files[0])}
+                                                />
                                                 <button className="btn btn-ghost" onClick={handleLogout} style={{ fontWeight: 700, fontSize: '1rem', color: '#f87171' }}>Logout</button>
                                             </div>
                                         )}
@@ -492,6 +551,13 @@ const Header = () => {
                                                 >
                                                     📦 Sauvegarde (ZIP)
                                                 </a>
+                                                <a
+                                                    href="#"
+                                                    onClick={handleImport}
+                                                    style={{ color: '#f59e0b', fontWeight: 700, textDecoration: 'none', fontSize: '1.1rem' }}
+                                                >
+                                                    📥 Importer ZIP
+                                                </a>
                                                 <button
                                                     className="btn btn-ghost"
                                                     onClick={handleLogout}
@@ -506,6 +572,96 @@ const Header = () => {
                             </AnimatePresence>
                         </div>
                     </motion.nav>
+                )}
+            </AnimatePresence>
+
+            {/* ── Modal import ZIP ───────────────────────────────────────────── */}
+            <AnimatePresence>
+                {importModalFile && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
+                            zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            padding: '1rem'
+                        }}
+                        onClick={() => doImport('cancel')}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={e => e.stopPropagation()}
+                            style={{
+                                background: 'white', borderRadius: '16px',
+                                padding: '2rem', maxWidth: '420px', width: '100%',
+                                boxShadow: '0 25px 60px rgba(0,0,0,0.2)',
+                                display: 'flex', flexDirection: 'column', gap: '1.2rem'
+                            }}
+                        >
+                            <div style={{ fontSize: '2rem', textAlign: 'center' }}>📥</div>
+                            <h3 style={{ margin: 0, textAlign: 'center', fontSize: '1.2rem', color: '#1e293b' }}>
+                                Importer le ZIP
+                            </h3>
+                            <p style={{ margin: 0, color: '#475569', fontSize: '0.95rem', textAlign: 'center' }}>
+                                <strong style={{ color: '#1e293b' }}>{importModalFile?.name}</strong>
+                                <br />Choisissez le mode d'import :
+                            </p>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                                {/* Fusion */}
+                                <button
+                                    onClick={() => doImport('merge')}
+                                    style={{
+                                        background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                                        color: 'white', border: 'none', borderRadius: '10px',
+                                        padding: '0.85rem 1.2rem', fontWeight: 700, fontSize: '1rem',
+                                        cursor: 'pointer', textAlign: 'left', display: 'flex',
+                                        alignItems: 'center', gap: '0.8rem'
+                                    }}
+                                >
+                                    <span style={{ fontSize: '1.4rem' }}>✅</span>
+                                    <span>
+                                        <div>Fusion (recommandé)</div>
+                                        <div style={{ fontWeight: 400, fontSize: '0.8rem', opacity: 0.9 }}>Ajoute les nouveaux fichiers sans écraser les existants</div>
+                                    </span>
+                                </button>
+
+                                {/* Remplacement */}
+                                <button
+                                    onClick={() => doImport('replace')}
+                                    style={{
+                                        background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                                        color: 'white', border: 'none', borderRadius: '10px',
+                                        padding: '0.85rem 1.2rem', fontWeight: 700, fontSize: '1rem',
+                                        cursor: 'pointer', textAlign: 'left', display: 'flex',
+                                        alignItems: 'center', gap: '0.8rem'
+                                    }}
+                                >
+                                    <span style={{ fontSize: '1.4rem' }}>⚠️</span>
+                                    <span>
+                                        <div>Remplacement complet</div>
+                                        <div style={{ fontWeight: 400, fontSize: '0.8rem', opacity: 0.9 }}>Écrase les fichiers existants par ceux du ZIP</div>
+                                    </span>
+                                </button>
+
+                                {/* Annuler */}
+                                <button
+                                    onClick={() => doImport('cancel')}
+                                    style={{
+                                        background: 'none', color: '#64748b',
+                                        border: '1px solid #e2e8f0', borderRadius: '10px',
+                                        padding: '0.75rem 1.2rem', fontWeight: 600, fontSize: '0.95rem',
+                                        cursor: 'pointer', textAlign: 'center'
+                                    }}
+                                >
+                                    ✕ Annuler
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </header>

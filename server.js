@@ -549,6 +549,66 @@ app.get('/api/admin/backup', authMiddleware, (req, res) => {
     }
 });
 
+// ─── Restore from ZIP ─────────────────────────────────────────────────────────
+const uploadMemory = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } });
+
+app.post('/api/admin/restore', authMiddleware, uploadMemory.single('backup'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'Aucun fichier ZIP fourni' });
+
+    const mode = req.body.mode === 'replace' ? 'replace' : 'merge'; // default: merge
+
+    try {
+        const zip = new AdmZip(req.file.buffer);
+        const entries = zip.getEntries();
+
+        // Mapping: dossier ZIP → dossier système
+        const dirMap = {
+            'blog': BLOG_DIR,
+            'services_pages': SERVICES_PAGES_DIR,
+            'locales': LOCALES_DIR,
+            'uploads': IMAGES_DIR,
+        };
+
+        let restored = 0;
+        let skipped = 0;
+
+        for (const entry of entries) {
+            if (entry.isDirectory) continue;
+
+            const parts = entry.entryName.split('/');
+            const folder = parts[0];
+            const relPath = parts.slice(1).join('/');
+
+            const targetDir = dirMap[folder];
+            if (!targetDir || !relPath) { skipped++; continue; }
+
+            const targetPath = path.join(targetDir, relPath);
+            const targetParent = path.dirname(targetPath);
+
+            // Sécurité : empêcher path traversal
+            if (!targetPath.startsWith(targetDir)) { skipped++; continue; }
+
+            // Mode merge : ne pas écraser les fichiers existants
+            if (mode === 'merge' && fs.existsSync(targetPath)) { skipped++; continue; }
+
+            fs.mkdirSync(targetParent, { recursive: true });
+            fs.writeFileSync(targetPath, entry.getData());
+            restored++;
+        }
+
+        res.json({
+            success: true,
+            mode,
+            restored,
+            skipped,
+            message: `Restauration (${mode}) : ${restored} fichier(s) importé(s), ${skipped} ignoré(s).`
+        });
+    } catch (e) {
+        console.error('Restore error:', e);
+        res.status(500).json({ error: 'Erreur lors de la restauration du ZIP' });
+    }
+});
+
 
 // ─── Admin panel ──────────────────────────────────────────────────────────────
 app.get('/admin', (req, res) => {
