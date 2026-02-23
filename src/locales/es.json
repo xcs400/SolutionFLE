@@ -19,7 +19,7 @@
   "hero": {
     "title_line1": "Aprende francés con",
     "title_line2": "Aline Gamblin",
-    "subtitle_html": "Profesora titulada DAEFLE<br>Francés como lengua extranjera - Alfabetización - Cursos de perfeccionamiento de francés<br>Cursos individuales o en minigrupo a domicilio<br/>Sesiones de formación in situ o en empresas",
+    "subtitle_html": "Profesora titulada DAEFLE<br>Francés como lengua extranjera - Alfabetización - Cursos de perfeccionamiento de francés<br><img src=\"/uploads/logo_Solution.jpg\" alt=\"Mi foto\" style=\"max-width:100%;border-radius:8px;margin-bottom:2rem\"/><br>Cursos individuales o en minigrupo a domicilio<br/>Sesiones de formación in situ o en empresas",
     "cta": "Descubrir",
     "cta_link": "#services",
     "image_alt": "Visual FLE"
@@ -88,6 +88,10 @@
         ]
       }
     ]
+  },
+  "servicePage": {
+    "interested": "¿Te interesa esta formación?",
+    "contactCta": "Contáctame para saber más"
   },
   "resources": {
     "title": "Contenidos y Noticias FLE",

@@ -19,7 +19,7 @@
   "hero": {
     "title_line1": "Apprendre le français avec ",
     "title_line2": "Aline Gamblin",
-    "subtitle_html": "Professeure diplômée DAEFLE<br>Français langue étrangère - Alphabétisation - Remise à niveau en français<br>Cours individuels ou en mini-groupe à mon domicile<br/>Sessions de formation en centre ou en entreprise",
+    "subtitle_html": "<img src=\"/uploads/logo_Solution.jpg\" alt=\"Ma photo\" style=\"float:right;max-width:10%;border-radius:8px;margin-left:2rem;margin-bottom:1rem\"/>Professeure diplômée DAEFLE<br>Français langue étrangère - Alphabétisation - Remise à niveau en françaisCours individuels ou en mini-groupe à mon domicile<br/>Sessions de formation en centre ou en entreprise",
     "cta": "Découvrir",
     "cta_link": "#services",
     "image_alt": "Visuel FLE"
@@ -88,6 +88,10 @@
         ]
       }
     ]
+  },
+  "servicePage": {
+    "interested": "Cette formation vous intéresse ?",
+    "contactCta": "Me contacter pour en savoir plus"
   },
   "resources": {
     "title": "Contenus & Actualités FLE",

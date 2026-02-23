@@ -180,6 +180,7 @@ export const LanguageProvider = ({ children }) => {
     return (
         <LanguageContext.Provider value={{
             language,
+            currentLang: language,
             changeLanguage,
             t,
             supportedLanguages: SUPPORTED_LANGUAGES,

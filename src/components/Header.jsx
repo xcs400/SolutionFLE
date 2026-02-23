@@ -181,11 +181,11 @@ const Header = () => {
                         alignItems: 'center',
                         gap: '0.1rem'
                     }}>
-                        <a href="tel:+33649163537" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '600' }}>
-                            <Phone size={12} /> <EditableText tag="span" translationKey="contact.phone_value">{t('contact.phone_value') || '06 49 16 35 37'}</EditableText>
+                        <a href="tel:+33649163537" className="contact-link" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '600' }}>
+                            <Phone className="contact-icon" size={12} /> <EditableText tag="span" translationKey="contact.phone_value">{t('contact.phone_value') || '+33 6 49 16 35 37'}</EditableText>
                         </a>
-                        <a href="mailto:solutionFLE@gmail.com" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '600', fontSize: '0.8rem' }}>
-                            <Mail size={12} /> <EditableText tag="span" translationKey="contact.email_value">{t('contact.email_value') || 'solutionFLE@gmail.com'}</EditableText>
+                        <a href="mailto:solutionFLE@gmail.com" className="contact-link" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '600', fontSize: '0.8rem' }}>
+                            <Mail className="contact-icon" size={12} /> <EditableText tag="span" translationKey="contact.email_value">{t('contact.email_value') || 'solutionFLE@gmail.com'}</EditableText>
                         </a>
                     </div>
 
@@ -214,7 +214,7 @@ const Header = () => {
                                         <span style={{ fontWeight: '800' }}>
                                             <EditableText tag="span" translationKey="nav.logo_part1">{t('nav.logo_part1') || 'Solution'}</EditableText>
                                         </span>
-                                        <span style={{ fontWeight: '300', opacity: 0.5, fontSize: '1.8rem', paddingBottom: '2px' }}>|</span>
+      
                                         <span style={{ fontWeight: '800' }}>
                                             <EditableText tag="span" translationKey="nav.logo_part2">{t('nav.logo_part2') || 'FLE'}</EditableText>
                                         </span>

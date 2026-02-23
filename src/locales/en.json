@@ -19,7 +19,7 @@
   "hero": {
     "title_line1": "Learn French with",
     "title_line2": "Aline Gamblin",
-    "subtitle_html": "DAEFLE qualified teacher<br>French as a foreign language - Literacy - French refresher courses<br>Individual or mini-group courses at my home<br/>On-site or in-company training sessions",
+    "subtitle_html": "DAEFLE qualified teacher<br>French as a foreign language - Literacy - French refresher courses<br><img src=\"/uploads/logo_Solution.jpg\" alt=\"My photo\" style=\"float:right;max-width:40%;border-radius:8px;margin-left:2rem;margin-bottom:1rem\"/>Individual or mini-group courses at my home<br/>On-site or in-company training sessions",
     "cta": "Discover",
     "cta_link": "#services",
     "image_alt": "FLE Visual"
@@ -88,6 +88,10 @@
         ]
       }
     ]
+  },
+  "servicePage": {
+    "interested": "Is this training right for you?",
+    "contactCta": "Contact me to learn more"
   },
   "resources": {
     "title": "FLE Content & News",

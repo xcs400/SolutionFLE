@@ -314,6 +314,27 @@ header {
   margin: 0 auto;
 }
 
+/* Desktop: téléphone et email sur une ligne */
+@media (min-width: 901px) {
+  .top-contact-info {
+    flex-direction: row !important;
+    gap: 2rem !important;
+  }
+  
+  .contact-link {
+    font-size: 1rem !important;
+  }
+  
+  .contact-icon {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  
+  .top-banner {
+    height: 50px;
+  }
+}
+
 .header-main {
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
@@ -335,6 +356,13 @@ header {
   display: flex;
   gap: 2rem;
   align-items: center;
+}
+
+/* Desktop: menu items plus gros */
+@media (min-width: 1025px) {
+  .nav-links a {
+    font-size: 1.1rem;
+  }
 }
 
 .mobile-menu-toggle {

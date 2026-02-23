@@ -12,7 +12,14 @@ function parseMarkdown(text) {
     const inline = (s) => {
         if (!s) return '';
         s = s.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px"/>');
-        s = s.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>');
+        // Traiter les liens : liens internes (#...) avec onclick, autres en target="_blank"
+        s = s.replace(/\[(.*?)\]\(([^)]+)\)/g, (match, text, url) => {
+            if (url.startsWith('#')) {
+                return `<a href="${url}" onclick="event.preventDefault(); window.location.href='${url}'" style="cursor:pointer">${text}</a>`;
+            } else {
+                return `<a href="${url}" target="_blank">${text}</a>`;
+            }
+        });
         s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
         s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
         return s;
@@ -58,7 +65,7 @@ function parseMarkdown(text) {
 const ServicePage = () => {
     const { slug } = useParams();
     const navigate = useNavigate();
-    const { currentLang } = useLanguage();
+    const { currentLang, t } = useLanguage();
     const [page, setPage] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
@@ -162,8 +169,28 @@ const ServicePage = () => {
                         dangerouslySetInnerHTML={{ __html: parseMarkdown(page.body) }}
                     />
                     <div style={{ marginTop: '4rem', padding: '2rem', background: 'var(--color-bg)', borderRadius: '16px', textAlign: 'center' }}>
-                        <h3 style={{ marginBottom: '1rem' }}>Cette formation vous intéresse ?</h3>
-                        <button onClick={() => navigate('/#contact')} className="btn btn-primary">Me contacter pour en savoir plus</button>
+                        <h3 style={{ marginBottom: '1rem' }}>{t('servicePage.interested')}</h3>
+                        <button 
+                            onClick={() => window.location.href = '/#contact'} 
+                            className="btn"
+                            style={{
+                                background: '#ffffff',
+                                backgroundImage: 'linear-gradient(#fff, #fff), linear-gradient(to right, #002395 33%, #ffffff 33.33%, #ffffff 66.66%, #ed2939 66.66%)',
+                                backgroundOrigin: 'border-box',
+                                backgroundClip: 'padding-box, border-box',
+                                border: '5px solid transparent',
+                                color: 'var(--color-primary)',
+                                padding: '1.4rem 5rem',
+                                fontSize: '1.15rem',
+                                fontWeight: 'bold',
+                                borderRadius: '100px',
+                                cursor: 'pointer',
+                                transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                boxShadow: '0 10px 30px rgba(0, 35, 149, 0.12)'
+                            }}
+                        >
+                            {t('servicePage.contactCta')}
+                        </button>
                     </div>
                 </>
             </article>
