@@ -233,6 +233,7 @@
     }
   </style>
   <script src="https://unpkg.com/wavesurfer.js"></script>
+  <script src="audio-processor.js"></script>
 </head>
 
 <body>
@@ -363,14 +364,8 @@
 
   <script>
     // ═══════════════════════════════════════════════════════════════
-    // CONSTANTES
+    // STORE PARTAGÉ (constantes et variables définies dans audio-processor.js)
     // ═══════════════════════════════════════════════════════════════
-    const SILENCE_THRESH = 0.025; // seuil RMS pour détecter la parole
-    const ONSET_WIN_SEC = 0.015; // fenêtre RMS pour le détecteur d'onset (15 ms)
-    const ONSET_CONFIRM = 3;     // nb de fenêtres consécutives pour confirmer l'onset
-    const PRE_SPEECH_SEC = 0.20;  // silence conservé AVANT la première parole
-    const TAIL_SEC = 0.12;  // silence conservé APRÈS la fin de parole
-    const N_ENV = 512;   // buckets pour l'enveloppe
 
     const store = { prof: null, eleve: null };
 
@@ -1401,10 +1396,8 @@
     }
 
     // ─── Initialisation au chargement ──────────────────────────────────────────
-    // Charger les leçons si on est en mode élève (mode initial)
-    if (currentMode === 'student') {
-      loadLessons();
-    }
+    // Déclencher l'initialisation du mode élève (pour cacher les boutons du prof, etc.)
+    appModes[0].dispatchEvent(new Event('change'));
   </script>
 </body>
 
