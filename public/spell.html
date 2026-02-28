@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 
 <head>
@@ -233,7 +233,7 @@
     }
   </style>
   <script src="https://unpkg.com/wavesurfer.js"></script>
-  <script src="audio-processor.js"></script>
+  <script src="audio-processor-advanced.js"></script>
 </head>
 
 <body>
@@ -364,13 +364,18 @@
 
   <script>
     // ═══════════════════════════════════════════════════════════════
-    // STORE PARTAGÉ (constantes et variables définies dans audio-processor.js)
+    // AUDIO PROCESSOR ADVANCED INSTANCE
+    // ═══════════════════════════════════════════════════════════════
+    const audioProcessor = new AudioProcessorAdvanced();
+
+    // ═══════════════════════════════════════════════════════════════
+    // STORE PARTAGÉ (constantes et variables)
     // ═══════════════════════════════════════════════════════════════
 
     const store = { prof: null, eleve: null };
 
     // ═══════════════════════════════════════════════════════════════
-    // LISSAGE GAUSSIEN
+    // LISSAGE GAUSSIEN (réutilisé pour le dessin, garder côté client)
     // ═══════════════════════════════════════════════════════════════
     function gaussSmooth(arr, radius) {
       const n = arr.length, r = Math.max(1, Math.round(radius));
@@ -384,191 +389,6 @@
         out[i] = s / w;
       }
       return out;
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // ENVELOPPE RMS
-    // ═══════════════════════════════════════════════════════════════
-    function computeEnvRMS(buffer, nBuckets) {
-      const data = buffer.getChannelData(0);
-      const bSz = Math.ceil(data.length / nBuckets);
-      const env = new Float32Array(nBuckets);
-      let maxVal = 0;
-      for (let b = 0; b < nBuckets; b++) {
-        let sum = 0, cnt = 0, off = b * bSz;
-        for (let i = off; i < Math.min(off + bSz, data.length); i++, cnt++) sum += data[i] * data[i];
-        env[b] = Math.sqrt(sum / (cnt || 1));
-        if (env[b] > maxVal) maxVal = env[b];
-      }
-      if (maxVal > 0) for (let i = 0; i < nBuckets; i++) env[i] /= maxVal;
-      return env;
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // EXTRACTION DE PITCH F0 (autocorrélation)
-    // ═══════════════════════════════════════════════════════════════
-    function extractPitch(buffer) {
-      const data = buffer.getChannelData(0);
-      const sr = buffer.sampleRate;
-      const frameLen = Math.floor(sr * 0.025); // 25 ms
-      const hopLen = Math.floor(sr * 0.010); // 10 ms
-      const minLag = Math.floor(sr / 500);
-      const maxLag = Math.floor(sr / 70);
-      const pitches = [];
-      const totalDur = buffer.duration;
-
-      for (let start = 0; start + frameLen <= data.length; start += hopLen) {
-        let energy = 0;
-        for (let i = start; i < start + frameLen; i++) energy += data[i] * data[i];
-        energy /= frameLen;
-        if (energy < 0.0003) { pitches.push(0); continue; }
-
-        let bestCorr = -1, bestLag = 0;
-        for (let lag = minLag; lag <= maxLag; lag++) {
-          let num = 0, den = 0;
-          const lim = frameLen - maxLag;
-          for (let i = 0; i < lim; i++) {
-            num += data[start + i] * data[start + i + lag];
-            den += data[start + i] * data[start + i];
-          }
-          const r = den > 1e-10 ? num / den : 0;
-          if (r > bestCorr) { bestCorr = r; bestLag = lag; }
-        }
-        pitches.push((bestCorr > 0.28 && bestLag > 0) ? sr / bestLag : 0);
-      }
-
-      // Filtre médian 5 pts (anti octave-jumps)
-      const med = pitches.slice();
-      for (let i = 2; i < pitches.length - 2; i++) {
-        const w = [pitches[i - 2], pitches[i - 1], pitches[i], pitches[i + 1], pitches[i + 2]].sort((a, b) => a - b);
-        med[i] = w[2];
-      }
-      // Retourne aussi le hop en secondes pour la conversion temps→index
-      return { frames: med, hopSec: hopLen / sr, totalDur };
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // DENSITÉ DE PITCH VOISÉ — tableau normalisé [0..N_ENV]
-    // Utilisé pour pondérer la détection de syllabes
-    // ═══════════════════════════════════════════════════════════════
-    function buildVoicedDensity(pitchResult, nBuckets) {
-      const { frames, hopSec, totalDur } = pitchResult;
-      const density = new Float32Array(nBuckets);
-      for (let f = 0; f < frames.length; f++) {
-        if (frames[f] <= 0) continue;
-        const t = f * hopSec / totalDur;           // 0..1
-        const b = Math.min(nBuckets - 1, Math.floor(t * nBuckets));
-        density[b] += 1;
-      }
-      // Normalise
-      const maxD = Math.max(...density, 1);
-      for (let i = 0; i < nBuckets; i++) density[i] /= maxD;
-      return density;
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // DÉTECTION DE SYLLABES (pitch-gated)
-    // ═══════════════════════════════════════════════════════════════
-    //
-    // NOUVEAU : combiner enveloppe d'énergie ET densité de frames voisées.
-    // Un noyau syllabique = là où les DEUX sont élevés.
-    // Cela évite les faux positifs sur consonnes sourdes (s, f, p...).
-    //
-    function detectSyllables(env, pitchResult) {
-      const n = env.length;
-      const voiced = buildVoicedDensity(pitchResult, n);
-
-      // Lissage de l'énergie (double passe)
-      const eSmooth = gaussSmooth(gaussSmooth(env, n * 0.025), n * 0.018);
-
-      // Lissage de la densité voisée (fenêtre plus large → contexte voisé)
-      const vSmooth = gaussSmooth(voiced, n * 0.04);
-
-      // Score combiné : géométrique (les deux doivent être présents)
-      // energy^0.5 * voiced^0.5 → pénalise fortement quand l'un est absent
-      const combined = new Float32Array(n);
-      for (let i = 0; i < n; i++) {
-        combined[i] = Math.sqrt(Math.max(0, eSmooth[i]) * Math.max(0, vSmooth[i]));
-      }
-
-      const globalMax = Math.max(...combined);
-      if (globalMax < 1e-6) return [];
-
-      const thr = globalMax * 0.18;
-      const minGap = Math.max(5, Math.floor(n * 0.07)); // ≥7% du signal entre syllabes
-
-      // Candidats avec prominence
-      const candidates = [];
-      for (let i = 3; i < n - 3; i++) {
-        if (combined[i] < thr) continue;
-        if (combined[i] <= combined[i - 1] || combined[i] <= combined[i + 1]) continue;
-        if (combined[i] <= combined[i - 2] || combined[i] <= combined[i + 2]) continue;
-
-        let lMin = combined[i], rMin = combined[i];
-        for (let j = Math.max(0, i - minGap); j < i; j++)
-          if (combined[j] < lMin) lMin = combined[j];
-        for (let j = i + 1; j <= Math.min(n - 1, i + minGap); j++)
-          if (combined[j] < rMin) rMin = combined[j];
-        const prom = combined[i] - Math.max(lMin, rMin);
-
-        if (prom >= globalMax * 0.10) {
-          candidates.push({ pos: i, val: combined[i], prom });
-        }
-      }
-
-      // NMS par prominence décroissante
-      const peaks = [];
-      for (const c of candidates.sort((a, b) => b.prom - a.prom)) {
-        if (peaks.every(p => Math.abs(p.pos - c.pos) >= minGap)) peaks.push(c);
-      }
-      peaks.sort((a, b) => a.pos - b.pos);
-      return peaks.map(p => p.pos / n); // positions normalisées 0→1
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // INTONATION PAR SYLLABE
-    // ═══════════════════════════════════════════════════════════════
-    //
-    // Pour chaque syllabe, on regarde les frames de pitch dans une
-    // fenêtre centrée sur la syllabe (±80ms).
-    // On calcule la pente par régression linéaire sur les frames voisées.
-    // Résultat : 'up' | 'down' | 'flat'
-    //
-    function computeIntonationPerSyllable(syllablePositions, pitchResult) {
-      const { frames, hopSec, totalDur } = pitchResult;
-
-      return syllablePositions.map(pos => {
-        const tCenter = pos * totalDur;              // secondes
-        const winSec = 0.10;                        // ±100ms
-        const fStart = Math.max(0, Math.floor((tCenter - winSec) / hopSec));
-        const fEnd = Math.min(frames.length - 1, Math.ceil((tCenter + winSec) / hopSec));
-
-        // Frames voisées dans la fenêtre
-        const voiced = [];
-        for (let f = fStart; f <= fEnd; f++) {
-          if (frames[f] > 50) voiced.push({ t: f - fStart, hz: frames[f] });
-        }
-
-        if (voiced.length < 4) return { pos, tone: 'flat', slopeST: 0 };
-
-        // Régression linéaire (moindres carrés) sur les semitones
-        // y = semitones par rapport à la médiane locale
-        const REF = 150;
-        const pts = voiced.map(v => ({ t: v.t, st: 12 * Math.log2(v.hz / REF) }));
-        const n = pts.length;
-        const mT = pts.reduce((s, p) => s + p.t, 0) / n;
-        const mST = pts.reduce((s, p) => s + p.st, 0) / n;
-        let num = 0, den = 0;
-        for (const p of pts) { num += (p.t - mT) * (p.st - mST); den += (p.t - mT) ** 2; }
-        const slope = den > 0 ? num / den : 0; // semitones / frame
-
-        // Pente totale sur la durée de la fenêtre
-        const totalSlope = slope * (fEnd - fStart);
-
-        // Seuils : ±0.8 semitone de variation perceptible
-        const tone = totalSlope > 0.8 ? 'up' : totalSlope < -0.8 ? 'down' : 'flat';
-        return { pos, tone, slopeST: totalSlope };
-      });
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -673,20 +493,21 @@
 
     // ═══════════════════════════════════════════════════════════════
     // DESSIN : enveloppe + courbe de pitch + marqueurs syllabiques
+    // Version optimisée pour AudioProcessorAdvanced
     // ═══════════════════════════════════════════════════════════════
-    function drawOverlay(canvas, buffer, color, syllableInfo, pitchResult) {
+    function drawOverlayFromResult(canvas, envelope, color, intonation, pitchResult) {
       const wrap = canvas.parentElement;
       const W = wrap.clientWidth || 740, H = wrap.clientHeight || 120;
       canvas.width = W; canvas.height = H;
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, W, H);
 
-      // ── 1. Enveloppe RMS ──────────────────────────────────────────
-      const env = computeEnvRMS(buffer, W);
-      const sm = gaussSmooth(env, Math.max(3, Math.floor(W * 0.01)));
+      // ── 1. Enveloppe RMS (déjà normalisée) ────────────────────────
+      // Resampler l'enveloppe à W points si nécessaire (N_ENV=512 vs W pixels)
+      const envW = envelope.length !== W ? resample(Float32Array.from(envelope), W) : envelope;
+      const sm = gaussSmooth(envW, Math.max(3, Math.floor(W * 0.01)));
 
-      // Zone enveloppe = partie basse du canvas (60% bas)
-      const envTop = H * 0.38; // le haut de la zone enveloppe
+      const envTop = H * 0.38;
       const envH = H - envTop;
       const scaleY = envH * 0.46;
       const mid = envTop + envH * 0.5;
@@ -720,13 +541,11 @@
       ctx.globalAlpha = .85; ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
 
       // ── 2. Courbe de pitch (zone haute du canvas) ─────────────────
-      // Zone pitch = bande 0..envTop avec 4px de marge
       const { frames, hopSec, totalDur } = pitchResult;
       const pitchTop = 4;
       const pitchBottom = envTop - 6;
       const pitchZoneH = pitchBottom - pitchTop;
 
-      // Fréquences min/max pour la normalisation (en semitones)
       const REF = 150;
       const voicedHz = frames.filter(v => v > 50);
       if (voicedHz.length > 3) {
@@ -736,7 +555,7 @@
 
         const stToY = st => pitchBottom - ((st - minST) / (maxST - minST)) * pitchZoneH;
 
-        // Tracé : on connecte uniquement les frames voisées consécutives
+        // Tracé : connecter univement les frames voisées consécutives
         ctx.beginPath();
         let inLine = false;
         for (let f = 0; f < frames.length; f++) {
@@ -755,7 +574,7 @@
         ctx.setLineDash([]);
         ctx.stroke();
 
-        // Axe horizontal léger au milieu de la zone pitch
+        // Axe horizontal léger
         ctx.beginPath();
         const midST = (minST + maxST) / 2;
         ctx.moveTo(0, stToY(midST));
@@ -770,13 +589,12 @@
 
       // ── 3. Marqueurs syllabiques + flèche d'intonation ───────────
       ctx.globalAlpha = 1;
-      const ARROW_SZ = 7;  // demi-largeur de la flèche
-      const MARKER_Y = mid - 6; // juste au-dessus du sommet de l'enveloppe
+      const ARROW_SZ = 7;
+      const MARKER_Y = mid - 6;
 
-      for (const { pos, tone, slopeST } of syllableInfo) {
+      for (const { pos, tone, slopeST } of intonation) {
         const x = Math.round(pos * W);
 
-        // Couleur selon la direction
         const arrowColor =
           tone === 'up' ? '#22aa44' :
             tone === 'down' ? '#cc3333' : '#888888';
@@ -785,12 +603,10 @@
         ctx.fillStyle = arrowColor;
         ctx.strokeStyle = arrowColor;
 
-        // Cherche la hauteur réelle de l'enveloppe à cette position
         const ix = Math.min(Math.round(pos * W), W - 1);
-        const envTop_ = mid - sm[ix] * scaleY - 4; // sommet de l'enveloppe à x
+        const envTop_ = mid - sm[ix] * scaleY - 4;
 
         if (tone === 'up') {
-          // Triangle pointant VERS LE HAUT (intonation montante)
           ctx.beginPath();
           ctx.moveTo(x, envTop_ - 12);
           ctx.lineTo(x - ARROW_SZ, envTop_);
@@ -798,7 +614,6 @@
           ctx.closePath();
           ctx.fill();
         } else if (tone === 'down') {
-          // Triangle pointant VERS LE BAS (intonation descendante)
           ctx.beginPath();
           ctx.moveTo(x, envTop_);
           ctx.lineTo(x - ARROW_SZ, envTop_ - 12);
@@ -806,17 +621,15 @@
           ctx.closePath();
           ctx.fill();
         } else {
-          // Cercle (intonation stable)
           ctx.beginPath();
           ctx.arc(x, envTop_ - 6, ARROW_SZ * 0.7, 0, Math.PI * 2);
           ctx.fill();
         }
 
-        // Petite barre verticale pointillée reliant le marqueur à la courbe de pitch
-        const pitchLineX = x;
+        // Petite barre verticale pointillée
         ctx.beginPath();
-        ctx.moveTo(pitchLineX, envTop_ - 14);
-        ctx.lineTo(pitchLineX, pitchBottom);
+        ctx.moveTo(x, envTop_ - 14);
+        ctx.lineTo(x, pitchBottom);
         ctx.globalAlpha = 0.18;
         ctx.strokeStyle = arrowColor;
         ctx.lineWidth = 1;
@@ -865,37 +678,60 @@
         mediaRecorder.onstop = async () => {
           statusEl.textContent = '🔍 Analyse…';
           const blob = new Blob(audioChunks, { type: 'audio/webm' });
-          const { wav, buffer } = await trimSilence(blob);
 
-          // 1. Pitch
-          const pitchResult = extractPitch(buffer);
-          // 2. Syllabes (pitch-gated)
-          const syllablePos = detectSyllables(computeEnvRMS(buffer, N_ENV), pitchResult);
-          // 3. Intonation par syllabe
-          const syllableInfo = computeIntonationPerSyllable(syllablePos, pitchResult);
+          try {
+            // Utiliser le processeur avancé
+            const result = await audioProcessor.processAudio(blob, {
+              trimSilence: true,
+              extractPitch: true,
+              detectSyllables: true,
+              computeIntonation: true,
+              onProgress: (progress) => {
+                statusEl.textContent = `🔍 ${progress.stage}...`;
+              }
+            });
+ 
+            const { wavBlob, pitchAnalysis, envelope, syllables, intonation } = result;
 
-          store[key] = { pitch: pitchResult, syllables: syllablePos, blob: wav };
-          refreshSaveBtn();
+            // Sauvegarder dans le store
+            store[key] = {
+              pitch: pitchAnalysis,
+              syllables: syllables.map(s => s.pos), // extraire positions pour compatibilité
+              blob: wavBlob
+            };
+            refreshSaveBtn();
 
-          wave.load(URL.createObjectURL(wav));
-          wave.once('ready', () => {
-            playBtn.disabled = false;
-            const tones = syllableInfo.map(s =>
-              s.tone === 'up' ? '▲' : s.tone === 'down' ? '▼' : '●'
-            ).join(' ');
-            statusEl.textContent = `✅ ${syllablePos.length} syllabe(s) : ${tones || '—'}`;
-            drawOverlay(ovCanvas, buffer, color, syllableInfo, pitchResult);
-            refreshBothBtn();
-            computeAndDisplay();
-          });
+            // Charger dans le waveform
+            wave.load(URL.createObjectURL(wavBlob));
+            wave.once('ready', () => {
+              playBtn.disabled = false;
+              const tones = intonation.map(s =>
+                s.tone === 'up' ? '▲' : s.tone === 'down' ? '▼' : '●'
+              ).join(' ');
+              statusEl.textContent = `✅ ${syllables.length} syllabe(s) : ${tones || '—'}`;
+
+              // Redessiner l'overlay (note: on ne peut pas accéder au buffer décodé directement)
+              // On utilise l'enveloppe et pitch du résultat pour le drawing
+              drawOverlayFromResult(ovCanvas, envelope, color, intonation, pitchAnalysis);
+              refreshBothBtn();
+              computeAndDisplay();
+            });
+          } catch (error) {
+            statusEl.textContent = '❌ Erreur analyse: ' + error.message;
+            statusEl.style.color = '#c00';
+          }
         };
         mediaRecorder.start(100);
         recBtn.classList.add('recording'); recBtn.textContent = '⏺ Enregistrement…';
       };
 
       const stopRec = () => {
-        if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
+        if (mediaRecorder?.state !== 'recording') return;
         recBtn.classList.remove('recording'); recBtn.textContent = '🎤 Parler';
+        // Délai pour laisser le dernier chunk audio être capturé avant stop()
+        setTimeout(() => {
+          if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
+        }, 350);
       };
       recBtn.onpointerup = stopRec;
       recBtn.onlostpointercapture = stopRec;
@@ -904,23 +740,40 @@
       // Permet de forcer le chargement depuis un blob externe hors enregistrement
       const injectBlob = async (blob) => {
         statusEl.textContent = '🔍 Analyse…';
-        const { wav, buffer } = await trimSilence(blob);
-        const pitchResult = extractPitch(buffer);
-        const syllablePos = detectSyllables(computeEnvRMS(buffer, N_ENV), pitchResult);
-        const syllableInfo = computeIntonationPerSyllable(syllablePos, pitchResult);
 
-        store[key] = { pitch: pitchResult, syllables: syllablePos, blob: wav };
-        refreshSaveBtn();
+        try {
+          const result = await audioProcessor.processAudio(blob, {
+            trimSilence: true,
+            extractPitch: true,
+            detectSyllables: true,
+            computeIntonation: true,
+            onProgress: (progress) => {
+              statusEl.textContent = `🔍 ${progress.stage}...`;
+            }
+          });
 
-        wave.load(URL.createObjectURL(wav));
-        wave.once('ready', () => {
-          playBtn.disabled = false;
-          const tones = syllableInfo.map(s => s.tone === 'up' ? '▲' : s.tone === 'down' ? '▼' : '●').join(' ');
-          statusEl.textContent = `✅ ${syllablePos.length} syllabe(s) : ${tones || '—'}`;
-          drawOverlay(ovCanvas, buffer, color, syllableInfo, pitchResult);
-          refreshBothBtn();
-          computeAndDisplay();
-        });
+          const { wavBlob, pitchAnalysis, envelope, syllables, intonation } = result;
+
+          store[key] = {
+            pitch: pitchAnalysis,
+            syllables: syllables.map(s => s.pos),
+            blob: wavBlob
+          };
+          refreshSaveBtn();
+
+          wave.load(URL.createObjectURL(wavBlob));
+          wave.once('ready', () => {
+            playBtn.disabled = false;
+            const tones = intonation.map(s => s.tone === 'up' ? '▲' : s.tone === 'down' ? '▼' : '●').join(' ');
+            statusEl.textContent = `✅ ${syllables.length} syllabe(s) : ${tones || '—'}`;
+            drawOverlayFromResult(ovCanvas, envelope, color, intonation, pitchAnalysis);
+            refreshBothBtn();
+            computeAndDisplay();
+          });
+        } catch (error) {
+          statusEl.textContent = '❌ Erreur analyse: ' + error.message;
+          statusEl.style.color = '#c00';
+        }
       };
 
       return { wave, recBtn, ready: () => !playBtn.disabled, injectBlob };
@@ -1398,6 +1251,11 @@
     // ─── Initialisation au chargement ──────────────────────────────────────────
     // Déclencher l'initialisation du mode élève (pour cacher les boutons du prof, etc.)
     appModes[0].dispatchEvent(new Event('change'));
+
+    // Cleanup au déchargement
+    window.addEventListener('beforeunload', () => {
+      audioProcessor.dispose();
+    });
   </script>
 </body>
 
