@@ -327,14 +327,18 @@
       </div>
       <div id="scorePct">—</div>
     </div>
-    <div class="sub-scores">
+      <div class="sub-scores">
       <div class="sub-score">
         <div id="subPitchVal" class="sub-score-val">—</div>
-        <div class="sub-score-lbl">🎵 Intonation (pitch)</div>
+        <div class="sub-score-lbl">🎵 Prosodie</div>
       </div>
       <div class="sub-score">
         <div id="subRhythmVal" class="sub-score-val">—</div>
         <div class="sub-score-lbl">🥁 Rythme syllabique</div>
+      </div>
+      <div class="sub-score">
+        <div id="subStressVal" class="sub-score-val">—</div>
+        <div class="sub-score-lbl">💪 Accentuation</div>
       </div>
     </div>
   </div>
@@ -404,17 +408,29 @@
       return out;
     }
 
+    // SCORE PROSODIE (forme mélodique, indépendant de la hauteur absolue)
+    // Z-normalisation → fonctionne cross-genre (voix grave/aiguë)
+    // ═══════════════════════════════════════════════════════════════
     function scorePitch(pitchA, pitchB) {
-      const REF = 150;
-      const toSt = hz => hz > 50 ? 12 * Math.log2(hz / REF) : null;
+      const toSt = hz => hz > 50 ? 12 * Math.log2(hz / 150) : null;
 
       const vA = pitchA.frames.map(toSt).filter(v => v !== null);
       const vB = pitchB.frames.map(toSt).filter(v => v !== null);
 
-      if (vA.length < 5 || vB.length < 5) return 0.50;
+      // Pénalité voix : si l'élève n'a pas assez de frames voisées → pas de parole réelle
+      const vrA = vA.length / (pitchA.frames.length || 1);
+      const vrB = vB.length / (pitchB.frames.length || 1);
+      const voicedPenalty = Math.min(vrA, vrB) / (Math.max(vrA, vrB) + 1e-10);
+      if (vA.length < 5 || vB.length < 5 || vrB < 0.05) return 0;
 
-      const center = arr => { const m = arr.reduce((s, v) => s + v, 0) / arr.length; return arr.map(v => v - m); };
-      const cA = center(vA), cB = center(vB);
+      // Z-score : retire la moyenne ET normalise la variance
+      // → compare la FORME du contour, pas la hauteur absolue
+      const znorm = arr => {
+        const m = arr.reduce((s, v) => s + v, 0) / arr.length;
+        const std = Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length) || 1;
+        return arr.map(v => (v - m) / std);
+      };
+      const cA = znorm(vA), cB = znorm(vB);
 
       const N = 80;
       const rA = Array.from(resample(Float32Array.from(cA), N));
@@ -427,13 +443,40 @@
         dtw[i][j] = cost + Math.min(dtw[i - 1][j], dtw[i][j - 1], dtw[i - 1][j - 1]);
       }
       const dtwDist = dtw[N][N] / (2 * N);
-      const rawScore = Math.max(0, 1 - dtwDist / 3.5);
+      const shapeScore = Math.max(0, 1 - dtwDist / 2.0);
+      // Pondère par la similarité de taux de voix (pénalise le bruit non voisé)
+      return shapeScore * (0.6 + 0.4 * voicedPenalty);
+    }
 
-      const vrA = vA.length / pitchA.frames.length;
-      const vrB = vB.length / pitchB.frames.length;
-      const vf = Math.min(vrA, vrB) / (Math.max(vrA, vrB) + 1e-10);
+    // SCORE TEMPS FORTS — compare les enveloppes d'énergie (accents, articulation)
+    // Mesure si les mêmes syllabes sont accentuées, indépendamment du timbre/genre
+    // ═══════════════════════════════════════════════════════════════
+    function scoreStress(envA, envB, pitchA, pitchB) {
+      if (!envA || !envB) return 0;
 
-      return rawScore * (0.7 + 0.3 * vf);
+      // Vérifie qu'il y a vraiment de la parole voisée chez l'élève
+      const countVoiced = frames => frames.filter(f => f > 50).length;
+      const vrA = pitchA ? countVoiced(pitchA.frames) / (pitchA.frames.length || 1) : 0;
+      const vrB = pitchB ? countVoiced(pitchB.frames) / (pitchB.frames.length || 1) : 0;
+      if (vrB < 0.05) return 0; // bruit ou silence → score nul
+
+      const N = 64;
+      // Resampler à N buckets et Z-normaliser
+      const prep = env => {
+        const r = Array.from(resample(Float32Array.from(env), N));
+        const m = r.reduce((s, v) => s + v, 0) / N;
+        const std = Math.sqrt(r.reduce((s, v) => s + (v - m) ** 2, 0) / N) || 1;
+        return r.map(v => (v - m) / std);
+      };
+      const nA = prep(envA), nB = prep(envB);
+      // Corrélation de Pearson (–1..1) → score 0..1
+      let num = 0, dA = 0, dB = 0;
+      for (let i = 0; i < N; i++) { num += nA[i] * nB[i]; dA += nA[i] ** 2; dB += nB[i] ** 2; }
+      const r = (dA > 0 && dB > 0) ? num / Math.sqrt(dA * dB) : 0;
+      const corr = Math.max(0, (r + 1) / 2);
+      // Pondère par taux de voix élève vs prof
+      const voicedPenalty = Math.min(vrA, vrB) / (Math.max(vrA, vrB) + 1e-10);
+      return corr * (0.5 + 0.5 * voicedPenalty);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -441,10 +484,10 @@
     // ═══════════════════════════════════════════════════════════════
     function scoreRhythm(posA, posB) {
       const nA = posA.length, nB = posB.length;
-      if (nA === 0 || nB === 0) return 0.50;
+      if (nA === 0 || nB === 0) return 0;
 
       const countFactor = Math.max(0.60, 1 - Math.abs(nA - nB) / Math.max(nA, nB) * 0.5);
-      if (nA < 2 || nB < 2) return 0.55 * countFactor;
+      if (nA < 2 || nB < 2) return 0.20 * countFactor;
 
       const ioiOf = pos => {
         const ioi = pos.slice(1).map((v, i) => v - pos[i]);
@@ -470,9 +513,19 @@
     function computeAndDisplay() {
       if (!store.prof || !store.eleve) return;
 
-      const pctPitch = Math.round(scorePitch(store.prof.pitch, store.eleve.pitch) * 100);
+      const pctPitch  = Math.round(scorePitch(store.prof.pitch, store.eleve.pitch) * 100);
       const pctRhythm = Math.round(scoreRhythm(store.prof.syllables, store.eleve.syllables) * 100);
-      const pctGlobal = Math.round(pctPitch * 0.50 + pctRhythm * 0.50);
+      const pctStress = Math.round(scoreStress(store.prof.envelope, store.eleve.envelope, store.prof.pitch, store.eleve.pitch) * 100);
+
+      // Gate syllabique : pénalise si l'élève n'a détecté aucune syllabe (bruit, silence)
+      const nSylProf = store.prof.syllables.length;
+      const nSylEleve = store.eleve.syllables.length;
+      // Rapport syllabes élève/prof, plafonné à 1, penalise à 0 si 0 syllabes détectées
+      const sylGate = nSylProf === 0 ? 1 : Math.min(1, nSylEleve / nSylProf);
+
+      // Poids : prosodie 30% · rythme 35% · temps forts 35%
+      const rawGlobal = pctPitch * 0.30 + pctRhythm * 0.35 + pctStress * 0.35;
+      const pctGlobal = Math.round(rawGlobal * sylGate);
 
       document.getElementById('scoreBox').style.display = 'flex';
       const col = v => v >= 75 ? '#28a745' : v >= 50 ? '#fd7e14' : '#dc3545';
@@ -485,6 +538,8 @@
       document.getElementById('subPitchVal').style.color = col(pctPitch);
       document.getElementById('subRhythmVal').textContent = pctRhythm + ' %';
       document.getElementById('subRhythmVal').style.color = col(pctRhythm);
+      document.getElementById('subStressVal').textContent = pctStress + ' %';
+      document.getElementById('subStressVal').style.color = col(pctStress);
       document.getElementById('scoreLabel').textContent =
         pctGlobal >= 75 ? '🎉 Excellente prononciation !'
           : pctGlobal >= 50 ? '👍 Bien, continue à t\'entraîner !'
@@ -696,7 +751,8 @@
             // Sauvegarder dans le store
             store[key] = {
               pitch: pitchAnalysis,
-              syllables: syllables.map(s => s.pos), // extraire positions pour compatibilité
+              syllables: syllables.map(s => s.pos),
+              envelope,
               blob: wavBlob
             };
             refreshSaveBtn();
@@ -728,7 +784,6 @@
       const stopRec = () => {
         if (mediaRecorder?.state !== 'recording') return;
         recBtn.classList.remove('recording'); recBtn.textContent = '🎤 Parler';
-        // Délai pour laisser le dernier chunk audio être capturé avant stop()
         setTimeout(() => {
           if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
         }, 350);
@@ -757,6 +812,7 @@
           store[key] = {
             pitch: pitchAnalysis,
             syllables: syllables.map(s => s.pos),
+            envelope,
             blob: wavBlob
           };
           refreshSaveBtn();
