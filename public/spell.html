@@ -735,7 +735,7 @@
           const blob = new Blob(audioChunks, { type: 'audio/webm' });
 
           try {
-            // Utiliser le processeur avancé
+            // Enregistrement live : trimSilence ACTIVÉ
             const result = await audioProcessor.processAudio(blob, {
               trimSilence: true,
               extractPitch: true,
@@ -745,10 +745,9 @@
                 statusEl.textContent = `🔍 ${progress.stage}...`;
               }
             });
- 
+
             const { wavBlob, pitchAnalysis, envelope, syllables, intonation } = result;
 
-            // Sauvegarder dans le store
             store[key] = {
               pitch: pitchAnalysis,
               syllables: syllables.map(s => s.pos),
@@ -757,7 +756,6 @@
             };
             refreshSaveBtn();
 
-            // Charger dans le waveform
             wave.load(URL.createObjectURL(wavBlob));
             wave.once('ready', () => {
               playBtn.disabled = false;
@@ -766,8 +764,6 @@
               ).join(' ');
               statusEl.textContent = `✅ ${syllables.length} syllabe(s) : ${tones || '—'}`;
 
-              // Redessiner l'overlay (note: on ne peut pas accéder au buffer décodé directement)
-              // On utilise l'enveloppe et pitch du résultat pour le drawing
               drawOverlayFromResult(ovCanvas, envelope, color, intonation, pitchAnalysis);
               refreshBothBtn();
               computeAndDisplay();
@@ -792,13 +788,14 @@
       recBtn.onlostpointercapture = stopRec;
       playBtn.onclick = () => { wave.isPlaying() ? wave.pause() : wave.play(); };
 
-      // Permet de forcer le chargement depuis un blob externe hors enregistrement
-      const injectBlob = async (blob) => {
+      // ─── injectBlob : charge un blob depuis le serveur (déjà traité)
+      // alreadyProcessed=true → trimSilence DÉSACTIVÉ pour éviter la double coupe
+      const injectBlob = async (blob, { alreadyProcessed = false } = {}) => {
         statusEl.textContent = '🔍 Analyse…';
 
         try {
           const result = await audioProcessor.processAudio(blob, {
-            trimSilence: true,
+            trimSilence: !alreadyProcessed,   // ← NE PAS re-trimmer si déjà fait côté serveur
             extractPitch: true,
             detectSyllables: true,
             computeIntonation: true,
@@ -809,15 +806,18 @@
 
           const { wavBlob, pitchAnalysis, envelope, syllables, intonation } = result;
 
+          // Si le processeur ne renvoie pas de wavBlob (trimSilence désactivé), on réutilise le blob source
+          const finalBlob = wavBlob || blob;
+
           store[key] = {
             pitch: pitchAnalysis,
             syllables: syllables.map(s => s.pos),
             envelope,
-            blob: wavBlob
+            blob: finalBlob
           };
           refreshSaveBtn();
 
-          wave.load(URL.createObjectURL(wavBlob));
+          wave.load(URL.createObjectURL(finalBlob));
           wave.once('ready', () => {
             playBtn.disabled = false;
             const tones = intonation.map(s => s.tone === 'up' ? '▲' : s.tone === 'down' ? '▼' : '●').join(' ');
@@ -859,7 +859,7 @@
         profTrack.recBtn.style.display = 'inline-block';
         profHint.style.display = 'none';
         saveProfBox.style.display = 'flex';
-        loadProfLessons(); // Charge la liste pour le mode Prof
+        loadProfLessons();
       } else {
         lessonSelectorBox.style.display = 'flex';
         eleveTrackWrapper.style.display = 'block';
@@ -869,9 +869,9 @@
         profTrack.recBtn.style.display = 'none';
         profHint.style.display = 'inline';
         saveProfBox.style.display = 'none';
-        document.getElementById('profLessonIdInput').value = ''; // Reset
+        document.getElementById('profLessonIdInput').value = '';
         document.getElementById('profLessonInput').value = '';
-        loadLessons(); // Charge la liste pour le mode Eleve
+        loadLessons();
       }
       refreshBothBtn();
       refreshSaveBtn();
@@ -905,7 +905,8 @@
         const res = await fetch(url);
         const blob = await res.blob();
         if (blob.size === 0) throw new Error("Audio vide");
-        await profTrack.injectBlob(blob);
+        // Audio déjà traité côté serveur → pas de re-trim
+        await profTrack.injectBlob(blob, { alreadyProcessed: true });
       } catch (err) {
         document.getElementById('statusProf').textContent = "❌ Erreur de chargement: " + err.message;
         document.getElementById('statusProf').style.color = '#c00';
@@ -958,14 +959,14 @@
       profLessonInput.value = name;
       saveProfStatus.textContent = "Mode édition: Vous pouvez modifier le nom ou ré-enregistrer l'audio.";
       saveProfStatus.style.color = "blue";
-      // Optionnel : on pourrait même charger le son pour vérification
       try {
         if (url) {
           const res = await fetch(url);
           const blob = await res.blob();
-          await profTrack.injectBlob(blob);
+          // Audio déjà traité côté serveur → pas de re-trim
+          await profTrack.injectBlob(blob, { alreadyProcessed: true });
         }
-      } catch (e) { } // Ignore if audio not found
+      } catch (e) { }
     };
 
     window.deleteLesson = async function (id) {
@@ -999,8 +1000,6 @@
       formData.append('lessonName', lessonName);
       if (editId) formData.append('id', editId);
 
-      // Si profTrack l'a, on renvoie. (si pas d'audio et editId, on fera juste un rename coté serveur si on ne l'attache pas.
-      // Mais en mode prof le createBlob sera dispo uniquement s'il a rec.
       if (store.prof?.blob) {
         formData.append('profAudio', store.prof.blob, 'prof.wav');
       } else if (!editId) {
@@ -1013,10 +1012,10 @@
         if (data.success) {
           saveProfStatus.textContent = editId ? "✅ Leçon mise à jour !" : "✅ Leçon créée et sauvegardée !";
           saveProfStatus.style.color = "green";
-          profLessonIdInput.value = ''; // Reset selected ID
+          profLessonIdInput.value = '';
           profLessonInput.value = '';
-          store.prof = {}; // vide le store audio pour forcer un nouvel enregistrement
-          loadProfLessons(); // refresh liste
+          store.prof = {};
+          loadProfLessons();
         } else {
           saveProfStatus.textContent = "❌ " + (data.error || "Erreur.");
           saveProfStatus.style.color = "red";
@@ -1062,13 +1061,11 @@
       saveEleveStatus.style.color = "#888";
 
       const formData = new FormData();
-      // On sauvegarde le lessonName
       formData.append('lessonName', lessonName);
       formData.append('studentName', studentName);
       formData.append('profAudio', store.prof.blob, 'prof.wav');
       formData.append('eleveAudio', store.eleve.blob, 'eleve.wav');
 
-      // Récupérer les scores actuels affichés
       const scorePct = document.getElementById('scorePct').textContent || "0%";
       const subPitchVal = document.getElementById('subPitchVal').textContent || "0%";
       const subRhythmVal = document.getElementById('subRhythmVal').textContent || "0%";
@@ -1084,7 +1081,6 @@
         if (data.success) {
           saveEleveStatus.textContent = "✅ Essai sauvegardé avec succès !";
           saveEleveStatus.style.color = "green";
-          // Mémoriser pour le prochain essai
           saveEleveBtn.disabled = true;
           loadHistory();
         } else {
@@ -1180,18 +1176,14 @@
         if (profUrl && profUrl !== 'null' && profUrl !== 'undefined') {
           const resP = await fetch(profUrl);
           const blobP = await resP.blob();
-          await profTrack.injectBlob(blobP);
+          // Audio déjà traité côté serveur → pas de re-trim
+          await profTrack.injectBlob(blobP, { alreadyProcessed: true });
         }
         if (eleveUrl && eleveUrl !== 'null' && eleveUrl !== 'undefined') {
           const resE = await fetch(eleveUrl);
           const blobE = await resE.blob();
-          await eleveTrack.injectBlob(blobE);
-        }
-        // Force evaluation if both are loaded
-        if (store.prof?.blob && store.eleve?.blob) {
-          // computeAndDisplay() est déjà appelé par injectBlob(), mais s'il l'est asynchrone pour les deux, 
-          // on veut être sûr que le score final combine les deux. 
-          // injectBlob -> wave.once('ready', computeAndDisplay). C'est automatique.
+          // Audio déjà traité côté serveur → pas de re-trim
+          await eleveTrack.injectBlob(blobE, { alreadyProcessed: true });
         }
       } catch (err) {
         alert("Erreur de chargement: " + err.message);
@@ -1204,22 +1196,6 @@
     // ═══════════════════════════════════════════════════════════════
     // UTILITAIRES AUDIO
     // ═══════════════════════════════════════════════════════════════
-    // ─── Détecteur d'onset de parole ──────────────────────────────────────────────
-    //
-    //  Problème du trim naïf :
-    //    Le premier échantillon > seuil peut être un bruit de bouche, une
-    //    consonne occlusant, ou simplement du bruit de fond amplifié.
-    //    Surtout : si prof appuie et attend 100 ms avant de parler mais l'élève
-    //    attend 600 ms, les enveloppes et positions de syllabes sont décalées.
-    //
-    //  Solution :
-    //    1) Calcul d'une enveloppe RMS sur fenêtres de 15 ms
-    //    2) Détection du premier burst SOUTENU (N fenêtres consécutives > seuil)
-    //       → résiste aux clics et bruits parasites isolés
-    //    3) Début de l'audio exporté = onset détecté - PRE_SPEECH_SEC (0.20 s)
-    //       → marge fixe et identique pour les deux locuteurs
-    //    4) Fin = dernière fenêtre voisée + TAIL_SEC
-    //
     async function trimSilence(blob) {
       const audioCtx = new AudioContext();
       const decoded = await audioCtx.decodeAudioData(await blob.arrayBuffer());
@@ -1227,14 +1203,12 @@
       const nCh = decoded.numberOfChannels;
       const N = decoded.length;
 
-      // Mixage mono pour le calcul d'onset (plus rapide, inutile de traiter chaque canal)
       const mono = new Float32Array(N);
       for (let c = 0; c < nCh; c++) {
         const d = decoded.getChannelData(c);
         for (let i = 0; i < N; i++) mono[i] += d[i] / nCh;
       }
 
-      // ── Enveloppe RMS par fenêtres de ONSET_WIN_SEC ───────────────
       const winLen = Math.max(1, Math.floor(ONSET_WIN_SEC * sr));
       const nFrames = Math.ceil(N / winLen);
       const rms = new Float32Array(nFrames);
@@ -1245,14 +1219,11 @@
         rms[f] = Math.sqrt(sum / (cnt || 1));
       }
 
-      // ── Seuil adaptatif : médiane du premier tiers + marge ────────
-      //  (robuste si le fond sonore varie selon l'environnement)
       const noiseFrames = rms.slice(0, Math.max(4, Math.floor(nFrames * 0.20)));
       const sorted = Float32Array.from(noiseFrames).sort();
-      const noiseFloor = sorted[Math.floor(sorted.length * 0.75)]; // percentile 75
-      const dynThresh = Math.max(SILENCE_THRESH, noiseFloor * 4);  // 4× le bruit de fond
+      const noiseFloor = sorted[Math.floor(sorted.length * 0.75)];
+      const dynThresh = Math.max(SILENCE_THRESH, noiseFloor * 4);
 
-      // ── Onset : première fenêtre d'un burst soutenu ───────────────
       let onsetFrame = -1;
       for (let f = 0; f < nFrames - ONSET_CONFIRM; f++) {
         let ok = true;
@@ -1262,21 +1233,17 @@
         if (ok) { onsetFrame = f; break; }
       }
 
-      // Si rien détecté (silence total ?), comportement de secours
       if (onsetFrame < 0) onsetFrame = 0;
 
-      // ── Calcul du start avec marge fixe PRE_SPEECH_SEC ───────────
       const onsetSample = onsetFrame * winLen;
       const start = Math.max(0, onsetSample - Math.round(PRE_SPEECH_SEC * sr));
 
-      // ── Fin : dernier burst de parole ────────────────────────────
       let endFrame = nFrames - 1;
       for (let f = nFrames - 1; f >= 0; f--) {
         if (rms[f] >= dynThresh) { endFrame = f; break; }
       }
       const end = Math.min(N - 1, (endFrame + 1) * winLen + Math.round(TAIL_SEC * sr));
 
-      // ── Découpe du buffer ─────────────────────────────────────────
       const newLen = end - start + 1;
       const buf = audioCtx.createBuffer(nCh, newLen, sr);
       for (let c = 0; c < nCh; c++) {
@@ -1305,7 +1272,6 @@
     }
 
     // ─── Initialisation au chargement ──────────────────────────────────────────
-    // Déclencher l'initialisation du mode élève (pour cacher les boutons du prof, etc.)
     appModes[0].dispatchEvent(new Event('change'));
 
     // Cleanup au déchargement
