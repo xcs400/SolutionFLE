@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solution FLE — Éditeur de traductions</title>
-    <link rel="icon" type="image/svg+xml" href="/logo_Solution.jpg" />
+    <link rel="icon" type="image/svg+xml" href="/Logo_Solution.jpg" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -1113,15 +1113,15 @@
         function showContextMenu(e) {
             e.preventDefault();
             const target = e.target;
-            
+
             // Check if right-clicked on a textarea/input in lang cells
-            if ((target.tagName === 'TEXTAREA' || target.tagName === 'INPUT') && 
+            if ((target.tagName === 'TEXTAREA' || target.tagName === 'INPUT') &&
                 target.dataset.lang && target.dataset.key) {
                 contextMenuTarget = target;
                 contextMenuData.key = target.dataset.key;
                 contextMenuData.index = target.dataset.index || null;  // Capture array index if exists
                 contextMenuData.targetLang = target.dataset.lang;
-                
+
                 const menu = document.getElementById('contextMenu');
                 menu.style.left = e.clientX + 'px';
                 menu.style.top = e.clientY + 'px';
@@ -1196,7 +1196,7 @@
 
                 // Update the target field
                 setByPath(current[targetLang], fullKey, translated);
-                
+
                 // Find and update the corresponding input/textarea
                 let targetElement;
                 if (index !== null && index !== undefined) {
@@ -1212,7 +1212,7 @@
                         input[data-lang="${targetLang}"][data-key="${key}"]`
                     );
                 }
-                
+
                 if (targetElement) {
                     targetElement.value = translated;
                     targetElement.classList.add('modified');

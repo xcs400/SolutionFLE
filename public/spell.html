@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Prononciation – Comparaison</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial;
+      padding: 16px;
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    h2 {
+      margin: 0 0 4px 0;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .track {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      background: #fafafa;
+    }
+
+    .track.prof {
+      border-left: 4px solid #0077ff;
+    }
+
+    .track.eleve {
+      border-left: 4px solid #ff6600;
+    }
+
+    .track-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .wave-wrap {
+      position: relative;
+      height: 120px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      background: #fff;
+    }
+
+    .wave-wrap>div {
+      position: absolute;
+      inset: 0;
+    }
+
+    .wave-wrap canvas.overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .status {
+      font-size: 12px;
+      color: #888;
+      margin-top: 6px;
+      min-height: 16px;
+    }
+
+    button {
+      padding: 9px 18px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background: #eee;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+
+    button:disabled {
+      opacity: .4;
+      cursor: default;
+    }
+
+    button.rec {
+      background: #0077ff;
+      color: #fff;
+    }
+
+    button.rec.recording {
+      background: #ff2222;
+    }
+
+    button.play {
+      background: #28a745;
+      color: #fff;
+    }
+
+    #bothBtn {
+      display: block;
+      width: 100%;
+      padding: 13px;
+      font-size: 15px;
+      background: #6f42c1;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 4px;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+
+    #bothBtn:disabled {
+      opacity: .4;
+      cursor: default;
+    }
+
+    #scoreBox {
+      margin-top: 18px;
+      padding: 16px 20px;
+      border-radius: 8px;
+      background: #f0f0f0;
+      flex-direction: column;
+    }
+
+    .score-top {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      gap: 18px;
+    }
+
+    #scoreLabel {
+      font-size: 14px;
+      color: #555;
+      flex: 1;
+      font-weight: bold;
+    }
+
+    #scoreBar {
+      width: 100%;
+      height: 10px;
+      border-radius: 5px;
+      background: #ddd;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    #scoreBarFill {
+      height: 100%;
+      width: 0%;
+      border-radius: 5px;
+      transition: width .6s ease, background .4s;
+    }
+
+    #scorePct {
+      font-size: 38px;
+      font-weight: bold;
+      letter-spacing: -1px;
+      transition: color .4s;
+    }
+
+    .sub-scores {
+      display: flex;
+      gap: 15px;
+      margin-top: 15px;
+      border-top: 1px solid #ddd;
+      padding-top: 15px;
+      width: 100%;
+    }
+
+    .sub-score {
+      flex: 1;
+      text-align: center;
+    }
+
+    .sub-score-val {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 2px;
+    }
+
+    .sub-score-lbl {
+      font-size: 11px;
+      color: #777;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .legend {
+      font-size: 11px;
+      color: #666;
+      margin-top: 4px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    @media(max-width:480px) {
+      button {
+        flex: 1;
+      }
+
+      #scorePct {
+        font-size: 28px;
+      }
+
+      .wave-wrap {
+        height: 22vw;
+        min-height: 80px;
+      }
+    }
+  </style>
+  <script src="https://unpkg.com/wavesurfer.js"></script>
+</head>
+
+<body>
+
+  <!-- Sélecteur de modes -->
+  <div
+    style="margin-bottom: 20px; display:flex; gap:20px; background:#fff; padding:15px; border-radius:8px; border:1px solid #ddd; align-items:center;">
+    <strong style="white-space:nowrap;">Mode de l'application :</strong>
+    <label style="cursor:pointer;"><input type="radio" name="appMode" value="student" checked> 🎓 Entraînement
+      (Élève)</label>
+    <label style="cursor:pointer;"><input type="radio" name="appMode" value="prof"> 👩‍🏫 Création de leçon
+      (Prof)</label>
+  </div>
+
+  <!-- Sélecteur de leçons (Mode Eleve) -->
+  <div id="lessonSelectorBox"
+    style="margin-bottom:20px; padding:15px; background:#eef4ff; border-radius:8px; border:1px dashed #b7cfff; display:flex; flex-direction:column; gap:10px;">
+    <strong>Cliquer sur une leçon pour l'étudier :</strong>
+    <select id="lessonSelect" style="padding:10px; border-radius:4px; border:1px solid #ccc; font-size:14px;">
+      <option value="">-- Chargement des leçons actives --</option>
+    </select>
+  </div>
+
+  <div class="track prof" id="profTrackWrapper">
+    <h2>👩‍🏫 Professeur <span id="profHint" style="font-size:12px; font-weight:normal; color:#666;">(Écoute seulement
+        en mode élève)</span></h2>
+    <div class="track-controls">
+      <button class="rec" id="recProf" disabled>🎤 Parler</button>
+      <button class="play" id="playProf" disabled>▶ Écouter</button>
+    </div>
+    <div class="wave-wrap">
+      <div id="waveProf"></div><canvas class="overlay" id="envProf"></canvas>
+    </div>
+    <div class="status" id="statusProf">⏳ Initialisation…</div>
+  </div>
+
+  <!-- Boîte de sauvegarde (Mode Prof) -->
+  <div id="saveProfBox"
+    style="display:none; margin-bottom:20px; padding:15px; background:#fff3e0; border-radius:8px; border:1px solid #ffcc80; flex-direction:column; gap:10px;">
+    <h3 style="margin:0; font-size:16px;">💾 Sauvegarder la leçon (Base de données)</h3>
+    <div style="font-size:12px; color:#666;">Pour écraser le son d'une leçon, sélectionnez-la ci-dessous, enregistrez un
+      nouveau son, puis sauvegardez. Pour modifier le nom, modifiez-le et sauvegardez.</div>
+    <div style="display:flex; gap:10px;">
+      <input type="hidden" id="profLessonIdInput" value="">
+      <input type="text" id="profLessonInput" placeholder="Ex: Mots finissant par -eur"
+        style="flex:1; padding:10px; border:1px solid #ccc; border-radius:4px;">
+      <button id="saveProfBtn" style="background:#ff9800; color:#fff; font-weight:bold; cursor:pointer;"
+        disabled>Sauvegarder La Leçon</button>
+    </div>
+    <div id="saveProfStatus" style="font-size:14px; font-weight:bold;"></div>
+
+    <div style="margin-top:15px; border-top:1px solid #ffcc80; padding-top:10px;">
+      <h4 style="margin:0 0 10px 0; font-size:14px; color:#ff9800;">Liste de vos leçons</h4>
+      <div id="profLessonList" style="display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto;">
+        <span style="color:#888; font-size:12px;">Chargement...</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="track eleve" id="eleveTrackWrapper">
+    <h2>🎓 Élève</h2>
+    <div class="track-controls">
+      <button class="rec" id="recEleve" disabled>🎤 Parler</button>
+      <button class="play" id="playEleve" disabled>▶ Écouter</button>
+    </div>
+    <div class="wave-wrap">
+      <div id="waveEleve"></div><canvas class="overlay" id="envEleve"></canvas>
+    </div>
+    <div class="status" id="statusEleve">⏳ Initialisation…</div>
+  </div>
+
+  <div class="legend">
+    <span>Intonation syllabe :</span>
+    <span style="color:#22aa44">▲ montante</span>
+    <span style="color:#cc3333">▼ descendante</span>
+    <span style="color:#888">● stable</span>
+  </div>
+
+  <div style="display:flex; gap:10px; margin-bottom:15px;">
+    <button id="bothBtn" disabled>▶▶ Écouter les deux ensemble</button>
+  </div>
+
+  <div id="scoreBox"
+    style="display:none; margin-bottom:20px; padding:15px; border-radius:8px; border:1px solid #ddd; background:#fff;">
+    <div class="score-top">
+      <div style="flex:1">
+        <div id="scoreLabel">Score global</div>
+        <div id="scoreBar">
+          <div id="scoreBarFill"></div>
+        </div>
+      </div>
+      <div id="scorePct">—</div>
+    </div>
+    <div class="sub-scores">
+      <div class="sub-score">
+        <div id="subPitchVal" class="sub-score-val">—</div>
+        <div class="sub-score-lbl">🎵 Intonation (pitch)</div>
+      </div>
+      <div class="sub-score">
+        <div id="subRhythmVal" class="sub-score-val">—</div>
+        <div class="sub-score-lbl">🥁 Rythme syllabique</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="saveEleveBox"
+    style="margin-top:20px; padding:15px; background:#f9f9f9; border-radius:8px; border:1px solid #ddd; display:flex; flex-direction:column; gap:10px;">
+    <h3 style="margin:0; font-size:16px;">💾 Sauvegarder mon essai</h3>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <input type="text" id="studentInput" placeholder="Prénom de l'élève"
+        style="flex:1; padding:10px; border:1px solid #ccc; border-radius:4px;">
+    </div>
+    <button id="saveEleveBtn" style="background:#28a745; color:#fff; font-weight:bold; cursor:pointer;" disabled>Envoyer
+      à mon professeur</button>
+    <div id="saveEleveStatus" style="font-size:14px; text-align:center; font-weight:bold;"></div>
+  </div>
+
+  <div id="historyBox"
+    style="margin-top:20px; padding:15px; background:#fff; border-radius:8px; border:1px solid #ddd;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="margin:0; font-size:16px;">📚 Historique des progrès</h3>
+      <button id="refreshHistBtn" style="padding:4px 8px; font-size:12px;">Rafraîchir</button>
+    </div>
+    <div id="historyList"
+      style="margin-top:15px; display:flex; flex-direction:column; gap:10px; max-height:400px; overflow-y:auto;">
+    </div>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════════
+    // CONSTANTES
+    // ═══════════════════════════════════════════════════════════════
+    const SILENCE_THRESH = 0.025; // seuil RMS pour détecter la parole
+    const ONSET_WIN_SEC = 0.015; // fenêtre RMS pour le détecteur d'onset (15 ms)
+    const ONSET_CONFIRM = 3;     // nb de fenêtres consécutives pour confirmer l'onset
+    const PRE_SPEECH_SEC = 0.20;  // silence conservé AVANT la première parole
+    const TAIL_SEC = 0.12;  // silence conservé APRÈS la fin de parole
+    const N_ENV = 512;   // buckets pour l'enveloppe
+
+    const store = { prof: null, eleve: null };
+
+    // ═══════════════════════════════════════════════════════════════
+    // LISSAGE GAUSSIEN
+    // ═══════════════════════════════════════════════════════════════
+    function gaussSmooth(arr, radius) {
+      const n = arr.length, r = Math.max(1, Math.round(radius));
+      const out = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        let s = 0, w = 0;
+        for (let j = Math.max(0, i - r); j <= Math.min(n - 1, i + r); j++) {
+          const g = Math.exp(-0.5 * ((j - i) / r) ** 2);
+          s += arr[j] * g; w += g;
+        }
+        out[i] = s / w;
+      }
+      return out;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ENVELOPPE RMS
+    // ═══════════════════════════════════════════════════════════════
+    function computeEnvRMS(buffer, nBuckets) {
+      const data = buffer.getChannelData(0);
+      const bSz = Math.ceil(data.length / nBuckets);
+      const env = new Float32Array(nBuckets);
+      let maxVal = 0;
+      for (let b = 0; b < nBuckets; b++) {
+        let sum = 0, cnt = 0, off = b * bSz;
+        for (let i = off; i < Math.min(off + bSz, data.length); i++, cnt++) sum += data[i] * data[i];
+        env[b] = Math.sqrt(sum / (cnt || 1));
+        if (env[b] > maxVal) maxVal = env[b];
+      }
+      if (maxVal > 0) for (let i = 0; i < nBuckets; i++) env[i] /= maxVal;
+      return env;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // EXTRACTION DE PITCH F0 (autocorrélation)
+    // ═══════════════════════════════════════════════════════════════
+    function extractPitch(buffer) {
+      const data = buffer.getChannelData(0);
+      const sr = buffer.sampleRate;
+      const frameLen = Math.floor(sr * 0.025); // 25 ms
+      const hopLen = Math.floor(sr * 0.010); // 10 ms
+      const minLag = Math.floor(sr / 500);
+      const maxLag = Math.floor(sr / 70);
+      const pitches = [];
+      const totalDur = buffer.duration;
+
+      for (let start = 0; start + frameLen <= data.length; start += hopLen) {
+        let energy = 0;
+        for (let i = start; i < start + frameLen; i++) energy += data[i] * data[i];
+        energy /= frameLen;
+        if (energy < 0.0003) { pitches.push(0); continue; }
+
+        let bestCorr = -1, bestLag = 0;
+        for (let lag = minLag; lag <= maxLag; lag++) {
+          let num = 0, den = 0;
+          const lim = frameLen - maxLag;
+          for (let i = 0; i < lim; i++) {
+            num += data[start + i] * data[start + i + lag];
+            den += data[start + i] * data[start + i];
+          }
+          const r = den > 1e-10 ? num / den : 0;
+          if (r > bestCorr) { bestCorr = r; bestLag = lag; }
+        }
+        pitches.push((bestCorr > 0.28 && bestLag > 0) ? sr / bestLag : 0);
+      }
+
+      // Filtre médian 5 pts (anti octave-jumps)
+      const med = pitches.slice();
+      for (let i = 2; i < pitches.length - 2; i++) {
+        const w = [pitches[i - 2], pitches[i - 1], pitches[i], pitches[i + 1], pitches[i + 2]].sort((a, b) => a - b);
+        med[i] = w[2];
+      }
+      // Retourne aussi le hop en secondes pour la conversion temps→index
+      return { frames: med, hopSec: hopLen / sr, totalDur };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // DENSITÉ DE PITCH VOISÉ — tableau normalisé [0..N_ENV]
+    // Utilisé pour pondérer la détection de syllabes
+    // ═══════════════════════════════════════════════════════════════
+    function buildVoicedDensity(pitchResult, nBuckets) {
+      const { frames, hopSec, totalDur } = pitchResult;
+      const density = new Float32Array(nBuckets);
+      for (let f = 0; f < frames.length; f++) {
+        if (frames[f] <= 0) continue;
+        const t = f * hopSec / totalDur;           // 0..1
+        const b = Math.min(nBuckets - 1, Math.floor(t * nBuckets));
+        density[b] += 1;
+      }
+      // Normalise
+      const maxD = Math.max(...density, 1);
+      for (let i = 0; i < nBuckets; i++) density[i] /= maxD;
+      return density;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // DÉTECTION DE SYLLABES (pitch-gated)
+    // ═══════════════════════════════════════════════════════════════
+    //
+    // NOUVEAU : combiner enveloppe d'énergie ET densité de frames voisées.
+    // Un noyau syllabique = là où les DEUX sont élevés.
+    // Cela évite les faux positifs sur consonnes sourdes (s, f, p...).
+    //
+    function detectSyllables(env, pitchResult) {
+      const n = env.length;
+      const voiced = buildVoicedDensity(pitchResult, n);
+
+      // Lissage de l'énergie (double passe)
+      const eSmooth = gaussSmooth(gaussSmooth(env, n * 0.025), n * 0.018);
+
+      // Lissage de la densité voisée (fenêtre plus large → contexte voisé)
+      const vSmooth = gaussSmooth(voiced, n * 0.04);
+
+      // Score combiné : géométrique (les deux doivent être présents)
+      // energy^0.5 * voiced^0.5 → pénalise fortement quand l'un est absent
+      const combined = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        combined[i] = Math.sqrt(Math.max(0, eSmooth[i]) * Math.max(0, vSmooth[i]));
+      }
+
+      const globalMax = Math.max(...combined);
+      if (globalMax < 1e-6) return [];
+
+      const thr = globalMax * 0.18;
+      const minGap = Math.max(5, Math.floor(n * 0.07)); // ≥7% du signal entre syllabes
+
+      // Candidats avec prominence
+      const candidates = [];
+      for (let i = 3; i < n - 3; i++) {
+        if (combined[i] < thr) continue;
+        if (combined[i] <= combined[i - 1] || combined[i] <= combined[i + 1]) continue;
+        if (combined[i] <= combined[i - 2] || combined[i] <= combined[i + 2]) continue;
+
+        let lMin = combined[i], rMin = combined[i];
+        for (let j = Math.max(0, i - minGap); j < i; j++)
+          if (combined[j] < lMin) lMin = combined[j];
+        for (let j = i + 1; j <= Math.min(n - 1, i + minGap); j++)
+          if (combined[j] < rMin) rMin = combined[j];
+        const prom = combined[i] - Math.max(lMin, rMin);
+
+        if (prom >= globalMax * 0.10) {
+          candidates.push({ pos: i, val: combined[i], prom });
+        }
+      }
+
+      // NMS par prominence décroissante
+      const peaks = [];
+      for (const c of candidates.sort((a, b) => b.prom - a.prom)) {
+        if (peaks.every(p => Math.abs(p.pos - c.pos) >= minGap)) peaks.push(c);
+      }
+      peaks.sort((a, b) => a.pos - b.pos);
+      return peaks.map(p => p.pos / n); // positions normalisées 0→1
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // INTONATION PAR SYLLABE
+    // ═══════════════════════════════════════════════════════════════
+    //
+    // Pour chaque syllabe, on regarde les frames de pitch dans une
+    // fenêtre centrée sur la syllabe (±80ms).
+    // On calcule la pente par régression linéaire sur les frames voisées.
+    // Résultat : 'up' | 'down' | 'flat'
+    //
+    function computeIntonationPerSyllable(syllablePositions, pitchResult) {
+      const { frames, hopSec, totalDur } = pitchResult;
+
+      return syllablePositions.map(pos => {
+        const tCenter = pos * totalDur;              // secondes
+        const winSec = 0.10;                        // ±100ms
+        const fStart = Math.max(0, Math.floor((tCenter - winSec) / hopSec));
+        const fEnd = Math.min(frames.length - 1, Math.ceil((tCenter + winSec) / hopSec));
+
+        // Frames voisées dans la fenêtre
+        const voiced = [];
+        for (let f = fStart; f <= fEnd; f++) {
+          if (frames[f] > 50) voiced.push({ t: f - fStart, hz: frames[f] });
+        }
+
+        if (voiced.length < 4) return { pos, tone: 'flat', slopeST: 0 };
+
+        // Régression linéaire (moindres carrés) sur les semitones
+        // y = semitones par rapport à la médiane locale
+        const REF = 150;
+        const pts = voiced.map(v => ({ t: v.t, st: 12 * Math.log2(v.hz / REF) }));
+        const n = pts.length;
+        const mT = pts.reduce((s, p) => s + p.t, 0) / n;
+        const mST = pts.reduce((s, p) => s + p.st, 0) / n;
+        let num = 0, den = 0;
+        for (const p of pts) { num += (p.t - mT) * (p.st - mST); den += (p.t - mT) ** 2; }
+        const slope = den > 0 ? num / den : 0; // semitones / frame
+
+        // Pente totale sur la durée de la fenêtre
+        const totalSlope = slope * (fEnd - fStart);
+
+        // Seuils : ±0.8 semitone de variation perceptible
+        const tone = totalSlope > 0.8 ? 'up' : totalSlope < -0.8 ? 'down' : 'flat';
+        return { pos, tone, slopeST: totalSlope };
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SCORE PITCH (DTW sur contours mélodiques)
+    // ═══════════════════════════════════════════════════════════════
+    function resample(arr, n) {
+      const out = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        const t = i / (n - 1) * (arr.length - 1);
+        const lo = Math.floor(t), hi = Math.min(lo + 1, arr.length - 1);
+        out[i] = arr[lo] + (t - lo) * (arr[hi] - arr[lo]);
+      }
+      return out;
+    }
+
+    function scorePitch(pitchA, pitchB) {
+      const REF = 150;
+      const toSt = hz => hz > 50 ? 12 * Math.log2(hz / REF) : null;
+
+      const vA = pitchA.frames.map(toSt).filter(v => v !== null);
+      const vB = pitchB.frames.map(toSt).filter(v => v !== null);
+
+      if (vA.length < 5 || vB.length < 5) return 0.50;
+
+      const center = arr => { const m = arr.reduce((s, v) => s + v, 0) / arr.length; return arr.map(v => v - m); };
+      const cA = center(vA), cB = center(vB);
+
+      const N = 80;
+      const rA = Array.from(resample(Float32Array.from(cA), N));
+      const rB = Array.from(resample(Float32Array.from(cB), N));
+
+      const dtw = Array.from({ length: N + 1 }, () => new Float32Array(N + 1).fill(Infinity));
+      dtw[0][0] = 0;
+      for (let i = 1; i <= N; i++) for (let j = 1; j <= N; j++) {
+        const cost = Math.abs(rA[i - 1] - rB[j - 1]);
+        dtw[i][j] = cost + Math.min(dtw[i - 1][j], dtw[i][j - 1], dtw[i - 1][j - 1]);
+      }
+      const dtwDist = dtw[N][N] / (2 * N);
+      const rawScore = Math.max(0, 1 - dtwDist / 3.5);
+
+      const vrA = vA.length / pitchA.frames.length;
+      const vrB = vB.length / pitchB.frames.length;
+      const vf = Math.min(vrA, vrB) / (Math.max(vrA, vrB) + 1e-10);
+
+      return rawScore * (0.7 + 0.3 * vf);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SCORE RYTHME (DTW sur IOI normalisés)
+    // ═══════════════════════════════════════════════════════════════
+    function scoreRhythm(posA, posB) {
+      const nA = posA.length, nB = posB.length;
+      if (nA === 0 || nB === 0) return 0.50;
+
+      const countFactor = Math.max(0.60, 1 - Math.abs(nA - nB) / Math.max(nA, nB) * 0.5);
+      if (nA < 2 || nB < 2) return 0.55 * countFactor;
+
+      const ioiOf = pos => {
+        const ioi = pos.slice(1).map((v, i) => v - pos[i]);
+        const sum = ioi.reduce((a, b) => a + b, 0);
+        return sum > 0 ? ioi.map(v => v / sum) : ioi;
+      };
+      const ioiA = ioiOf(posA), ioiB = ioiOf(posB);
+      const la = ioiA.length, lb = ioiB.length;
+      const dp = Array.from({ length: la + 1 }, () => new Float32Array(lb + 1).fill(Infinity));
+      dp[0][0] = 0;
+      for (let i = 1; i <= la; i++) for (let j = 1; j <= lb; j++) {
+        const cost = Math.abs(ioiA[i - 1] - ioiB[j - 1]);
+        dp[i][j] = cost + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+      }
+      const dtwDist = dp[la][lb] / Math.max(la, lb);
+      const ioiScore = Math.max(0, 1 - dtwDist * 4);
+      return ioiScore * countFactor;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // AFFICHAGE DES SCORES
+    // ═══════════════════════════════════════════════════════════════
+    function computeAndDisplay() {
+      if (!store.prof || !store.eleve) return;
+
+      const pctPitch = Math.round(scorePitch(store.prof.pitch, store.eleve.pitch) * 100);
+      const pctRhythm = Math.round(scoreRhythm(store.prof.syllables, store.eleve.syllables) * 100);
+      const pctGlobal = Math.round(pctPitch * 0.50 + pctRhythm * 0.50);
+
+      document.getElementById('scoreBox').style.display = 'flex';
+      const col = v => v >= 75 ? '#28a745' : v >= 50 ? '#fd7e14' : '#dc3545';
+
+      document.getElementById('scorePct').textContent = pctGlobal + ' %';
+      document.getElementById('scorePct').style.color = col(pctGlobal);
+      document.getElementById('scoreBarFill').style.width = pctGlobal + '%';
+      document.getElementById('scoreBarFill').style.background = col(pctGlobal);
+      document.getElementById('subPitchVal').textContent = pctPitch + ' %';
+      document.getElementById('subPitchVal').style.color = col(pctPitch);
+      document.getElementById('subRhythmVal').textContent = pctRhythm + ' %';
+      document.getElementById('subRhythmVal').style.color = col(pctRhythm);
+      document.getElementById('scoreLabel').textContent =
+        pctGlobal >= 75 ? '🎉 Excellente prononciation !'
+          : pctGlobal >= 50 ? '👍 Bien, continue à t\'entraîner !'
+            : '💪 Écoute bien l\'intonation du professeur';
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // DESSIN : enveloppe + courbe de pitch + marqueurs syllabiques
+    // ═══════════════════════════════════════════════════════════════
+    function drawOverlay(canvas, buffer, color, syllableInfo, pitchResult) {
+      const wrap = canvas.parentElement;
+      const W = wrap.clientWidth || 740, H = wrap.clientHeight || 120;
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, W, H);
+
+      // ── 1. Enveloppe RMS ──────────────────────────────────────────
+      const env = computeEnvRMS(buffer, W);
+      const sm = gaussSmooth(env, Math.max(3, Math.floor(W * 0.01)));
+
+      // Zone enveloppe = partie basse du canvas (60% bas)
+      const envTop = H * 0.38; // le haut de la zone enveloppe
+      const envH = H - envTop;
+      const scaleY = envH * 0.46;
+      const mid = envTop + envH * 0.5;
+
+      const grad = ctx.createLinearGradient(0, envTop, 0, H);
+      grad.addColorStop(0, color + '99');
+      grad.addColorStop(0.5, color + 'cc');
+      grad.addColorStop(1, color + '99');
+
+      // Remplissage enveloppe
+      ctx.beginPath();
+      ctx.moveTo(0, mid - sm[0] * scaleY);
+      for (let i = 1; i < W; i++) {
+        const cx = i - .5;
+        ctx.bezierCurveTo(cx, mid - sm[i - 1] * scaleY, cx, mid - sm[i] * scaleY, i, mid - sm[i] * scaleY);
+      }
+      for (let i = W - 1; i >= 0; i--) {
+        const cx = i + .5;
+        ctx.bezierCurveTo(cx, mid + sm[Math.min(i + 1, W - 1)] * scaleY, cx, mid + sm[i] * scaleY, i, mid + sm[i] * scaleY);
+      }
+      ctx.closePath();
+      ctx.fillStyle = grad; ctx.globalAlpha = .40; ctx.fill();
+
+      // Contour haut enveloppe
+      ctx.beginPath();
+      ctx.moveTo(0, mid - sm[0] * scaleY);
+      for (let i = 1; i < W; i++) {
+        const cx = i - .5;
+        ctx.bezierCurveTo(cx, mid - sm[i - 1] * scaleY, cx, mid - sm[i] * scaleY, i, mid - sm[i] * scaleY);
+      }
+      ctx.globalAlpha = .85; ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+
+      // ── 2. Courbe de pitch (zone haute du canvas) ─────────────────
+      // Zone pitch = bande 0..envTop avec 4px de marge
+      const { frames, hopSec, totalDur } = pitchResult;
+      const pitchTop = 4;
+      const pitchBottom = envTop - 6;
+      const pitchZoneH = pitchBottom - pitchTop;
+
+      // Fréquences min/max pour la normalisation (en semitones)
+      const REF = 150;
+      const voicedHz = frames.filter(v => v > 50);
+      if (voicedHz.length > 3) {
+        const voicedST = voicedHz.map(hz => 12 * Math.log2(hz / REF));
+        const minST = Math.min(...voicedST) - 1;
+        const maxST = Math.max(...voicedST) + 1;
+
+        const stToY = st => pitchBottom - ((st - minST) / (maxST - minST)) * pitchZoneH;
+
+        // Tracé : on connecte uniquement les frames voisées consécutives
+        ctx.beginPath();
+        let inLine = false;
+        for (let f = 0; f < frames.length; f++) {
+          const hz = frames[f];
+          if (hz <= 50) { inLine = false; continue; }
+          const x = (f * hopSec / totalDur) * W;
+          const st = 12 * Math.log2(hz / REF);
+          const y = stToY(st);
+          if (!inLine) { ctx.moveTo(x, y); inLine = true; }
+          else { ctx.lineTo(x, y); }
+        }
+        ctx.globalAlpha = .90;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.lineJoin = 'round';
+        ctx.setLineDash([]);
+        ctx.stroke();
+
+        // Axe horizontal léger au milieu de la zone pitch
+        ctx.beginPath();
+        const midST = (minST + maxST) / 2;
+        ctx.moveTo(0, stToY(midST));
+        ctx.lineTo(W, stToY(midST));
+        ctx.globalAlpha = .12;
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // ── 3. Marqueurs syllabiques + flèche d'intonation ───────────
+      ctx.globalAlpha = 1;
+      const ARROW_SZ = 7;  // demi-largeur de la flèche
+      const MARKER_Y = mid - 6; // juste au-dessus du sommet de l'enveloppe
+
+      for (const { pos, tone, slopeST } of syllableInfo) {
+        const x = Math.round(pos * W);
+
+        // Couleur selon la direction
+        const arrowColor =
+          tone === 'up' ? '#22aa44' :
+            tone === 'down' ? '#cc3333' : '#888888';
+
+        ctx.globalAlpha = 0.92;
+        ctx.fillStyle = arrowColor;
+        ctx.strokeStyle = arrowColor;
+
+        // Cherche la hauteur réelle de l'enveloppe à cette position
+        const ix = Math.min(Math.round(pos * W), W - 1);
+        const envTop_ = mid - sm[ix] * scaleY - 4; // sommet de l'enveloppe à x
+
+        if (tone === 'up') {
+          // Triangle pointant VERS LE HAUT (intonation montante)
+          ctx.beginPath();
+          ctx.moveTo(x, envTop_ - 12);
+          ctx.lineTo(x - ARROW_SZ, envTop_);
+          ctx.lineTo(x + ARROW_SZ, envTop_);
+          ctx.closePath();
+          ctx.fill();
+        } else if (tone === 'down') {
+          // Triangle pointant VERS LE BAS (intonation descendante)
+          ctx.beginPath();
+          ctx.moveTo(x, envTop_);
+          ctx.lineTo(x - ARROW_SZ, envTop_ - 12);
+          ctx.lineTo(x + ARROW_SZ, envTop_ - 12);
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          // Cercle (intonation stable)
+          ctx.beginPath();
+          ctx.arc(x, envTop_ - 6, ARROW_SZ * 0.7, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Petite barre verticale pointillée reliant le marqueur à la courbe de pitch
+        const pitchLineX = x;
+        ctx.beginPath();
+        ctx.moveTo(pitchLineX, envTop_ - 14);
+        ctx.lineTo(pitchLineX, pitchBottom);
+        ctx.globalAlpha = 0.18;
+        ctx.strokeStyle = arrowColor;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      ctx.globalAlpha = 1;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // USINE DE TRACK
+    // ═══════════════════════════════════════════════════════════════
+    function makeTrack({ waveId, envId, recId, playId, statusId, color, key }) {
+      const wave = WaveSurfer.create({
+        container: '#' + waveId, waveColor: color + '55', progressColor: color + '99',
+        height: 120, normalize: true,
+      });
+      const recBtn = document.getElementById(recId);
+      const playBtn = document.getElementById(playId);
+      const statusEl = document.getElementById(statusId);
+      const ovCanvas = document.getElementById(envId);
+      let mediaRecorder, audioChunks = [], stream;
+
+      (async () => {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          statusEl.textContent = '✅ Micro prêt';
+          recBtn.disabled = false;
+        } catch (e) {
+          const isHttp = location.protocol === 'http:' && !['localhost', '127.0.0.1'].includes(location.hostname);
+          statusEl.textContent = isHttp ? '❌ HTTP — micro requiert HTTPS'
+            : e.name === 'NotAllowedError' ? '❌ Permission refusée'
+              : e.name === 'NotFoundError' ? '❌ Aucun micro détecté'
+                : '❌ ' + e.name;
+          statusEl.style.color = '#c00';
+        }
+      })();
+
+      recBtn.onpointerdown = e => {
+        e.preventDefault(); recBtn.setPointerCapture(e.pointerId);
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => { if (e.data?.size > 0) audioChunks.push(e.data); };
+        mediaRecorder.onstop = async () => {
+          statusEl.textContent = '🔍 Analyse…';
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          const { wav, buffer } = await trimSilence(blob);
+
+          // 1. Pitch
+          const pitchResult = extractPitch(buffer);
+          // 2. Syllabes (pitch-gated)
+          const syllablePos = detectSyllables(computeEnvRMS(buffer, N_ENV), pitchResult);
+          // 3. Intonation par syllabe
+          const syllableInfo = computeIntonationPerSyllable(syllablePos, pitchResult);
+
+          store[key] = { pitch: pitchResult, syllables: syllablePos, blob: wav };
+          refreshSaveBtn();
+
+          wave.load(URL.createObjectURL(wav));
+          wave.once('ready', () => {
+            playBtn.disabled = false;
+            const tones = syllableInfo.map(s =>
+              s.tone === 'up' ? '▲' : s.tone === 'down' ? '▼' : '●'
+            ).join(' ');
+            statusEl.textContent = `✅ ${syllablePos.length} syllabe(s) : ${tones || '—'}`;
+            drawOverlay(ovCanvas, buffer, color, syllableInfo, pitchResult);
+            refreshBothBtn();
+            computeAndDisplay();
+          });
+        };
+        mediaRecorder.start(100);
+        recBtn.classList.add('recording'); recBtn.textContent = '⏺ Enregistrement…';
+      };
+
+      const stopRec = () => {
+        if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
+        recBtn.classList.remove('recording'); recBtn.textContent = '🎤 Parler';
+      };
+      recBtn.onpointerup = stopRec;
+      recBtn.onlostpointercapture = stopRec;
+      playBtn.onclick = () => { wave.isPlaying() ? wave.pause() : wave.play(); };
+
+      // Permet de forcer le chargement depuis un blob externe hors enregistrement
+      const injectBlob = async (blob) => {
+        statusEl.textContent = '🔍 Analyse…';
+        const { wav, buffer } = await trimSilence(blob);
+        const pitchResult = extractPitch(buffer);
+        const syllablePos = detectSyllables(computeEnvRMS(buffer, N_ENV), pitchResult);
+        const syllableInfo = computeIntonationPerSyllable(syllablePos, pitchResult);
+
+        store[key] = { pitch: pitchResult, syllables: syllablePos, blob: wav };
+        refreshSaveBtn();
+
+        wave.load(URL.createObjectURL(wav));
+        wave.once('ready', () => {
+          playBtn.disabled = false;
+          const tones = syllableInfo.map(s => s.tone === 'up' ? '▲' : s.tone === 'down' ? '▼' : '●').join(' ');
+          statusEl.textContent = `✅ ${syllablePos.length} syllabe(s) : ${tones || '—'}`;
+          drawOverlay(ovCanvas, buffer, color, syllableInfo, pitchResult);
+          refreshBothBtn();
+          computeAndDisplay();
+        });
+      };
+
+      return { wave, recBtn, ready: () => !playBtn.disabled, injectBlob };
+    }
+
+    const profTrack = makeTrack({ waveId: 'waveProf', envId: 'envProf', recId: 'recProf', playId: 'playProf', statusId: 'statusProf', color: '#0077ff', key: 'prof' });
+    const eleveTrack = makeTrack({ waveId: 'waveEleve', envId: 'envEleve', recId: 'recEleve', playId: 'playEleve', statusId: 'statusEleve', color: '#ff6600', key: 'eleve' });
+
+    // ─── Modes de l'Application ───────────────────────────────────────────────
+    let currentMode = 'student'; // 'student' ou 'prof'
+    const appModes = document.querySelectorAll('input[name="appMode"]');
+    const lessonSelectorBox = document.getElementById('lessonSelectorBox');
+    const saveProfBox = document.getElementById('saveProfBox');
+    const saveEleveBox = document.getElementById('saveEleveBox');
+    const eleveTrackWrapper = document.getElementById('eleveTrackWrapper');
+    const profHint = document.getElementById('profHint');
+
+    appModes.forEach(radio => radio.addEventListener('change', (e) => {
+      currentMode = e.target.value;
+      if (currentMode === 'prof') {
+        lessonSelectorBox.style.display = 'none';
+        eleveTrackWrapper.style.display = 'none';
+        bothBtn.style.display = 'none';
+        saveEleveBox.style.display = 'none';
+        document.getElementById('scoreBox').style.display = 'none';
+        profTrack.recBtn.disabled = false;
+        profTrack.recBtn.style.display = 'inline-block';
+        profHint.style.display = 'none';
+        saveProfBox.style.display = 'flex';
+        loadProfLessons(); // Charge la liste pour le mode Prof
+      } else {
+        lessonSelectorBox.style.display = 'flex';
+        eleveTrackWrapper.style.display = 'block';
+        bothBtn.style.display = 'inline-block';
+        saveEleveBox.style.display = 'flex';
+        profTrack.recBtn.disabled = true;
+        profTrack.recBtn.style.display = 'none';
+        profHint.style.display = 'inline';
+        saveProfBox.style.display = 'none';
+        document.getElementById('profLessonIdInput').value = ''; // Reset
+        document.getElementById('profLessonInput').value = '';
+        loadLessons(); // Charge la liste pour le mode Eleve
+      }
+      refreshBothBtn();
+      refreshSaveBtn();
+    }));
+
+    // ─── Lesson Loading (Mode Eleve) ──────────────────────────────────────────
+    const lessonSelect = document.getElementById('lessonSelect');
+
+    async function loadLessons() {
+      lessonSelect.innerHTML = "<option value=''>-- Chargement --</option>";
+      try {
+        const res = await fetch('/api/pronunciation/lessons');
+        const lessons = await res.json();
+        lessonSelect.innerHTML = "<option value=''>-- Sélectionnez une leçon --</option>";
+        lessons.forEach(l => {
+          const opt = document.createElement('option');
+          opt.value = l.audioUrl;
+          opt.textContent = l.lessonName;
+          lessonSelect.appendChild(opt);
+        });
+      } catch (e) {
+        lessonSelect.innerHTML = "<option value=''>Erreur serveur</option>";
+      }
+    }
+
+    lessonSelect.addEventListener('change', async (e) => {
+      const url = e.target.value;
+      if (!url) return;
+      document.getElementById('statusProf').textContent = "⬇️ Téléchargement leçon...";
+      try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        if (blob.size === 0) throw new Error("Audio vide");
+        await profTrack.injectBlob(blob);
+      } catch (err) {
+        document.getElementById('statusProf').textContent = "❌ Erreur de chargement: " + err.message;
+        document.getElementById('statusProf').style.color = '#c00';
+      }
+    });
+
+    const bothBtn = document.getElementById('bothBtn');
+
+    function refreshBothBtn() {
+      const ready = profTrack.ready() && eleveTrack.ready();
+      bothBtn.disabled = !ready;
+    }
+    bothBtn.onclick = () => { profTrack.wave.play(); eleveTrack.wave.play(); };
+
+    // ─── Save PROF Lesson API ────────────────────────────────────────────────
+    const saveProfBtn = document.getElementById('saveProfBtn');
+    const profLessonInput = document.getElementById('profLessonInput');
+    const profLessonIdInput = document.getElementById('profLessonIdInput');
+    const saveProfStatus = document.getElementById('saveProfStatus');
+    const profLessonList = document.getElementById('profLessonList');
+
+    async function loadProfLessons() {
+      try {
+        const res = await fetch('/api/pronunciation/lessons');
+        const lessons = await res.json();
+        profLessonList.innerHTML = "";
+        if (lessons.length === 0) {
+          profLessonList.innerHTML = "<span style='color:#888; font-size:12px;'>Aucune leçon pour l'instant.</span>";
+          return;
+        }
+        lessons.forEach(l => {
+          const item = document.createElement('div');
+          item.style = "display:flex; justify-content:space-between; align-items:center; background:#fff; padding:6px 10px; border-radius:4px; border:1px solid #eee; font-size:13px;";
+          item.innerHTML = `
+            <strong>${l.lessonName}</strong>
+            <div style="display:flex; gap:6px;">
+              <button onclick="window.editLesson('${l.id}', '${l.lessonName.replace(/'/g, "\\'")}', '${l.audioUrl}')" style="padding:2px 8px; font-size:11px; cursor:pointer;" title="Sélectionner pour écraser/modifier">✏️ Sélectionner</button>
+              <button onclick="window.deleteLesson('${l.id}')" style="padding:2px 8px; font-size:11px; background:#dc3545; color:#fff; border:none; border-radius:3px; cursor:pointer;">🗑️</button>
+            </div>
+          `;
+          profLessonList.appendChild(item);
+        });
+      } catch (e) {
+        profLessonList.innerHTML = "<span style='color:red;'>Erreur serveur.</span>";
+      }
+    }
+
+    window.editLesson = async function (id, name, url) {
+      profLessonIdInput.value = id;
+      profLessonInput.value = name;
+      saveProfStatus.textContent = "Mode édition: Vous pouvez modifier le nom ou ré-enregistrer l'audio.";
+      saveProfStatus.style.color = "blue";
+      // Optionnel : on pourrait même charger le son pour vérification
+      try {
+        if (url) {
+          const res = await fetch(url);
+          const blob = await res.blob();
+          await profTrack.injectBlob(blob);
+        }
+      } catch (e) { } // Ignore if audio not found
+    };
+
+    window.deleteLesson = async function (id) {
+      if (!confirm("Voulez-vous vraiment supprimer cette leçon pour tous les élèves ?")) return;
+      try {
+        const res = await fetch('/api/pronunciation/lesson/' + id, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          if (profLessonIdInput.value === id) {
+            profLessonIdInput.value = "";
+            profLessonInput.value = "";
+          }
+          loadProfLessons();
+        } else { alert("Erreur: " + data.error); }
+      } catch (e) { alert("Erreur connexion"); }
+    };
+
+    saveProfBtn.onclick = async () => {
+      const lessonName = profLessonInput.value.trim();
+      const editId = profLessonIdInput.value;
+      if (!lessonName) return alert("Veuillez renseigner le nom de la leçon.");
+
+      let confirmMsg = editId ? "Mettre à jour cette leçon ?" : "Sauvegarder cette nouvelle leçon dans la base ?";
+      if (!confirm(confirmMsg)) return;
+
+      saveProfBtn.disabled = true;
+      saveProfStatus.textContent = "⏳ Sauvegarde...";
+      saveProfStatus.style.color = "#888";
+
+      const formData = new FormData();
+      formData.append('lessonName', lessonName);
+      if (editId) formData.append('id', editId);
+
+      // Si profTrack l'a, on renvoie. (si pas d'audio et editId, on fera juste un rename coté serveur si on ne l'attache pas.
+      // Mais en mode prof le createBlob sera dispo uniquement s'il a rec.
+      if (store.prof?.blob) {
+        formData.append('profAudio', store.prof.blob, 'prof.wav');
+      } else if (!editId) {
+        return alert("Veuillez enregistrer un son pour une NOUVELLE leçon.");
+      }
+
+      try {
+        const res = await fetch('/api/pronunciation/lesson', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+          saveProfStatus.textContent = editId ? "✅ Leçon mise à jour !" : "✅ Leçon créée et sauvegardée !";
+          saveProfStatus.style.color = "green";
+          profLessonIdInput.value = ''; // Reset selected ID
+          profLessonInput.value = '';
+          store.prof = {}; // vide le store audio pour forcer un nouvel enregistrement
+          loadProfLessons(); // refresh liste
+        } else {
+          saveProfStatus.textContent = "❌ " + (data.error || "Erreur.");
+          saveProfStatus.style.color = "red";
+          saveProfBtn.disabled = false;
+        }
+      } catch (err) {
+        saveProfStatus.textContent = "❌ Erreur de connexion.";
+        saveProfStatus.style.color = "red";
+        saveProfBtn.disabled = false;
+      }
+    };
+
+    // ─── Save ELEVE Attempt API  ─────────────────────────────────────────────
+    const saveEleveBtn = document.getElementById('saveEleveBtn');
+    const studentInput = document.getElementById('studentInput');
+    const saveEleveStatus = document.getElementById('saveEleveStatus');
+
+    function refreshSaveBtn() {
+      if (currentMode === 'prof') {
+        const isProfReady = !!store.prof?.blob;
+        saveProfBtn.disabled = !isProfReady;
+        saveProfBtn.style.opacity = isProfReady ? '1' : '0.5';
+      } else {
+        const isReady = store.prof?.blob && store.eleve?.blob && lessonSelect.value !== '';
+        saveEleveBtn.disabled = !isReady;
+        saveEleveBtn.style.opacity = isReady ? '1' : '0.5';
+      }
+    }
+
+    saveEleveBtn.onclick = async () => {
+      const lessonName = lessonSelect.options[lessonSelect.selectedIndex].text;
+      const studentName = studentInput.value.trim();
+
+      if (!studentName || !lessonSelect.value) {
+        alert("Veuillez choisir une leçon et renseigner votre prénom.");
+        return;
+      }
+
+      if (!confirm("Voulez-vous envoyer cet essai au professeur ?")) return;
+
+      saveEleveBtn.disabled = true;
+      saveEleveStatus.textContent = "⏳ Envoi...";
+      saveEleveStatus.style.color = "#888";
+
+      const formData = new FormData();
+      // On sauvegarde le lessonName
+      formData.append('lessonName', lessonName);
+      formData.append('studentName', studentName);
+      formData.append('profAudio', store.prof.blob, 'prof.wav');
+      formData.append('eleveAudio', store.eleve.blob, 'eleve.wav');
+
+      // Récupérer les scores actuels affichés
+      const scorePct = document.getElementById('scorePct').textContent || "0%";
+      const subPitchVal = document.getElementById('subPitchVal').textContent || "0%";
+      const subRhythmVal = document.getElementById('subRhythmVal').textContent || "0%";
+      formData.append('scores', JSON.stringify({
+        global: scorePct.replace('%', ''),
+        pitch: subPitchVal.replace('%', ''),
+        rhythm: subRhythmVal.replace('%', '')
+      }));
+
+      try {
+        const res = await fetch('/api/pronunciation/save', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+          saveEleveStatus.textContent = "✅ Essai sauvegardé avec succès !";
+          saveEleveStatus.style.color = "green";
+          // Mémoriser pour le prochain essai
+          saveEleveBtn.disabled = true;
+          loadHistory();
+        } else {
+          saveEleveStatus.textContent = "❌ " + (data.error || "Erreur serveur.");
+          saveEleveStatus.style.color = "red";
+          saveEleveBtn.disabled = false;
+        }
+      } catch (err) {
+        saveEleveStatus.textContent = "❌ Erreur de connexion.";
+        saveEleveStatus.style.color = "red";
+        saveEleveBtn.disabled = false;
+      }
+    };
+
+    // ─── History UI ───────────────────────────────────────────────────────────
+    const historyList = document.getElementById('historyList');
+    const refreshHistBtn = document.getElementById('refreshHistBtn');
+
+    async function loadHistory() {
+      historyList.innerHTML = "<div style='color:#888;'>Chargement...</div>";
+      try {
+        const res = await fetch('/api/pronunciation/history');
+        const items = await res.json();
+
+        if (items.length === 0) {
+          historyList.innerHTML = "<div style='color:#888;'>Aucun historique.</div>";
+          return;
+        }
+
+        historyList.innerHTML = "";
+        items.forEach(item => {
+          const date = new Date(item.timestamp).toLocaleString();
+          const pScore = item.scores?.pitch || '?';
+          const rScore = item.scores?.rhythm || '?';
+          const gScore = item.scores?.global || '?';
+
+          const card = document.createElement('div');
+          card.style.border = "1px solid #eaeaea";
+          card.style.padding = "10px";
+          card.style.borderRadius = "6px";
+          card.style.background = "#fafafa";
+          card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+              <strong style="color:#0056b3;">${item.studentName} — ${item.lessonName}</strong>
+              <span style="font-size:11px; color:#888;">${date}</span>
+            </div>
+            <div style="font-size:12px; margin-bottom:8px;">
+              Score: <strong>${gScore}%</strong> (Mélodie: ${pScore}% | Rythme: ${rScore}%)
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button onclick="window.playAudio('${item.profAudio}')" style="flex:1; padding:4px; font-size:12px; background:#fff; border:1px solid #ccc;">▶ Écouter Prof</button>
+              <button onclick="window.playAudio('${item.eleveAudio}')" style="flex:1; padding:4px; font-size:12px; background:#fff; border:1px solid #ccc;">▶ Écouter Élève</button>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+              <button onclick="window.loadHistoryToGraph('${item.profAudio}', '${item.eleveAudio}')" style="flex:2; padding:4px; font-size:12px; background:#0077ff; color:white; border:none; border-radius:3px; outline:none; cursor:pointer;">📊 Afficher les courbes</button>
+              <button onclick="window.deleteHistory('${item.id}')" style="flex:1; padding:4px; font-size:12px; background:#dc3545; color:white; border:none; border-radius:3px; outline:none; cursor:pointer;">🗑️ Supprimer</button>
+            </div>
+          `;
+          historyList.appendChild(card);
+        });
+      } catch (e) {
+        historyList.innerHTML = "<div style='color:red;'>Erreur chargement.</div>";
+      }
+    }
+
+    refreshHistBtn.onclick = loadHistory;
+
+    window.playAudio = function (url) {
+      if (!url || url === 'undefined' || url === 'null') return alert("Fichier introuvable.");
+      const a = new Audio(url);
+      a.play().catch(e => alert("Impossible de lire l'audio : " + e.message));
+    };
+
+    window.deleteHistory = async function (id) {
+      if (!confirm("Voulez-vous vraiment supprimer cet essai de l'historique ?")) return;
+      try {
+        const res = await fetch('/api/pronunciation/history/' + id, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          loadHistory();
+        } else {
+          alert('Erreur: ' + (data.error || 'inconnue'));
+        }
+      } catch (e) {
+        alert('Erreur connexion');
+      }
+    };
+
+    window.loadHistoryToGraph = async function (profUrl, eleveUrl) {
+      document.getElementById('statusProf').textContent = "⬇️ Chargement de l'essai (Prof)...";
+      document.getElementById('statusEleve').textContent = "⬇️ Chargement de l'essai (Eleve)...";
+      try {
+        if (profUrl && profUrl !== 'null' && profUrl !== 'undefined') {
+          const resP = await fetch(profUrl);
+          const blobP = await resP.blob();
+          await profTrack.injectBlob(blobP);
+        }
+        if (eleveUrl && eleveUrl !== 'null' && eleveUrl !== 'undefined') {
+          const resE = await fetch(eleveUrl);
+          const blobE = await resE.blob();
+          await eleveTrack.injectBlob(blobE);
+        }
+        // Force evaluation if both are loaded
+        if (store.prof?.blob && store.eleve?.blob) {
+          // computeAndDisplay() est déjà appelé par injectBlob(), mais s'il l'est asynchrone pour les deux, 
+          // on veut être sûr que le score final combine les deux. 
+          // injectBlob -> wave.once('ready', computeAndDisplay). C'est automatique.
+        }
+      } catch (err) {
+        alert("Erreur de chargement: " + err.message);
+      }
+    };
+
+    // Load history at startup
+    loadHistory();
+
+    // ═══════════════════════════════════════════════════════════════
+    // UTILITAIRES AUDIO
+    // ═══════════════════════════════════════════════════════════════
+    // ─── Détecteur d'onset de parole ──────────────────────────────────────────────
+    //
+    //  Problème du trim naïf :
+    //    Le premier échantillon > seuil peut être un bruit de bouche, une
+    //    consonne occlusant, ou simplement du bruit de fond amplifié.
+    //    Surtout : si prof appuie et attend 100 ms avant de parler mais l'élève
+    //    attend 600 ms, les enveloppes et positions de syllabes sont décalées.
+    //
+    //  Solution :
+    //    1) Calcul d'une enveloppe RMS sur fenêtres de 15 ms
+    //    2) Détection du premier burst SOUTENU (N fenêtres consécutives > seuil)
+    //       → résiste aux clics et bruits parasites isolés
+    //    3) Début de l'audio exporté = onset détecté - PRE_SPEECH_SEC (0.20 s)
+    //       → marge fixe et identique pour les deux locuteurs
+    //    4) Fin = dernière fenêtre voisée + TAIL_SEC
+    //
+    async function trimSilence(blob) {
+      const audioCtx = new AudioContext();
+      const decoded = await audioCtx.decodeAudioData(await blob.arrayBuffer());
+      const sr = decoded.sampleRate;
+      const nCh = decoded.numberOfChannels;
+      const N = decoded.length;
+
+      // Mixage mono pour le calcul d'onset (plus rapide, inutile de traiter chaque canal)
+      const mono = new Float32Array(N);
+      for (let c = 0; c < nCh; c++) {
+        const d = decoded.getChannelData(c);
+        for (let i = 0; i < N; i++) mono[i] += d[i] / nCh;
+      }
+
+      // ── Enveloppe RMS par fenêtres de ONSET_WIN_SEC ───────────────
+      const winLen = Math.max(1, Math.floor(ONSET_WIN_SEC * sr));
+      const nFrames = Math.ceil(N / winLen);
+      const rms = new Float32Array(nFrames);
+      for (let f = 0; f < nFrames; f++) {
+        const off = f * winLen;
+        let sum = 0, cnt = 0;
+        for (let i = off; i < Math.min(off + winLen, N); i++, cnt++) sum += mono[i] ** 2;
+        rms[f] = Math.sqrt(sum / (cnt || 1));
+      }
+
+      // ── Seuil adaptatif : médiane du premier tiers + marge ────────
+      //  (robuste si le fond sonore varie selon l'environnement)
+      const noiseFrames = rms.slice(0, Math.max(4, Math.floor(nFrames * 0.20)));
+      const sorted = Float32Array.from(noiseFrames).sort();
+      const noiseFloor = sorted[Math.floor(sorted.length * 0.75)]; // percentile 75
+      const dynThresh = Math.max(SILENCE_THRESH, noiseFloor * 4);  // 4× le bruit de fond
+
+      // ── Onset : première fenêtre d'un burst soutenu ───────────────
+      let onsetFrame = -1;
+      for (let f = 0; f < nFrames - ONSET_CONFIRM; f++) {
+        let ok = true;
+        for (let k = 0; k < ONSET_CONFIRM; k++) {
+          if (rms[f + k] < dynThresh) { ok = false; break; }
+        }
+        if (ok) { onsetFrame = f; break; }
+      }
+
+      // Si rien détecté (silence total ?), comportement de secours
+      if (onsetFrame < 0) onsetFrame = 0;
+
+      // ── Calcul du start avec marge fixe PRE_SPEECH_SEC ───────────
+      const onsetSample = onsetFrame * winLen;
+      const start = Math.max(0, onsetSample - Math.round(PRE_SPEECH_SEC * sr));
+
+      // ── Fin : dernier burst de parole ────────────────────────────
+      let endFrame = nFrames - 1;
+      for (let f = nFrames - 1; f >= 0; f--) {
+        if (rms[f] >= dynThresh) { endFrame = f; break; }
+      }
+      const end = Math.min(N - 1, (endFrame + 1) * winLen + Math.round(TAIL_SEC * sr));
+
+      // ── Découpe du buffer ─────────────────────────────────────────
+      const newLen = end - start + 1;
+      const buf = audioCtx.createBuffer(nCh, newLen, sr);
+      for (let c = 0; c < nCh; c++) {
+        buf.copyToChannel(decoded.getChannelData(c).slice(start, end + 1), c);
+      }
+      audioCtx.close();
+      return { wav: bufferToWav(buf), buffer: buf };
+    }
+
+    function bufferToWav(buffer) {
+      const nCh = buffer.numberOfChannels, sr = buffer.sampleRate, len = buffer.length;
+      const pcm = new Int16Array(len * nCh);
+      for (let i = 0; i < len; i++) for (let c = 0; c < nCh; c++) {
+        const s = buffer.getChannelData(c)[i];
+        pcm[i * nCh + c] = Math.max(-32768, Math.min(32767, Math.round(s * 32767)));
+      }
+      const db = pcm.byteLength, wav = new ArrayBuffer(44 + db), v = new DataView(wav);
+      const w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+      w(0, 'RIFF'); v.setUint32(4, 36 + db, true); w(8, 'WAVE'); w(12, 'fmt ');
+      v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, nCh, true);
+      v.setUint32(24, sr, true); v.setUint32(28, sr * nCh * 2, true);
+      v.setUint16(32, nCh * 2, true); v.setUint16(34, 16, true);
+      w(36, 'data'); v.setUint32(40, db, true);
+      new Uint8Array(wav, 44).set(new Uint8Array(pcm.buffer));
+      return new Blob([wav], { type: 'audio/wav' });
+    }
+
+    // ─── Initialisation au chargement ──────────────────────────────────────────
+    // Charger les leçons si on est en mode élève (mode initial)
+    if (currentMode === 'student') {
+      loadLessons();
+    }
+  </script>
+</body>
+
+</html>

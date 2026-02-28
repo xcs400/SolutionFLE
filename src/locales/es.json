@@ -19,7 +19,7 @@
   "hero": {
     "title_line1": "Aprende francés con",
     "title_line2": "Aline Gamblin",
-    "subtitle_html": "Profesora titulada DAEFLE<br>Francés como lengua extranjera - Alfabetización - Cursos de perfeccionamiento de francés<br><img src=\"/uploads/logo_Solution.jpg\" alt=\"Mi foto\" style=\"max-width:100%;border-radius:8px;margin-bottom:2rem\"/><br>Cursos individuales o en minigrupo a domicilio<br/>Sesiones de formación in situ o en empresas",
+    "subtitle_html": "Profesora titulada DAEFLE<br>Francés como lengua extranjera - Alfabetización - Cursos de perfeccionamiento de francés<br><img src=\"/uploads/Logo_Solution.jpg\" alt=\"Mi foto\" style=\"max-width:100%;border-radius:8px;margin-bottom:2rem\"/><br>Cursos individuales o en minigrupo a domicilio<br/>Sesiones de formación in situ o en empresas",
     "cta": "Descubrir",
     "cta_link": "#services",
     "image_alt": "Visual FLE"
@@ -99,6 +99,11 @@
     "error": "No se han podido cargar las noticias de FLE en este momento.",
     "feed_unavailable": "Fuente no disponible temporalmente.",
     "read_more": "Leer más"
+  },
+  "pronunciation": {
+    "title": "Herramienta de pronunciación",
+    "description": "Mejora tu pronunciación del francés con nuestra herramienta interactiva. Prueba tu pronunciación y recibe retroalimentación instantánea.",
+    "cta": "🎤 Acceder a la herramienta"
   },
   "testimonials": {
     "title": "Testimonios de mis alumnos",

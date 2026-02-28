@@ -19,7 +19,7 @@
   "hero": {
     "title_line1": "Apprendre le français avec ",
     "title_line2": "Aline Gamblin",
-    "subtitle_html": "<img src=\"/uploads/logo_Solution.jpg\" alt=\"Ma photo\" style=\"float:right;max-width:10%;border-radius:8px;margin-left:2rem;margin-bottom:1rem\"/>Professeure diplômée DAEFLE<br>Français langue étrangère - Alphabétisation - Remise à niveau en françaisCours individuels ou en mini-groupe à mon domicile<br/>Sessions de formation en centre ou en entreprise",
+    "subtitle_html": "<img src=\"/uploads/Logo_Solution.jpg\" alt=\"Ma photo\" style=\"float:right;max-width:10%;border-radius:8px;margin-left:2rem;margin-bottom:1rem\"/>Professeure diplômée DAEFLE<br>Français langue étrangère - Alphabétisation - Remise à niveau en françaisCours individuels ou en mini-groupe à mon domicile<br/>Sessions de formation en centre ou en entreprise",
     "cta": "Découvrir",
     "cta_link": "#services",
     "image_alt": "Visuel FLE"
@@ -99,6 +99,11 @@
     "error": "Impossible de charger les actualités FLE pour le moment.",
     "feed_unavailable": "Flux temporairement indisponible.",
     "read_more": "Consulter"
+  },
+  "pronunciation": {
+    "title": "Outil de prononciation",
+    "description": "Améliorez votre prononciation française avec notre outil interactif. Testez votre prononciation et recevez des retours instantanés.",
+    "cta": "🎤 Accéder à l'outil"
   },
   "testimonials": {
     "title": "Témoignages de mes étudiants",

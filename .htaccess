@@ -1,0 +1,23 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+
+# 1. Pages spécifiques → dist/
+RewriteRule ^admin$                dist/admin.html [L]
+RewriteRule ^textedit$             dist/textedit.html [L]
+RewriteRule ^service_editor\.html$ dist/service_editor.html [L]
+
+# 2. Fichiers uploads → dist/uploads/
+RewriteRule ^uploads/(.+)$ dist/uploads/$1 [L]
+
+# 3. Assets → dist/assets/
+RewriteRule ^assets/(.+)$ dist/assets/$1 [L]
+
+# 4. API → dist/api.php
+RewriteRule ^api/(.*)$ dist/api.php?_route=$1 [L,QSA]
+
+# 5. Fichiers spécifiques → dist/
+RewriteRule ^(LogoOfficiel\.png|Logo_Solution\.jpg|image-aline\.jpg)$ dist/$1 [L]
+
+# 6. Tout le reste est servi normalement
+</IfModule>

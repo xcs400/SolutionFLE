@@ -82,7 +82,7 @@ function parseMDFile(filepath) {
         author: 'Unknown',
         date: new Date().toISOString(),
         description: '',
-        image: '/logo_Solution.jpg',
+        image: '/Logo_Solution.jpg',
         published: true,
         body: ''
     };
@@ -235,54 +235,54 @@ app.get('/api/auth/check', authMiddleware, (req, res) => {
 // ─── Translate (DeepL) ────────────────────────────────────────────────────────
 app.post('/api/translate', authMiddleware, async (req, res) => {
     const { text, sourceLang, targetLang } = req.body;
-    
+
     if (!text || !targetLang || !sourceLang) {
         return res.status(400).json({ error: 'Text, sourceLang and targetLang are required' });
     }
-    
+
     const apiKey = process.env.DEEPL_API_KEY;
     if (!apiKey) {
         return res.status(500).json({ error: 'DeepL API key not configured' });
     }
-    
+
     // DeepL Free: Arabe est supporté EN CIBLE mais PAS en SOURCE
     const supportedSourceLangs = ['fr', 'en', 'es'];
-    const langMapSource = { 
-        "fr": "FR", 
-        "en": "EN-US", 
+    const langMapSource = {
+        "fr": "FR",
+        "en": "EN-US",
         "es": "ES"
     };
-    
+
     const langMapTarget = {
         "fr": "FR",
         "en": "EN-US",
         "es": "ES",
         "ar": "AR"
     };
-    
+
     // Check if source language is supported
     if (!supportedSourceLangs.includes(sourceLang)) {
-        return res.status(400).json({ 
+        return res.status(400).json({
             error: `Language '${sourceLang}' not supported as source. Supported: ${supportedSourceLangs.join(', ')}`
         });
     }
-    
+
     // Check if target language is supported
     if (!Object.keys(langMapTarget).includes(targetLang)) {
-        return res.status(400).json({ 
+        return res.status(400).json({
             error: `Language '${targetLang}' not supported as target.`
         });
     }
-    
+
     if (sourceLang === targetLang) {
-        return res.status(400).json({ 
+        return res.status(400).json({
             error: 'Source and target languages must be different'
         });
     }
-    
+
     const source = langMapSource[sourceLang];
     const target = langMapTarget[targetLang];
-    
+
     try {
         const response = await fetch('https://api-free.deepl.com/v2/translate', {
             method: 'POST',
@@ -298,13 +298,13 @@ app.post('/api/translate', authMiddleware, async (req, res) => {
             }),
             timeout: 30000
         });
-        
+
         if (!response.ok) {
             const error = await response.text();
             console.error('DeepL API error:', error);
             return res.status(response.status).json({ error: 'Translation service error: ' + error });
         }
-        
+
         const data = await response.json();
         if (data.translations && data.translations[0]) {
             const translated = data.translations[0].text;
@@ -346,10 +346,14 @@ app.post('/api/contact', async (req, res) => {
 // ─── Blog CRUD ────────────────────────────────────────────────────────────────
 const BLOG_DIR = path.join(__dirname, 'content', 'blog');
 const SERVICES_PAGES_DIR = path.join(__dirname, 'content', 'services_pages');
+const PRONUNCIATION_DIR = path.join(__dirname, 'content', 'pronunciation');
+const PRONUNCIATION_DB = path.join(PRONUNCIATION_DIR, 'history.json');
+const PRONUNCIATION_LESSONS = path.join(PRONUNCIATION_DIR, 'lessons.json');
 
 // Ensure directories exist
 if (!fs.existsSync(BLOG_DIR)) fs.mkdirSync(BLOG_DIR, { recursive: true });
 if (!fs.existsSync(SERVICES_PAGES_DIR)) fs.mkdirSync(SERVICES_PAGES_DIR, { recursive: true });
+if (!fs.existsSync(PRONUNCIATION_DIR)) fs.mkdirSync(PRONUNCIATION_DIR, { recursive: true });
 
 
 const IMAGES_DIR = path.join(__dirname, 'public', 'uploads');
@@ -446,7 +450,7 @@ title: "${title}"
 author: "${author || 'Aline Gamblin'}"
 date: "${date || new Date().toISOString().split('T')[0]}"
 description: "${description || ''}"
-image: "${image || '/logo_Solution.jpg'}"
+image: "${image || '/Logo_Solution.jpg'}"
 lang: "${language}"
 published: ${published !== undefined ? published : true}
 ---
@@ -482,7 +486,7 @@ title: "${title}"
 author: "${author || 'Aline Gamblin'}"
 date: "${date || new Date().toISOString().split('T')[0]}"
 description: "${description || ''}"
-image: "${image || '/logo_Solution.jpg'}"
+image: "${image || '/Logo_Solution.jpg'}"
 lang: "${language}"
 published: ${published !== undefined ? published : true}
 ---
@@ -639,6 +643,196 @@ app.get('/api/admin/backup', authMiddleware, (req, res) => {
 // ─── Restore from ZIP ─────────────────────────────────────────────────────────
 const uploadMemory = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } });
 
+// ─── Historique de Prononciation ──────────────────────────────────────────────
+app.post('/api/pronunciation/lesson', uploadMemory.single('profAudio'), (req, res) => {
+    try {
+        const { lessonName, id: editId } = req.body;
+        if (!lessonName) return res.status(400).json({ error: 'Nom de leçon requis.' });
+
+        const dbExt = fs.existsSync(PRONUNCIATION_LESSONS) ? JSON.parse(fs.readFileSync(PRONUNCIATION_LESSONS, 'utf-8')) : [];
+        let entry;
+
+        if (editId) {
+            const index = dbExt.findIndex(e => e.id === editId);
+            if (index === -1) return res.status(404).json({ error: 'Leçon non trouvée.' });
+            entry = dbExt[index];
+            entry.lessonName = lessonName.trim();
+
+            if (req.file) {
+                const fileName = path.basename(entry.audioUrl);
+                fs.writeFileSync(path.join(PRONUNCIATION_DIR, fileName), req.file.buffer);
+            }
+        } else {
+            if (!req.file) return res.status(400).json({ error: 'Audio requis pour une nouvelle leçon.' });
+
+            const safeName = lessonName.trim().replace(/\W+/g, '-');
+            const timestamp = Date.now();
+            const newId = `lesson_${safeName}_${timestamp}`;
+            const fileName = `${newId}.wav`;
+
+            fs.writeFileSync(path.join(PRONUNCIATION_DIR, fileName), req.file.buffer);
+
+            entry = {
+                id: newId,
+                timestamp: new Date().toISOString(),
+                lessonName: lessonName.trim(),
+                audioUrl: `/api/pronunciation/audio/${fileName}`
+            };
+            dbExt.push(entry);
+        }
+
+        fs.writeFileSync(PRONUNCIATION_LESSONS, JSON.stringify(dbExt, null, 2));
+        res.json({ success: true, entry });
+    } catch (e) {
+        console.error('Erreur creation/edition leçon:', e);
+        res.status(500).json({ error: 'Erreur serveur.' });
+    }
+});
+
+app.delete('/api/pronunciation/lesson/:id', authMiddleware, (req, res) => {
+    try {
+        const { id } = req.params;
+        let dbExt = fs.existsSync(PRONUNCIATION_LESSONS) ? JSON.parse(fs.readFileSync(PRONUNCIATION_LESSONS, 'utf-8')) : [];
+        const entryIndex = dbExt.findIndex(e => e.id === id);
+
+        if (entryIndex !== -1) {
+            const entry = dbExt[entryIndex];
+            if (entry.audioUrl) {
+                const aFile = path.join(PRONUNCIATION_DIR, path.basename(entry.audioUrl));
+                if (fs.existsSync(aFile)) fs.unlinkSync(aFile);
+            }
+            dbExt.splice(entryIndex, 1);
+            fs.writeFileSync(PRONUNCIATION_LESSONS, JSON.stringify(dbExt, null, 2));
+            res.json({ success: true, message: 'Leçon effacée' });
+        } else {
+            res.status(404).json({ error: 'Leçon introuvable' });
+        }
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur suppression.' });
+    }
+});
+
+app.get('/api/pronunciation/lessons', (req, res) => {
+    try {
+        const dbExt = fs.existsSync(PRONUNCIATION_LESSONS) ? JSON.parse(fs.readFileSync(PRONUNCIATION_LESSONS, 'utf-8')) : [];
+        dbExt.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        res.json(dbExt);
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur lecture leçons.' });
+    }
+});
+
+app.post('/api/pronunciation/save', uploadMemory.fields([{ name: 'profAudio' }, { name: 'eleveAudio' }]), (req, res) => {
+    try {
+        const { lessonName, studentName, scores } = req.body;
+        if (!lessonName || !studentName) return res.status(400).json({ error: 'Noms de la leçon et de l\'élève requis.' });
+
+        const profFile = req.files && req.files['profAudio'] ? req.files['profAudio'][0] : null;
+        const eleveFile = req.files && req.files['eleveAudio'] ? req.files['eleveAudio'][0] : null;
+
+        const timestampNow = Date.now();
+        const safeStudent = studentName.trim().replace(/\W+/g, '-');
+        const safeLesson = lessonName.trim().replace(/\W+/g, '-');
+        // Identifiant fix pour un étudiant et un leçon ! Permettant l'écrasement (overwrite)
+        const id = `${safeStudent}_${safeLesson}`;
+
+        const dbExt = fs.existsSync(PRONUNCIATION_DB) ? JSON.parse(fs.readFileSync(PRONUNCIATION_DB, 'utf-8')) : [];
+        const existingIdx = dbExt.findIndex(e => e.id === id);
+
+        let profPath = '';
+        let elevePath = '';
+
+        if (profFile) {
+            profPath = `${id}_prof_${timestampNow}.wav`;
+            fs.writeFileSync(path.join(PRONUNCIATION_DIR, profPath), profFile.buffer);
+        }
+        if (eleveFile) {
+            elevePath = `${id}_eleve_${timestampNow}.wav`;
+            fs.writeFileSync(path.join(PRONUNCIATION_DIR, elevePath), eleveFile.buffer);
+        }
+
+        const entry = {
+            id,
+            timestamp: new Date().toISOString(),
+            lessonName: lessonName.trim(),
+            studentName: studentName.trim(),
+            scores: scores ? JSON.parse(scores) : {},
+            profAudio: profPath ? `/api/pronunciation/audio/${profPath}` : (existingIdx !== -1 ? dbExt[existingIdx].profAudio : null),
+            eleveAudio: elevePath ? `/api/pronunciation/audio/${elevePath}` : (existingIdx !== -1 ? dbExt[existingIdx].eleveAudio : null)
+        };
+
+        if (existingIdx !== -1) {
+            // Nettoyer les anciens fichiers pour éviter de remplir le disque
+            const oldEntry = dbExt[existingIdx];
+            if (profFile && oldEntry.profAudio) {
+                const oFile = path.join(PRONUNCIATION_DIR, path.basename(oldEntry.profAudio));
+                if (fs.existsSync(oFile)) fs.unlinkSync(oFile);
+            }
+            if (eleveFile && oldEntry.eleveAudio) {
+                const oFile = path.join(PRONUNCIATION_DIR, path.basename(oldEntry.eleveAudio));
+                if (fs.existsSync(oFile)) fs.unlinkSync(oFile);
+            }
+            dbExt[existingIdx] = entry; // overwrite
+        } else {
+            dbExt.push(entry);
+        }
+
+        fs.writeFileSync(PRONUNCIATION_DB, JSON.stringify(dbExt, null, 2));
+
+        res.json({ success: true, entry });
+    } catch (e) {
+        console.error('Erreur sauvegarde prononciation:', e);
+        res.status(500).json({ error: 'Erreur lors de la sauvegarde.' });
+    }
+});
+
+app.get('/api/pronunciation/history', (req, res) => {
+    try {
+        const dbExt = fs.existsSync(PRONUNCIATION_DB) ? JSON.parse(fs.readFileSync(PRONUNCIATION_DB, 'utf-8')) : [];
+        // Tri décroissant
+        dbExt.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        res.json(dbExt);
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur lecture historique.' });
+    }
+});
+
+app.get('/api/pronunciation/audio/:filename', (req, res) => {
+    const file = path.join(PRONUNCIATION_DIR, req.params.filename);
+    if (fs.existsSync(file)) res.sendFile(file);
+    else res.status(404).json({ error: 'Fichier non trouvé' });
+});
+
+app.delete('/api/pronunciation/history/:id', authMiddleware, (req, res) => {
+    try {
+        const { id } = req.params;
+        let dbExt = fs.existsSync(PRONUNCIATION_DB) ? JSON.parse(fs.readFileSync(PRONUNCIATION_DB, 'utf-8')) : [];
+        const entryIndex = dbExt.findIndex(e => e.id === id);
+
+        if (entryIndex !== -1) {
+            const entry = dbExt[entryIndex];
+            // Delete audio files
+            if (entry.profAudio) {
+                const pFile = path.join(PRONUNCIATION_DIR, path.basename(entry.profAudio));
+                if (fs.existsSync(pFile)) fs.unlinkSync(pFile);
+            }
+            if (entry.eleveAudio) {
+                const eFile = path.join(PRONUNCIATION_DIR, path.basename(entry.eleveAudio));
+                if (fs.existsSync(eFile)) fs.unlinkSync(eFile);
+            }
+
+            dbExt.splice(entryIndex, 1);
+            fs.writeFileSync(PRONUNCIATION_DB, JSON.stringify(dbExt, null, 2));
+            res.json({ success: true, message: 'Effacé' });
+        } else {
+            res.status(404).json({ error: 'Introuvable' });
+        }
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur suppression.' });
+    }
+});
+
+
 app.post('/api/admin/restore', authMiddleware, uploadMemory.single('backup'), (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'Aucun fichier ZIP fourni' });
 
@@ -711,9 +905,22 @@ app.get('/service_editor.html', (req, res) => {
 });
 
 // ─── SPA fallback ─────────────────────────────────────────────────────────────
+// Serve index.html for all non-API navigation routes (enables client-side routing)
 app.use((req, res, next) => {
-    if (req.path.match(/\.[a-z0-9]+$/i)) return next();
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    // Skip API routes
+    if (req.path.startsWith('/api/')) return next();
+    // Skip files with extensions (js, css, images, etc.) - let them 404 naturally if not found
+    if (req.path.match(/\.[a-z0-9]+$/i)) {
+        // Don't call next() - just let it 404 if the file doesn't exist
+        return res.status(404).json({ error: 'Not Found' });
+    }
+    // Serve index.html for all other routes (SPA navigation)
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'), (err) => {
+        if (err) {
+            console.error('Error serving index.html:', err);
+            res.status(500).json({ error: 'Server Error' });
+        }
+    });
 });
 
 

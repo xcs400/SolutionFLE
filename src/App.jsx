@@ -5,6 +5,7 @@ import Hero from './components/Hero';
 import Services from './components/Services';
 import About from './components/About';
 import Resources from './components/Resources';
+import Pronunciation from './components/Pronunciation';
 import Blog from './components/Blog';
 import BlogPost from './components/BlogPost';
 import Testimonials from './components/Testimonials';
@@ -23,6 +24,7 @@ const HomePage = () => (
             <About />
             <Services />
             <Resources />
+            <Pronunciation />
             <Blog />
             <Testimonials />
             <Contact />

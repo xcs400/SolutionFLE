@@ -821,7 +821,8 @@
                 <div class="field editor-wrapper">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem">
                         <label>Contenu (Markdown)</label>
-                        <button type="button" class="btn btn-ghost" style="padding:0.4rem 0.8rem;font-size:0.8rem" onclick="showTranslateMenuEditor(event)">
+                        <button type="button" class="btn btn-ghost" style="padding:0.4rem 0.8rem;font-size:0.8rem"
+                            onclick="showTranslateMenuEditor(event)">
                             🌐 Traduire contenu
                         </button>
                     </div>
@@ -1149,7 +1150,7 @@
         // ── Image preview ──────────────────────────────────────────────────────────
         function updateImgPreview() {
             const src = document.getElementById('f-image').value;
-            document.getElementById('imgPreview').src = src || '/logo_Solution.jpg';
+            document.getElementById('imgPreview').src = src || '/Logo_Solution.jpg';
         }
 
         // ── Image gallery ──────────────────────────────────────────────────────────
@@ -1238,12 +1239,12 @@
         function showContextMenu(e) {
             e.preventDefault();
             const target = e.target;
-            
+
             if ((target.tagName === 'TEXTAREA' || target.tagName === 'INPUT') && target.id && currentLang) {
                 contextMenuTarget = target;
                 contextMenuData.fieldId = target.id;
                 contextMenuData.targetLang = currentLang;
-                
+
                 const menu = document.getElementById('contextMenu');
                 menu.style.left = e.clientX + 'px';
                 menu.style.top = e.clientY + 'px';
@@ -1347,20 +1348,20 @@
             const button = buttonEvent.target.closest('button');
             const menu = document.getElementById('contextMenu');
             const rect = button.getBoundingClientRect();
-            
+
             menu.style.left = rect.left + 'px';
             menu.style.top = (rect.bottom + 5) + 'px';
             menu.classList.add('visible');
-            
+
             // Mark that we're translating the editor
             menu.dataset.editorMode = 'true';
         }
 
         // Override translateField to handle editor mode
         const originalTranslateField = window.translateField;
-        window.translateField = async function(sourceLang) {
+        window.translateField = async function (sourceLang) {
             const menu = document.getElementById('contextMenu');
-            
+
             // If in editor mode
             if (menu.dataset.editorMode === 'true') {
                 menu.dataset.editorMode = 'false';
@@ -1369,7 +1370,7 @@
                 hideContextMenu();
                 return;
             }
-            
+
             // Otherwise use original function
             return originalTranslateField.call(this, sourceLang);
         };
@@ -1384,7 +1385,7 @@
 
             // Get content from EasyMDE (or textarea if not initialized)
             const sourceText = easyMDE ? easyMDE.value() : document.getElementById('f-body').value;
-            
+
             if (!sourceText || !String(sourceText).trim()) {
                 showToast(`Contenu (${sourceLang.toUpperCase()}) vide`, 'warning');
                 return;
