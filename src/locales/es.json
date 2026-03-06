@@ -19,7 +19,7 @@
   "hero": {
     "title_line1": "Aprende francés con",
     "title_line2": "Aline Gamblin",
-    "subtitle_html": "Profesora titulada DAEFLE<br>Francés como lengua extranjera - Alfabetización - Cursos de perfeccionamiento de francés<br><img src=\"/uploads/Logo_Solution.jpg\" alt=\"Mi foto\" style=\"max-width:100%;border-radius:8px;margin-bottom:2rem\"/><br>Cursos individuales o en minigrupo a domicilio<br/>Sesiones de formación in situ o en empresas",
+    "subtitle_html": "Profesora titulada DAEFLE<br>Francés como lengua extranjera - Alfabetización - Cursos de perfeccionamiento de francés<br>Cursos individuales o en minigrupo a domicilio<br/>Sesiones de formación in situ o en empresas",
     "cta": "Descubrir",
     "cta_link": "#services",
     "image_alt": "Visual FLE"
@@ -89,21 +89,12 @@
       }
     ]
   },
-  "servicePage": {
-    "interested": "¿Te interesa esta formación?",
-    "contactCta": "Contáctame para saber más"
-  },
   "resources": {
     "title": "Contenidos y Noticias FLE",
     "subtitle": "Mantente conectado con el mundo francófono. Aquí tienes una selección de recursos actualizados diariamente para practicar tu francés.",
     "error": "No se han podido cargar las noticias de FLE en este momento.",
     "feed_unavailable": "Fuente no disponible temporalmente.",
     "read_more": "Leer más"
-  },
-  "pronunciation": {
-    "title": "Herramienta de pronunciación",
-    "description": "Mejora tu pronunciación del francés con nuestra herramienta interactiva. Prueba tu pronunciación y recibe retroalimentación instantánea.",
-    "cta": "🎤 Acceder a la herramienta"
   },
   "testimonials": {
     "title": "Testimonios de mis alumnos",
@@ -152,7 +143,7 @@
     "location": "Lugar",
     "location_value": "Individual o Grupo",
     "phone_value": "06 49 16 35 37",
-    "email_value": "solutionFLE@gmail.com",
+    "email_value": "contact@solutionfle.fr",
     "linkedin": "Sigue mis novedades en LinkedIn",
     "form_title": "Envíame un mensaje",
     "label_name": "Tu nombre",

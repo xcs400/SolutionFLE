@@ -1,0 +1,77 @@
+version: "3.8"
+services:
+  webstack_restore:
+    image: alpine:3.19
+    container_name: webstack_restore
+    environment:
+      MYSQL_HOST: webstack-mariadb-1
+      MYSQL_DATABASE: app
+      MYSQL_USER: app
+      MYSQL_PASSWORD: apppass
+      # ⚠️ Mettre le nom exact du fichier à restaurer
+      BACKUP_FILE: webstack_restore.tar.gz
+    command: >
+      sh -c "
+      echo '--- Installation des outils ---' &&
+      apk add --no-cache mariadb-client tar gzip &&
+
+      echo '--- Vérification du fichier backup ---' &&
+      ls /volumes/www/archive/ &&
+      ARCHIVE=/volumes/www/archive/$$BACKUP_FILE &&
+      if [ ! -f $$ARCHIVE ]; then
+        echo 'ERREUR : fichier introuvable : '$$ARCHIVE && exit 1;
+      fi &&
+
+      echo '--- Extraction de l archive principale ---' &&
+      WORK=/tmp/restore &&
+      mkdir -p $$WORK &&
+      tar xzf $$ARCHIVE -C $$WORK &&
+      echo 'Contenu extrait :' &&
+      ls $$WORK/ &&
+      ls $$WORK/volumes/ &&
+
+      echo '--- Restauration www ---' &&
+      tar xzf $$WORK/volumes/www.tar.gz -C /volumes/www &&
+
+      echo '--- Restauration nginx ---' &&
+      tar xzf $$WORK/volumes/nginx.tar.gz -C /volumes/nginx &&
+
+      echo '--- Restauration node ---' &&
+      tar xzf $$WORK/volumes/node.tar.gz -C /volumes/node &&
+
+      echo '--- Restauration ftp ---' &&
+      tar xzf $$WORK/volumes/ftp.tar.gz -C /volumes/ftp &&
+
+      echo '--- Restauration portainer ---' &&
+      tar xzf $$WORK/volumes/portainer.tar.gz -C /volumes/portainer &&
+
+      echo '--- Restauration MariaDB ---' &&
+      mysql -h $$MYSQL_HOST -u $$MYSQL_USER --password=$$MYSQL_PASSWORD $$MYSQL_DATABASE < $$WORK/db.sql &&
+
+      echo '--- Restauration terminée avec succès ! ---' &&
+      echo 'Tu peux redémarrer le stack.'"
+    volumes:
+      - webstack_web_www:/volumes/www:rw
+      - webstack_web_nginx:/volumes/nginx:rw
+      - webstack_web_node:/volumes/node:rw
+      - webstack_ftp_www:/volumes/ftp:rw
+      - webstack_portainer_data:/volumes/portainer:rw
+    networks:
+      - webstack_webnet
+    restart: "no"
+
+volumes:
+  webstack_web_www:
+    external: true
+  webstack_web_nginx:
+    external: true
+  webstack_web_node:
+    external: true
+  webstack_ftp_www:
+    external: true
+  webstack_portainer_data:
+    external: true
+
+networks:
+  webstack_webnet:
+    external: true

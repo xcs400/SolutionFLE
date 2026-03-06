@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Analyse Phonétique – Voyelles</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161922;
+    --border: #2a2f3d;
+    --prof: #4fc3f7;
+    --eleve: #ff7043;
+    --accent: #c5f74f;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --radius: 12px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family:'Sora',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:28px 20px; }
+  .app { max-width:860px; margin:auto; }
+
+  header { display:flex; align-items:baseline; gap:16px; margin-bottom:24px; border-bottom:1px solid var(--border); padding-bottom:20px; }
+  header h1 { font-family:'Space Mono',monospace; font-size:1.4rem; color:var(--accent); letter-spacing:-0.02em; }
+  header p { font-size:0.8rem; color:var(--muted); font-weight:300; }
+
+  .speaker-bar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:12px 16px; margin-bottom:16px; }
+  .speaker-label { font-family:'Space Mono',monospace; font-size:0.62rem; color:var(--muted); letter-spacing:0.1em; white-space:nowrap; }
+  .stabs { display:flex; gap:6px; flex-wrap:wrap; }
+  .stab { font-family:'Sora',sans-serif; font-size:0.72rem; font-weight:600; padding:5px 13px; border-radius:20px; background:transparent; color:var(--muted); border:1px solid var(--border); cursor:pointer; transition:all .15s; }
+  .stab:hover { color:var(--text); border-color:#555; }
+  .stab.active { background:var(--accent); color:#0d0f14; border-color:var(--accent); font-weight:700; }
+  .divider { width:1px; height:24px; background:var(--border); }
+  .info-chip { font-size:0.65rem; color:var(--accent); background:#0d0f14; border:1px solid var(--accent); border-radius:4px; padding:3px 8px; font-family:'Space Mono',monospace; margin-left:auto; }
+
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  @media(max-width:600px){ .grid { grid-template-columns:1fr; } }
+
+  .track { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px; position:relative; overflow:hidden; }
+  .track::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; }
+  .track.prof::before { background:var(--prof); }
+  .track.eleve::before { background:var(--eleve); }
+  .track h2 { font-size:0.72rem; font-family:'Space Mono',monospace; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:12px; }
+  .track.prof h2 { color:var(--prof); }
+  .track.eleve h2 { color:var(--eleve); }
+  .controls { display:flex; gap:8px; margin-bottom:10px; }
+
+  button { font-family:'Sora',sans-serif; font-size:0.78rem; font-weight:600; padding:8px 16px; border:1px solid var(--border); border-radius:6px; background:transparent; color:var(--text); cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:6px; }
+  button:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
+  button:disabled { opacity:0.3; cursor:default; }
+  button.recording { background:#7f1d1d; border-color:var(--eleve); color:var(--eleve); animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+  canvas.wave { width:100%; height:64px; border-radius:6px; background:#0d0f14; display:block; }
+
+  .analyze-bar { display:flex; justify-content:center; margin-bottom:20px; }
+  #btnAnalyze { font-size:0.9rem; padding:12px 36px; background:var(--accent); color:#0d0f14; border:none; border-radius:8px; font-weight:700; letter-spacing:0.05em; }
+  #btnAnalyze:hover:not(:disabled) { background:#d4ff5a; border:none; }
+  #btnAnalyze:disabled { background:#2a2f3d; color:var(--muted); border:none; }
+
+  .results { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:600px){ .results { grid-template-columns:1fr; } }
+
+  .trapezoid-panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px; }
+  .trapezoid-panel h3 { font-family:'Space Mono',monospace; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom:10px; }
+  #trapCanvas { width:100%; aspect-ratio:1; display:block; border-radius:8px; }
+  .legend { display:flex; gap:12px; font-size:0.68rem; color:var(--muted); margin-top:8px; flex-wrap:wrap; }
+  .legend span { display:flex; align-items:center; gap:4px; }
+  .dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+
+  .metrics-panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px; display:flex; flex-direction:column; gap:14px; }
+  .metrics-panel h3 { font-family:'Space Mono',monospace; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); }
+  .score-ring { display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .score-ring .big { font-family:'Space Mono',monospace; font-size:3.2rem; font-weight:700; color:var(--accent); line-height:1; }
+  .score-ring .label { font-size:0.68rem; color:var(--muted); }
+  .metric-row { display:flex; flex-direction:column; gap:8px; }
+  .metric { display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:#0d0f14; border-radius:8px; border:1px solid var(--border); font-size:0.75rem; }
+  .metric .k { color:var(--muted); }
+  .metric .v { font-family:'Space Mono',monospace; font-weight:700; }
+  .metric .v.prof-c { color:var(--prof); }
+  .metric .v.eleve-c { color:var(--eleve); }
+  .vowel-display { display:flex; align-items:center; justify-content:center; gap:10px; }
+  .vowel-tag { display:inline-flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-size:1.8rem; font-weight:700; width:52px; height:52px; border-radius:50%; }
+  .vowel-display .sep { color:var(--muted); font-size:1.2rem; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <h1>PHONÉTIQUE / VOYELLES</h1>
+    <p>Analyse formantique F1·F2 par LPC · Trapèze IPA adaptatif</p>
+  </header>
+
+  <div class="speaker-bar">
+    <span class="speaker-label">LOCUTEUR</span>
+    <div class="stabs" id="tabsType">
+      <button class="stab active" data-type="homme">♂ Homme</button>
+      <button class="stab" data-type="femme">♀ Femme</button>
+      <button class="stab" data-type="enfant">⚬ Enfant</button>
+    </div>
+    <div class="divider"></div>
+    <span class="speaker-label">LANGUE</span>
+    <div class="stabs" id="tabsLang">
+      <button class="stab active" data-lang="fr">Français</button>
+      <button class="stab" data-lang="en">Anglais</button>
+    </div>
+    <span class="info-chip" id="chipContext">FR · Homme</span>
+  </div>
+
+  <div class="grid">
+    <div class="track prof">
+      <h2>RÉFÉRENCE</h2>
+      <div class="controls">
+        <button id="recProf">● ENREGISTRER</button>
+        <button id="playProf" disabled>▶ ÉCOUTER</button>
+      </div>
+      <canvas class="wave" id="waveProf"></canvas>
+    </div>
+    <div class="track eleve">
+      <h2>ÉLÈVE</h2>
+      <div class="controls">
+        <button id="recEleve">● ENREGISTRER</button>
+        <button id="playEleve" disabled>▶ ÉCOUTER</button>
+      </div>
+      <canvas class="wave" id="waveEleve"></canvas>
+    </div>
+  </div>
+
+  <div class="analyze-bar">
+    <button id="btnAnalyze" disabled>ANALYSER ▶</button>
+  </div>
+
+  <div class="results">
+    <div class="trapezoid-panel">
+      <h3 id="trapTitle">TRAPÈZE VOCALIQUE — FR · HOMME</h3>
+      <canvas id="trapCanvas" width="360" height="340"></canvas>
+      <div class="legend">
+        <span><span class="dot" style="background:var(--prof)"></span>Référence</span>
+        <span><span class="dot" style="background:var(--eleve)"></span>Élève</span>
+        <span><span class="dot" style="background:#6875a8"></span>Voyelles IPA</span>
+      </div>
+    </div>
+    <div class="metrics-panel">
+      <h3>RÉSULTATS</h3>
+      <div class="score-ring">
+        <div class="big" id="scoreNum">—</div>
+        <div class="label">SCORE DE PRÉCISION</div>
+      </div>
+      <div id="vowelDisplay" class="vowel-display"></div>
+      <div class="metric-row" id="metricRows"></div>
+    </div>
+  </div>
+
+</div>
+<script>
+/* =========================================================
+   RÉFÉRENCES FORMANTIQUES F1/F2 (Hz)
+   
+   Français — sources : Calliope (1989), Léon & Bhatt,
+   Ladefoged & Maddieson. Moyennes par genre.
+   
+   Anglais — sources : Peterson & Barney (1952),
+   Hillenbrand et al. (1995). Voyelles américaines.
+   
+   Enfant : facteur ~1.2–1.3× par rapport à l'homme
+   ========================================================= */
+const REFS = {
+  homme: {
+    fr: {
+      'i':[270,2290], 'e':[390,2100], 'ɛ':[540,1770],
+      'a':[810,1600], 'ɑ':[780,1100], 'ɔ':[570, 840],
+      'o':[400, 750], 'u':[310, 870], 'y':[290,1870],
+      'ø':[380,1540], 'œ':[540,1300], 'ə':[490,1350],
+    },
+    en: {
+      'iː':[270,2290], 'ɪ':[390,1990], 'e':[530,1840],
+      'æ':[660,1720], 'ɑː':[730,1090], 'ɒ':[600, 900],
+      'ɔː':[450, 740], 'ʊ':[380,1000], 'uː':[300, 870],
+      'ʌ':[640,1190], 'ɜː':[490,1350], 'ə':[490,1350],
+    }
+  },
+  femme: {
+    fr: {
+      /* Femmes : F1 ×1.17, F2 ×1.22 environ (Calliope) */
+      'i':[310,2790], 'e':[460,2550], 'ɛ':[640,2170],
+      'a':[980,1860], 'ɑ':[900,1340], 'ɔ':[680,1010],
+      'o':[490, 920], 'u':[370,1060], 'y':[360,2280],
+      'ø':[460,1870], 'œ':[640,1570], 'ə':[590,1640],
+    },
+    en: {
+      'iː':[310,2790], 'ɪ':[430,2480], 'e':[610,2330],
+      'æ':[860,2050], 'ɑː':[850,1220], 'ɒ':[740,1090],
+      'ɔː':[560, 920], 'ʊ':[430,1220], 'uː':[370,1060],
+      'ʌ':[760,1400], 'ɜː':[590,1640], 'ə':[590,1640],
+    }
+  },
+  enfant: {
+    fr: {
+      /* Enfants (8–12 ans) : F1 ×1.35, F2 ×1.40 environ */
+      'i':[370,3200], 'e':[530,2900], 'ɛ':[730,2550],
+      'a':[1100,2200], 'ɑ':[1050,1600], 'ɔ':[780,1200],
+      'o':[570,1100], 'u':[430,1250], 'y':[410,2650],
+      'ø':[530,2180], 'œ':[740,1820], 'ə':[680,1900],
+    },
+    en: {
+      'iː':[370,3200], 'ɪ':[520,2860], 'e':[700,2700],
+      'æ':[980,2380], 'ɑː':[1000,1440], 'ɒ':[860,1280],
+      'ɔː':[650,1090], 'ʊ':[510,1430], 'uː':[430,1250],
+      'ʌ':[870,1640], 'ɜː':[680,1900], 'ə':[680,1900],
+    }
+  }
+};
+
+/* Plages d'axes du trapèze, adaptées au locuteur */
+const BOUNDS = {
+  homme: { F1_MIN:200, F1_MAX:900,  F2_MIN:600,  F2_MAX:2600 },
+  femme: { F1_MIN:250, F1_MAX:1100, F2_MIN:700,  F2_MAX:3100 },
+  enfant:{ F1_MIN:300, F1_MAX:1250, F2_MIN:800,  F2_MAX:3500 },
+};
+
+/* Plage de recherche F1 selon locuteur (pour le LPC) */
+const F1_SEARCH = {
+  homme: { min:150, max:950 },
+  femme: { min:200, max:1150 },
+  enfant:{ min:250, max:1300 },
+};
+
+let curType = 'homme';
+let curLang  = 'fr';
+let lastAnalysis = null;
+
+const getVoyelles = () => REFS[curType][curLang];
+const getBounds   = () => BOUNDS[curType];
+
+/* =========================================================
+   SÉLECTEURS LOCUTEUR / LANGUE
+   ========================================================= */
+document.getElementById('tabsType').addEventListener('click', e => {
+  const btn = e.target.closest('.stab');
+  if (!btn) return;
+  document.querySelectorAll('#tabsType .stab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  curType = btn.dataset.type;
+  updateChip(); redrawIfPossible();
+});
+document.getElementById('tabsLang').addEventListener('click', e => {
+  const btn = e.target.closest('.stab');
+  if (!btn) return;
+  document.querySelectorAll('#tabsLang .stab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  curLang = btn.dataset.lang;
+  updateChip(); redrawIfPossible();
+});
+
+function updateChip() {
+  const tl = { homme:'Homme', femme:'Femme', enfant:'Enfant' }[curType];
+  const ll = curLang.toUpperCase();
+  document.getElementById('chipContext').textContent = `${ll} · ${tl}`;
+  document.getElementById('trapTitle').textContent = `TRAPÈZE VOCALIQUE — ${ll} · ${tl.toUpperCase()}`;
+}
+
+function redrawIfPossible() {
+  if (lastAnalysis) {
+    const {F1p,F2p,F1e,F2e} = lastAnalysis;
+    drawTrapezoid(F1p,F2p, identifyVowel(F1p,F2p), F1e,F2e, identifyVowel(F1e,F2e), null);
+  } else {
+    drawTrapezoid(null,null,null,null,null,null,null);
+  }
+}
+
+/* =========================================================
+   AUDIO
+   ========================================================= */
+const audioCtx = new AudioContext();
+const buffers  = { prof:null, eleve:null };
+const srcs     = { prof:null, eleve:null };
+
+function drawWaveform(id, data, color) {
+  const c = document.getElementById(id);
+  c.width  = c.offsetWidth * devicePixelRatio || 600;
+  c.height = c.offsetHeight * devicePixelRatio || 128;
+  const g = c.getContext('2d');
+  g.clearRect(0,0,c.width,c.height);
+  g.strokeStyle = color; g.lineWidth = 1.5; g.beginPath();
+  const step = Math.ceil(data.length / c.width);
+  for (let i = 0; i < c.width; i++) {
+    let mn=1, mx=-1;
+    for (let j=0; j<step; j++) { const s=data[i*step+j]||0; if(s<mn)mn=s; if(s>mx)mx=s; }
+    const y1=(0.5+mn*0.45)*c.height, y2=(0.5+mx*0.45)*c.height;
+    if(i===0) g.moveTo(i,(y1+y2)/2); else { g.moveTo(i,y1); g.lineTo(i,y2); }
+  }
+  g.stroke();
+}
+
+function setupRecorder(key, recId, playId, waveId, color) {
+  const recBtn  = document.getElementById(recId);
+  const playBtn = document.getElementById(playId);
+  let stream, rec, chunks = [];
+  navigator.mediaDevices.getUserMedia({audio:true})
+    .then(s => { stream=s; })
+    .catch(() => { recBtn.textContent='✗ MIC'; recBtn.disabled=true; });
+
+  recBtn.addEventListener('click', () => {
+    if (!rec || rec.state==='inactive') {
+      if (audioCtx.state==='suspended') audioCtx.resume();
+      chunks=[];
+      rec = new MediaRecorder(stream);
+      rec.ondataavailable = e => chunks.push(e.data);
+      rec.onstop = async () => {
+        try {
+          buffers[key] = await audioCtx.decodeAudioData(
+            await new Blob(chunks,{type:'audio/webm'}).arrayBuffer()
+          );
+          drawWaveform(waveId, buffers[key].getChannelData(0), color);
+          playBtn.disabled = false;
+          if (buffers.prof && buffers.eleve)
+            document.getElementById('btnAnalyze').disabled = false;
+        } catch(err) { console.error('decode', err); }
+      };
+      rec.start();
+      recBtn.textContent='■ STOP'; recBtn.classList.add('recording');
+    } else {
+      rec.stop(); recBtn.textContent='● ENREGISTRER'; recBtn.classList.remove('recording');
+    }
+  });
+  playBtn.addEventListener('click', () => {
+    if (!buffers[key]) return;
+    if (srcs[key]) { try{srcs[key].stop();}catch(e){} }
+    const s = audioCtx.createBufferSource();
+    s.buffer = buffers[key]; s.connect(audioCtx.destination); s.start();
+    srcs[key] = s;
+  });
+}
+setupRecorder('prof',  'recProf',  'playProf',  'waveProf',  '#4fc3f7');
+setupRecorder('eleve', 'recEleve', 'playEleve', 'waveEleve', '#ff7043');
+
+/* =========================================================
+   LPC — LEVINSON-DURBIN
+   ========================================================= */
+function levinson(R, order) {
+  const a = new Float64Array(order+1), e = new Float64Array(order+1);
+  a[0]=1; e[0]=R[0];
+  for (let m=1; m<=order; m++) {
+    let lam=0;
+    for (let j=1; j<=m; j++) lam -= a[j-1]*R[m-j+1];
+    const k = lam / e[m-1];
+    const ac = a.slice();
+    for (let j=1; j<=m; j++) a[j] = ac[j] + k*ac[m-j];
+    e[m] = (1-k*k)*e[m-1];
+    if (!isFinite(e[m]) || Math.abs(k)>1.5) break;
+  }
+  return a;
+}
+
+/* =========================================================
+   EXTRACTION FORMANTS
+   — windows multiples, clustering, plages adaptées au locuteur
+   ========================================================= */
+function extractFormants(buffer) {
+  const raw = buffer.getChannelData(0);
+  const sr  = buffer.sampleRate;
+
+  let order = Math.round(sr/1000);
+  if (order%2!==0) order++;
+  order = Math.max(10, Math.min(20, order));
+
+  const winLen = Math.min(Math.floor(sr*0.04), 1024);
+  const positions = [0.20, 0.30, 0.40, 0.50, 0.60, 0.70];
+  const allPeaks = [];
+
+  for (const frac of positions) {
+    const start = Math.floor(raw.length*frac);
+    if (start+winLen > raw.length) continue;
+
+    const x = new Float64Array(winLen);
+    for (let i=0; i<winLen; i++) x[i] = raw[start+i];
+
+    let rms=0; for (let i=0; i<winLen; i++) rms+=x[i]*x[i];
+    if (Math.sqrt(rms/winLen) < 0.003) continue;
+
+    for (let i=winLen-1; i>0; i--) x[i] -= 0.97*x[i-1];
+    for (let i=0; i<winLen; i++) x[i] *= 0.54-0.46*Math.cos(2*Math.PI*i/(winLen-1));
+
+    const R = new Float64Array(order+1);
+    for (let k=0; k<=order; k++)
+      for (let n=0; n<winLen-k; n++) R[k]+=x[n]*x[n+k];
+    if (R[0]<1e-10) continue;
+
+    const a = levinson(R, order);
+    const nFFT=4096, spec=new Float64Array(nFFT);
+    for (let k=0; k<nFFT; k++) {
+      const om = Math.PI*k/nFFT;
+      let re=0, im=0;
+      for (let j=0; j<=order; j++) { re+=a[j]*Math.cos(j*om); im-=a[j]*Math.sin(j*om); }
+      spec[k] = 1/Math.max(re*re+im*im, 1e-12);
+    }
+
+    const sm=new Float64Array(nFFT);
+    for (let k=2; k<nFFT-2; k++)
+      sm[k]=(spec[k-2]+spec[k-1]+spec[k]+spec[k+1]+spec[k+2])/5;
+
+    const { F2_MAX } = getBounds();
+    for (let k=3; k<nFFT-3; k++) {
+      const f = k*sr/(2*nFFT);
+      if (f<100 || f>F2_MAX+500) continue;
+      if (sm[k]>sm[k-1]&&sm[k]>sm[k+1]&&sm[k]>sm[k-2]&&sm[k]>sm[k+2]&&sm[k]>sm[k-3]&&sm[k]>sm[k+3])
+        allPeaks.push(f);
+    }
+  }
+
+  if (allPeaks.length===0) return [null, null];
+  allPeaks.sort((a,b)=>a-b);
+
+  // Cluster : fusionne pics à moins de 120 Hz
+  const clusters=[];
+  let cl=[allPeaks[0]];
+  for (let i=1; i<allPeaks.length; i++) {
+    if (allPeaks[i]-allPeaks[i-1]<120) cl.push(allPeaks[i]);
+    else { clusters.push(cl.reduce((s,v)=>s+v,0)/cl.length); cl=[allPeaks[i]]; }
+  }
+  clusters.push(cl.reduce((s,v)=>s+v,0)/cl.length);
+
+  const { min: F1_min_s, max: F1_max_s } = F1_SEARCH[curType];
+  const { F2_MAX } = getBounds();
+
+  let F1=null, F2=null;
+  for (const c of clusters) {
+    if (!F1 && c>=F1_min_s && c<=F1_max_s) { F1=c; continue; }
+    if (F1 && !F2 && c>=F1+150 && c<=F2_MAX+500) { F2=c; break; }
+  }
+  if (!F1 && clusters.length>=1) F1=clusters[0];
+  if (!F2 && clusters.length>=2) F2=clusters[1];
+
+  console.log(`[LPC ${curType}/${curLang}] clusters:[${clusters.map(c=>Math.round(c)).join(',')}] → F1:${Math.round(F1||0)} F2:${Math.round(F2||0)}`);
+  return [F1, F2];
+}
+
+/* =========================================================
+   PITCH
+   ========================================================= */
+function estimatePitch(buffer) {
+  const raw=buffer.getChannelData(0), sr=buffer.sampleRate;
+  const start=Math.floor(raw.length*0.3), len=Math.min(2048, raw.length-start);
+  const x=raw.subarray(start, start+len);
+  const maxF = curType==='enfant'?500 : curType==='femme'?400 : 300;
+  const minLag=Math.floor(sr/maxF), maxLag=Math.floor(sr/60);
+  let bestLag=0, bestCorr=-Infinity;
+  for (let lag=minLag; lag<=maxLag; lag++) {
+    let c=0; for (let i=0; i<len-lag; i++) c+=x[i]*x[i+lag];
+    if (c>bestCorr){bestCorr=c; bestLag=lag;}
+  }
+  return bestLag&&bestCorr>1e-6 ? sr/bestLag : 0;
+}
+
+/* =========================================================
+   IDENTIFICATION VOYELLE — nearest-neighbor normalisé
+   ========================================================= */
+function identifyVowel(F1, F2) {
+  if (!F1 || !F2) return '?';
+  const voyelles=getVoyelles();
+  const {F1_MIN,F1_MAX,F2_MIN,F2_MAX}=getBounds();
+  const rF1=F1_MAX-F1_MIN, rF2=F2_MAX-F2_MIN;
+  let best='?', bestD=Infinity;
+  for (const [key,[vF1,vF2]] of Object.entries(voyelles)) {
+    const d=Math.hypot((F1-vF1)/rF1, (F2-vF2)/rF2);
+    if(d<bestD){bestD=d; best=key;}
+  }
+  return best;
+}
+
+/* =========================================================
+   TRAPÈZE VOCALIQUE
+   ========================================================= */
+function formantToCanvas(F1, F2, W, H, PAD) {
+  const {F1_MIN,F1_MAX,F2_MIN,F2_MAX}=getBounds();
+  return [
+    PAD+(1-(F2-F2_MIN)/(F2_MAX-F2_MIN))*(W-2*PAD),
+    PAD+((F1-F1_MIN)/(F1_MAX-F1_MIN))*(H-2*PAD)
+  ];
+}
+
+function drawTrapezoid(F1p,F2p,vp,F1e,F2e,ve,statusMsg) {
+  const canvas=document.getElementById('trapCanvas');
+  const rect=canvas.getBoundingClientRect();
+  const W=Math.round(rect.width)||360, H=Math.round(rect.height)||340;
+  canvas.width=W; canvas.height=H;
+
+  const g=canvas.getContext('2d'), PAD=40;
+  const {F1_MIN,F1_MAX,F2_MIN,F2_MAX}=getBounds();
+
+  g.fillStyle='#11141c'; g.fillRect(0,0,W,H);
+
+  // Grille
+  g.strokeStyle='#1e2333'; g.lineWidth=1;
+  const f2Step = (F2_MAX-F2_MIN)>2200?500:400;
+  for (let f2=Math.ceil(F2_MIN/f2Step)*f2Step; f2<=F2_MAX; f2+=f2Step) {
+    const x=PAD+(1-(f2-F2_MIN)/(F2_MAX-F2_MIN))*(W-2*PAD);
+    g.beginPath(); g.moveTo(x,PAD); g.lineTo(x,H-PAD); g.stroke();
+    g.fillStyle='#2d3450'; g.font='9px monospace'; g.textAlign='center';
+    g.fillText(f2, x, H-PAD+14);
+  }
+  for (let f1=Math.ceil(F1_MIN/100)*100; f1<=F1_MAX; f1+=100) {
+    const y=PAD+((f1-F1_MIN)/(F1_MAX-F1_MIN))*(H-2*PAD);
+    g.beginPath(); g.moveTo(PAD,y); g.lineTo(W-PAD,y); g.stroke();
+    g.fillStyle='#2d3450'; g.font='9px monospace'; g.textAlign='right';
+    g.fillText(f1, PAD-4, y+3);
+  }
+  g.fillStyle='#4a5275'; g.font='10px monospace';
+  g.textAlign='center'; g.fillText('← F2 (Hz) →', W/2, H-2);
+  g.save(); g.translate(10,H/2); g.rotate(-Math.PI/2);
+  g.fillText('← F1 (Hz) →', 0, 0); g.restore();
+
+  // Voyelles de référence IPA — visibles et lumineuses
+  g.font='bold 13px Georgia,serif';
+  for (const [key,[vF1,vF2]] of Object.entries(getVoyelles())) {
+    const [x,y]=formantToCanvas(vF1,vF2,W,H,PAD);
+    if (x<PAD-10||x>W-PAD+10||y<PAD-10||y>H-PAD+10) continue;
+    g.fillStyle='rgba(104,117,168,0.18)';
+    g.beginPath(); g.arc(x,y,11,0,Math.PI*2); g.fill();
+    g.fillStyle='#6875a8';
+    g.beginPath(); g.arc(x,y,4,0,Math.PI*2); g.fill();
+    g.fillStyle='#9ba5cc'; g.textAlign='center';
+    g.fillText(key, x, y-12);
+  }
+
+  if (statusMsg) {
+    g.fillStyle='#ff7043'; g.font='11px monospace'; g.textAlign='center';
+    g.fillText(statusMsg, W/2, H/2);
+  }
+
+  // Point RÉFÉRENCE (bleu)
+  if (F1p && F2p) {
+    const [x,y]=formantToCanvas(F1p,F2p,W,H,PAD);
+    const gr=g.createRadialGradient(x,y,2,x,y,22);
+    gr.addColorStop(0,'rgba(79,195,247,0.55)'); gr.addColorStop(1,'rgba(79,195,247,0)');
+    g.fillStyle=gr; g.beginPath(); g.arc(x,y,22,0,Math.PI*2); g.fill();
+    g.fillStyle='#4fc3f7'; g.beginPath(); g.arc(x,y,9,0,Math.PI*2); g.fill();
+    g.fillStyle='#fff';    g.beginPath(); g.arc(x,y,3,0,Math.PI*2); g.fill();
+    g.fillStyle='#4fc3f7'; g.font='bold 13px Georgia,serif'; g.textAlign='center';
+    g.fillText(vp||'?', x, y+22);
+  }
+
+  // Point ÉLÈVE (orange)
+  if (F1e && F2e) {
+    const [x,y]=formantToCanvas(F1e,F2e,W,H,PAD);
+    const gr=g.createRadialGradient(x,y,2,x,y,22);
+    gr.addColorStop(0,'rgba(255,112,67,0.55)'); gr.addColorStop(1,'rgba(255,112,67,0)');
+    g.fillStyle=gr; g.beginPath(); g.arc(x,y,22,0,Math.PI*2); g.fill();
+    g.fillStyle='#ff7043'; g.beginPath(); g.arc(x,y,9,0,Math.PI*2); g.fill();
+    g.fillStyle='#fff';    g.beginPath(); g.arc(x,y,3,0,Math.PI*2); g.fill();
+    g.fillStyle='#ff7043'; g.font='bold 13px Georgia,serif'; g.textAlign='center';
+    g.fillText(ve||'?', x, y+22);
+  }
+
+  // Ligne de distance
+  if (F1p&&F2p&&F1e&&F2e) {
+    const [x1,y1]=formantToCanvas(F1p,F2p,W,H,PAD);
+    const [x2,y2]=formantToCanvas(F1e,F2e,W,H,PAD);
+    g.strokeStyle='rgba(197,247,79,0.45)'; g.lineWidth=2; g.setLineDash([5,5]);
+    g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke(); g.setLineDash([]);
+  }
+}
+
+/* =========================================================
+   ANALYSE
+   ========================================================= */
+document.getElementById('btnAnalyze').addEventListener('click', () => {
+  let F1p=null,F2p=null,F1e=null,F2e=null;
+  try {[F1p,F2p]=extractFormants(buffers.prof);}  catch(e){console.error(e);}
+  try {[F1e,F2e]=extractFormants(buffers.eleve);} catch(e){console.error(e);}
+
+  lastAnalysis={F1p,F2p,F1e,F2e};
+
+  const vp=identifyVowel(F1p,F2p), ve=identifyVowel(F1e,F2e);
+  const pitchP=estimatePitch(buffers.prof), pitchE=estimatePitch(buffers.eleve);
+
+  let score=0;
+  const statusMsg=(!F1p||!F2p||!F1e||!F2e)?'Signal trop court ou silencieux — réessayez':null;
+  if (!statusMsg) {
+    const {F1_MIN,F1_MAX,F2_MIN,F2_MAX}=getBounds();
+    score=Math.max(0,Math.min(100,Math.round(100*(1-Math.hypot((F1p-F1e)/(F1_MAX-F1_MIN),(F2p-F2e)/(F2_MAX-F2_MIN))))));
+  }
+
+  drawTrapezoid(F1p,F2p,vp,F1e,F2e,ve,statusMsg);
+
+  const sn=document.getElementById('scoreNum');
+  sn.textContent=score?score+'%':'—';
+  sn.style.color=score>=75?'var(--accent)':score>=50?'#fbbf24':'var(--eleve)';
+
+  document.getElementById('vowelDisplay').innerHTML=`
+    <span class="vowel-tag" style="background:rgba(79,195,247,.15);color:#4fc3f7">${vp}</span>
+    <span class="sep">vs</span>
+    <span class="vowel-tag" style="background:rgba(255,112,67,.15);color:#ff7043">${ve}</span>`;
+
+  const fmt=v=>v&&v>0?Math.round(v)+' Hz':'—';
+  document.getElementById('metricRows').innerHTML=`
+    <div class="metric"><span class="k">F1 référence</span><span class="v prof-c">${fmt(F1p)}</span></div>
+    <div class="metric"><span class="k">F2 référence</span><span class="v prof-c">${fmt(F2p)}</span></div>
+    <div class="metric"><span class="k">F1 élève</span><span class="v eleve-c">${fmt(F1e)}</span></div>
+    <div class="metric"><span class="k">F2 élève</span><span class="v eleve-c">${fmt(F2e)}</span></div>
+    <div class="metric"><span class="k">Pitch référence</span><span class="v prof-c">${fmt(pitchP)}</span></div>
+    <div class="metric"><span class="k">Pitch élève</span><span class="v eleve-c">${fmt(pitchE)}</span></div>`;
+});
+
+window.addEventListener('load', () => {
+  requestAnimationFrame(()=>requestAnimationFrame(()=>drawTrapezoid(null,null,null,null,null,null,null)));
+});
+</script>
+</body>
+</html>

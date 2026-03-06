@@ -28,7 +28,7 @@ const Contact = () => {
                         <div style={{ display: 'grid', gap: '2rem', marginBottom: '4rem' }}>
                             {[
                                 { icon: <Phone />, title: t('contact.phone'), value: "06 49 16 35 37", link: "tel:+33649163537", color: 'var(--color-strong-blue)' },
-                                { icon: <Mail />, title: t('contact.email'), value: "gamblin.aline@gmail.com", link: "mailto:gamblin.aline@gmail.com", color: 'var(--color-red)' },
+                                { icon: <Mail />, title: t('contact.email'), value: "contact@solutionfle.fr", link: "mailto:contact@solutionfle.fr", color: 'var(--color-red)' },
                                 { icon: <MapPin />, title: t('contact.location'), value: t('contact.location_value'), link: null, color: 'var(--color-green)' }
                             ].map((item, idx) => (
                                 <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>

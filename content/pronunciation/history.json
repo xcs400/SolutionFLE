@@ -1,0 +1,67 @@
+[
+  {
+    "id": "lulu_1772229100926",
+    "timestamp": "2026-02-27T21:51:40.929Z",
+    "lessonName": "leçon 3- tu vas au cinéma",
+    "studentName": "lulu",
+    "scores": {
+      "global": "11 ",
+      "pitch": "21 ",
+      "rhythm": "0 "
+    },
+    "profAudio": "/api/pronunciation/audio/lulu_1772229100926_prof.wav",
+    "eleveAudio": "/api/pronunciation/audio/lulu_1772229100926_eleve.wav"
+  },
+  {
+    "id": "michel_1772231922535",
+    "timestamp": "2026-02-27T22:38:42.539Z",
+    "lessonName": "lecon 5 - tu vas au cinema",
+    "studentName": "michel",
+    "scores": {
+      "global": "36 ",
+      "pitch": "13 ",
+      "rhythm": "59 "
+    },
+    "profAudio": "/api/pronunciation/audio/michel_1772231922535_prof.wav",
+    "eleveAudio": "/api/pronunciation/audio/michel_1772231922535_eleve.wav"
+  },
+  {
+    "id": "lulu_lecon-6-il-etait-une-fois",
+    "timestamp": "2026-02-27T23:02:45.923Z",
+    "lessonName": "lecon 6 - il etait une fois",
+    "studentName": "lulu",
+    "scores": {
+      "global": "71 ",
+      "pitch": "50 ",
+      "rhythm": "91 "
+    },
+    "profAudio": "/api/pronunciation/audio/lulu_lecon-6-il-etait-une-fois_prof_1772233365919.wav",
+    "eleveAudio": "/api/pronunciation/audio/lulu_lecon-6-il-etait-une-fois_eleve_1772233365919.wav"
+  },
+  {
+    "id": "pascal_7",
+    "timestamp": "2026-02-28T22:32:36.229Z",
+    "lessonName": "7",
+    "studentName": "pascal",
+    "scores": {
+      "global": "81 ",
+      "pitch": "70 ",
+      "rhythm": "92 "
+    },
+    "profAudio": "/api/pronunciation/audio/pascal_7_prof_1772317956226.wav",
+    "eleveAudio": "/api/pronunciation/audio/pascal_7_eleve_1772317956226.wav"
+  },
+  {
+    "id": "pascal_le-on-3-tu-vas-au-cin-ma",
+    "timestamp": "2026-02-28T22:57:14.271Z",
+    "lessonName": "leçon 3- tu vas au cinéma",
+    "studentName": "pascal",
+    "scores": {
+      "global": "52 ",
+      "pitch": "85 ",
+      "rhythm": "0 "
+    },
+    "profAudio": "/api/pronunciation/audio/pascal_le-on-3-tu-vas-au-cin-ma_prof_1772319434267.wav",
+    "eleveAudio": "/api/pronunciation/audio/pascal_le-on-3-tu-vas-au-cin-ma_eleve_1772319434267.wav"
+  }
+]

@@ -19,7 +19,7 @@
   "hero": {
     "title_line1": "Learn French with",
     "title_line2": "Aline Gamblin",
-    "subtitle_html": "DAEFLE qualified teacher<br>French as a foreign language - Literacy - French refresher courses<br><img src=\"/uploads/Logo_Solution.jpg\" alt=\"My photo\" style=\"float:right;max-width:40%;border-radius:8px;margin-left:2rem;margin-bottom:1rem\"/>Individual or mini-group courses at my home<br/>On-site or in-company training sessions",
+    "subtitle_html": "DAEFLE qualified teacher<br>French as a foreign language - Literacy - French refresher courses<br>Individual or mini-group courses at my home<br/>On-site or in-company training sessions",
     "cta": "Discover",
     "cta_link": "#services",
     "image_alt": "FLE Visual"
@@ -89,21 +89,12 @@
       }
     ]
   },
-  "servicePage": {
-    "interested": "Is this training right for you?",
-    "contactCta": "Contact me to learn more"
-  },
   "resources": {
     "title": "FLE Content & News",
     "subtitle": "Stay connected with the French-speaking world. Here is a selection of resources updated daily to practice your French.",
     "error": "Unable to load FLE news at the moment.",
     "feed_unavailable": "Feed temporarily unavailable.",
     "read_more": "Read more"
-  },
-  "pronunciation": {
-    "title": "Pronunciation Tool",
-    "description": "Improve your French pronunciation with our interactive tool. Test your pronunciation and receive instant feedback.",
-    "cta": "🎤 Access the tool"
   },
   "testimonials": {
     "title": "Student Testimonials",
@@ -152,7 +143,7 @@
     "location": "Location",
     "location_value": "Individual or Group",
     "phone_value": "06 49 16 35 37",
-    "email_value": "solutionFLE@gmail.com",
+    "email_value": "contact@solutionfle.fr",
     "linkedin": "Follow my updates on LinkedIn",
     "form_title": "Send me a message",
     "label_name": "Your name",

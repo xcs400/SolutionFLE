@@ -39,7 +39,7 @@ $ADMIN_PASSWORD = getenv('ADMIN_PASSWORD') ? getenv('ADMIN_PASSWORD') : 'Pascal'
 $DEEPL_API_KEY  = getenv('DEEPL_API_KEY');
 $EMAIL_USER     = getenv('EMAIL_USER');
 $EMAIL_PASS     = getenv('EMAIL_PASS');
-$EMAIL_TO       = getenv('EMAIL_TO') ? getenv('EMAIL_TO') : 'gamblin.aline@gmail.com';
+$EMAIL_TO       = getenv('EMAIL_TO') ? getenv('EMAIL_TO') : 'contact@solutionfle.fr';
 
 // --- ROUTEUR ---
 $routeParam = isset($_GET['_route']) ? $_GET['_route'] : '';

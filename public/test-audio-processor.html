@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Audio Processor Advanced</title>
+  <style>
+    body { font-family: Arial; padding: 20px; max-width: 600px; margin: 0 auto; }
+    .test-box { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; background: #f9f9f9; }
+    .test-ok { background: #d4edda; border-color: #c3e6cb; }
+    .test-error { background: #f8d7da; border-color: #f5c6cb; }
+    button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 4px; background: #007bff; color: white; }
+    button:disabled { opacity: 0.5; cursor: default; }
+    code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; }
+  </style>
+  <script src="audio-processor-advanced.js"></script>
+</head>
+<body>
+  <h1>✅ Test Audio Processor Advanced</h1>
+  
+  <div class="test-box">
+    <h3>1. Vérifier l'initialisation</h3>
+    <p id="initTest" style="color: #666;">Initialisation du processeur...</p>
+  </div>
+
+  <div class="test-box">
+    <h3>2. Statut du Web Worker</h3>
+    <p id="workerTest" style="color: #666;">Vérification du worker...</p>
+  </div>
+
+  <div class="test-box">
+    <h3>3. Test d'API</h3>
+    <p id="apiTest" style="color: #666;">Vérification de l'API processAudio...</p>
+  </div>
+
+  <div class="test-box">
+    <h3>4. Résumé</h3>
+    <p id="summary" style="color: #666;">En attente...</p>
+  </div>
+
+  <script>
+    let testsPassed = 0;
+    let testsFailed = 0;
+
+    function logTest(id, passed, message) {
+      const el = document.getElementById(id);
+      const icon = passed ? '✅' : '❌';
+      const className = passed ? 'test-ok' : 'test-error';
+      el.parentElement.className = 'test-box ' + className;
+      el.innerHTML = `${icon} ${message}`;
+      
+      if (passed) testsPassed++;
+      else testsFailed++;
+    }
+
+    try {
+      // Test 1: Initialisation
+      const processor = new AudioProcessorAdvanced();
+      logTest('initTest', processor !== null && processor.worker !== null, 
+        'Processeur initialisé avec Web Worker');
+
+      // Test 2: Worker status
+      logTest('workerTest', processor.workerReady, 
+        processor.workerReady ? 'Web Worker actif et prêt' : 
+        'Web Worker indisponible (fallback mode activé)');
+
+      // Test 3: API disponible
+      const hasProcessAudio = typeof processor.processAudio === 'function';
+      const hasDispose = typeof processor.dispose === 'function';
+      logTest('apiTest', hasProcessAudio && hasDispose,
+        `API complète: processAudio ${hasProcessAudio ? '✓' : '✗'}, dispose ${hasDispose ? '✓' : '✗'}`);
+
+      // Résumé
+      setTimeout(() => {
+        const summary = document.getElementById('summary');
+        const allPassed = testsFailed === 0;
+        summary.innerHTML = `
+          <strong>${allPassed ? '✅ Tous les tests réussis!' : '⚠️ Certains tests ont échoué'}</strong><br/>
+          Réussis: ${testsPassed} | Échoués: ${testsFailed}<br/>
+          <small style="color: #888;">Audio Processor Advanced est prêt pour l'intégration dans spell.html</small>
+        `;
+        summary.parentElement.className = 'test-box ' + (allPassed ? 'test-ok' : 'test-error');
+      }, 500);
+
+      // Cleanup
+      processor.dispose();
+
+    } catch (error) {
+      document.body.innerHTML += `<div class="test-box test-error"><h3>❌ Erreur critique</h3><pre>${error.message + '\n' + error.stack}</pre></div>`;
+    }
+  </script>
+</body>
+</html>

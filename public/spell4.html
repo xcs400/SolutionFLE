@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Prononciation – Comparaison</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;}
+    body{font-family:Arial;padding:16px;max-width:780px;margin:0 auto;}
+    h2{margin:0 0 4px 0;font-size:16px;color:#333;}
+    .track{border:1px solid #ddd;border-radius:8px;padding:14px 16px;margin-bottom:14px;background:#fafafa;}
+    .track.prof{border-left:4px solid #0077ff;}
+    .track.eleve{border-left:4px solid #ff6600;}
+    .track-controls{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+    .wave-wrap{position:relative;height:110px;border:1px solid #e0e0e0;border-radius:4px;background:#fff;}
+    .wave-wrap>div{position:absolute;inset:0;}
+    .wave-wrap canvas.overlay{position:absolute;inset:0;pointer-events:none;}
+    .status{font-size:12px;color:#888;margin-top:6px;min-height:16px;}
+    button{padding:9px 18px;font-size:14px;cursor:pointer;border:none;border-radius:5px;background:#eee;touch-action:none;}
+    button:disabled{opacity:.4;cursor:default;}
+    button.rec{background:#0077ff;color:#fff;}
+    button.rec.recording{background:#ff2222;}
+    button.play{background:#28a745;color:#fff;}
+    #bothBtn{display:block;width:100%;padding:13px;font-size:15px;background:#6f42c1;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-top:4px;}
+    #bothBtn:disabled{opacity:.4;cursor:default;}
+    #scoreBox{margin-top:18px;padding:16px 20px;border-radius:8px;background:#f0f0f0;flex-direction:column;}
+    .score-top{display:flex;width:100%;align-items:center;gap:18px;}
+    #scoreLabel{font-size:14px;color:#555;flex:1;font-weight:bold;}
+    #scoreBar{width:100%;height:10px;border-radius:5px;background:#ddd;margin-top:8px;overflow:hidden;}
+    #scoreBarFill{height:100%;width:0%;border-radius:5px;transition:width .6s ease,background .4s;}
+    #scorePct{font-size:38px;font-weight:bold;letter-spacing:-1px;transition:color .4s;}
+    .sub-scores{display:flex;gap:15px;margin-top:15px;border-top:1px solid #ddd;padding-top:15px;width:100%;}
+    .sub-score{flex:1;text-align:center;}
+    .sub-score-val{font-size:22px;font-weight:bold;margin-bottom:2px;}
+    .sub-score-lbl{font-size:11px;color:#777;text-transform:uppercase;letter-spacing:0.5px;}
+    @media(max-width:480px){
+      button{flex:1;} #scorePct{font-size:28px;}
+      .wave-wrap{height:22vw;min-height:70px;}
+    }
+  </style>
+  <script src="https://unpkg.com/wavesurfer.js"></script>
+</head>
+<body>
+
+  <div class="track prof">
+    <h2>👩&#x200D;🏫 Professeur</h2>
+    <div class="track-controls">
+      <button class="rec" id="recProf" disabled>🎤 Parler</button>
+      <button class="play" id="playProf" disabled>▶ Écouter</button>
+    </div>
+    <div class="wave-wrap"><div id="waveProf"></div><canvas class="overlay" id="envProf"></canvas></div>
+    <div class="status" id="statusProf">⏳ Initialisation…</div>
+  </div>
+
+  <div class="track eleve">
+    <h2>🎓 Élève</h2>
+    <div class="track-controls">
+      <button class="rec" id="recEleve" disabled>🎤 Parler</button>
+      <button class="play" id="playEleve" disabled>▶ Écouter</button>
+    </div>
+    <div class="wave-wrap"><div id="waveEleve"></div><canvas class="overlay" id="envEleve"></canvas></div>
+    <div class="status" id="statusEleve">⏳ Initialisation…</div>
+  </div>
+
+  <button id="bothBtn" disabled>▶▶ Écouter les deux ensemble</button>
+
+  <div id="scoreBox" style="display:none;">
+    <div class="score-top">
+      <div style="flex:1">
+        <div id="scoreLabel">Score global</div>
+        <div id="scoreBar"><div id="scoreBarFill"></div></div>
+      </div>
+      <div id="scorePct">—</div>
+    </div>
+    <div class="sub-scores">
+      <div class="sub-score">
+        <div id="subPitchVal" class="sub-score-val">—</div>
+        <div class="sub-score-lbl">🎵 Intonation (pitch)</div>
+      </div>
+      <div class="sub-score">
+        <div id="subRhythmVal" class="sub-score-val">—</div>
+        <div class="sub-score-lbl">🥁 Rythme syllabique</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ─── Constantes ───────────────────────────────────────────────────────────────
+const SILENCE_THRESH = 0.03;
+const HEAD_SEC  = 0.05;
+const TAIL_SEC  = 0.1;
+const N_ENV     = 512;
+
+// ─── Stockage des analyses ────────────────────────────────────────────────────
+const store = { prof: null, eleve: null };
+
+// ─── Lissage gaussien ─────────────────────────────────────────────────────────
+function gaussSmooth(arr, radius) {
+  const n = arr.length, r = Math.max(1, Math.round(radius));
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    let s = 0, w = 0;
+    for (let j = Math.max(0,i-r); j <= Math.min(n-1,i+r); j++) {
+      const g = Math.exp(-0.5 * ((j-i)/r)**2);
+      s += arr[j]*g; w += g;
+    }
+    out[i] = s / w;
+  }
+  return out;
+}
+
+// ─── Enveloppe RMS normalisée ─────────────────────────────────────────────────
+function computeEnvRMS(buffer, nBuckets) {
+  const data = buffer.getChannelData(0);
+  const bSz  = Math.ceil(data.length / nBuckets);
+  const env  = new Float32Array(nBuckets);
+  let maxVal = 0;
+  for (let b = 0; b < nBuckets; b++) {
+    let sum = 0, cnt = 0, off = b * bSz;
+    for (let i = off; i < Math.min(off+bSz, data.length); i++, cnt++) sum += data[i]*data[i];
+    env[b] = Math.sqrt(sum / (cnt||1));
+    if (env[b] > maxVal) maxVal = env[b];
+  }
+  if (maxVal > 0) for (let i = 0; i < nBuckets; i++) env[i] /= maxVal;
+  return env;
+}
+
+// ─── Détection de syllabes robuste ───────────────────────────────────────────
+// Stratégie:
+//  1) Double lissage gaussien (elimine micro-pics)
+//  2) Seuil RELATIF au max global (pas de seuil absolu fragile)
+//  3) Prominence: le pic doit se détacher de son voisinage local
+//  4) NMS avec distance minimale adaptative
+function detectSyllables(env) {
+  const n = env.length;
+  const s1 = gaussSmooth(env, n * 0.025);
+  const sm = gaussSmooth(s1,  n * 0.020);
+
+  const globalMax = Math.max(...sm);
+  if (globalMax < 1e-6) return [];
+
+  const thr    = globalMax * 0.20;
+  const minGap = Math.max(5, Math.floor(n * 0.07));
+
+  // Candidats avec test de prominence
+  const candidates = [];
+  for (let i = 3; i < n-3; i++) {
+    if (sm[i] < thr) continue;
+    // Local max strict sur +/-2
+    if (sm[i] <= sm[i-1] || sm[i] <= sm[i+1]) continue;
+    if (sm[i] <= sm[i-2] || sm[i] <= sm[i+2]) continue;
+
+    // Prominence = hauteur au-dessus du min local dans le voisinage
+    let lMin = sm[i], rMin = sm[i];
+    for (let j = Math.max(0, i-minGap); j < i; j++)      if (sm[j] < lMin) lMin = sm[j];
+    for (let j = i+1; j <= Math.min(n-1, i+minGap); j++) if (sm[j] < rMin) rMin = sm[j];
+    const prominence = sm[i] - Math.max(lMin, rMin);
+
+    if (prominence >= globalMax * 0.10) {
+      candidates.push({ pos: i, val: sm[i], prominence });
+    }
+  }
+
+  // NMS: trier par prominence décroissante, garder les non-supprimés
+  const peaks = [];
+  for (const c of candidates.sort((a,b) => b.prominence - a.prominence)) {
+    if (peaks.every(p => Math.abs(p.pos - c.pos) >= minGap)) {
+      peaks.push(c);
+    }
+  }
+
+  peaks.sort((a,b) => a.pos - b.pos);
+  return peaks.map(p => p.pos / n);
+}
+
+// ─── Extraction de pitch F0 par autocorrélation ───────────────────────────────
+function extractPitch(buffer) {
+  const data     = buffer.getChannelData(0);
+  const sr       = buffer.sampleRate;
+  const frameLen = Math.floor(sr * 0.025);
+  const hopLen   = Math.floor(sr * 0.010);
+  const minLag   = Math.floor(sr / 500);
+  const maxLag   = Math.floor(sr / 70);
+  const pitches  = [];
+
+  for (let start = 0; start + frameLen <= data.length; start += hopLen) {
+    let energy = 0;
+    for (let i = start; i < start+frameLen; i++) energy += data[i]*data[i];
+    energy /= frameLen;
+    if (energy < 0.0003) { pitches.push(0); continue; }
+
+    let bestCorr = -1, bestLag = 0;
+    for (let lag = minLag; lag <= maxLag; lag++) {
+      let num=0, den=0;
+      const lim = frameLen - maxLag;
+      for (let i=0; i<lim; i++) {
+        num += data[start+i] * data[start+i+lag];
+        den += data[start+i] * data[start+i];
+      }
+      const r = den > 1e-10 ? num/den : 0;
+      if (r > bestCorr) { bestCorr = r; bestLag = lag; }
+    }
+    pitches.push((bestCorr > 0.30 && bestLag > 0) ? sr / bestLag : 0);
+  }
+
+  // Filtre médian 5 points (anti sauts d'octave)
+  const med = pitches.slice();
+  for (let i=2; i<pitches.length-2; i++) {
+    const w = [pitches[i-2],pitches[i-1],pitches[i],pitches[i+1],pitches[i+2]].sort((a,b)=>a-b);
+    med[i] = w[2];
+  }
+  return med;
+}
+
+// Rééchantillonnage linéaire
+function resample(arr, n) {
+  const out = new Float32Array(n);
+  for (let i=0; i<n; i++) {
+    const t = i/(n-1) * (arr.length-1);
+    const lo = Math.floor(t), hi = Math.min(lo+1, arr.length-1);
+    out[i] = arr[lo] + (t-lo)*(arr[hi]-arr[lo]);
+  }
+  return out;
+}
+
+// ─── Score Pitch : DTW sur contours mélodiques en semitones ──────────────────
+// - Conversion log (semitones) = compare la forme, pas la hauteur absolue
+// - Centrage = compare les mouvements mélodiques (montée/descente)
+// - DTW = gère les différences de débit
+function scorePitch(pitchA, pitchB) {
+  const REF  = 150;
+  const toSt = hz => hz > 50 ? 12 * Math.log2(hz / REF) : null;
+
+  const voicedA = pitchA.map(toSt).filter(v => v !== null);
+  const voicedB = pitchB.map(toSt).filter(v => v !== null);
+
+  if (voicedA.length < 5 || voicedB.length < 5) return 0.50;
+
+  // Centrage (enlève la hauteur de voix absolue)
+  const center = arr => {
+    const m = arr.reduce((s,v)=>s+v,0)/arr.length;
+    return arr.map(v=>v-m);
+  };
+  const cA = center(voicedA);
+  const cB = center(voicedB);
+
+  // DTW sur 80 frames
+  const N  = 80;
+  const rA = Array.from(resample(Float32Array.from(cA), N));
+  const rB = Array.from(resample(Float32Array.from(cB), N));
+
+  const dtw = Array.from({length:N+1}, () => new Float32Array(N+1).fill(Infinity));
+  dtw[0][0] = 0;
+  for (let i=1; i<=N; i++) for (let j=1; j<=N; j++) {
+    const cost = Math.abs(rA[i-1] - rB[j-1]);
+    dtw[i][j] = cost + Math.min(dtw[i-1][j], dtw[i][j-1], dtw[i-1][j-1]);
+  }
+
+  const dtwDist = dtw[N][N] / (2 * N);
+  // 0 semitone diff → 100%, 3.5 semitones → 0%
+  const rawScore = Math.max(0, 1 - dtwDist / 3.5);
+
+  // Ponderation par similarite du ratio voix/silence
+  const vrA = voicedA.length / pitchA.length;
+  const vrB = voicedB.length / pitchB.length;
+  const vf  = Math.min(vrA, vrB) / (Math.max(vrA, vrB) + 1e-10);
+
+  return rawScore * (0.7 + 0.3 * vf);
+}
+
+// ─── Score Rythme : DTW sur IOI normalisés ───────────────────────────────────
+// - IOI (Inter-Onset Intervals) normalisés: somme=1, indépendant de la durée
+// - DTW gère les syllabes manquantes/supplémentaires
+// - Pénalité count douce (pas binaire)
+function scoreRhythm(posA, posB) {
+  const nA = posA.length, nB = posB.length;
+  if (nA === 0 || nB === 0) return 0.50;
+
+  // Pénalité count douce (max -40%)
+  const countFactor = Math.max(0.60, 1 - Math.abs(nA-nB) / Math.max(nA,nB) * 0.5);
+
+  if (nA < 2 || nB < 2) return 0.55 * countFactor;
+
+  const ioiOf = pos => {
+    const ioi = pos.slice(1).map((v,i) => v - pos[i]);
+    const sum  = ioi.reduce((a,b)=>a+b,0);
+    return sum > 0 ? ioi.map(v=>v/sum) : ioi;
+  };
+  const ioiA = ioiOf(posA);
+  const ioiB = ioiOf(posB);
+
+  // DTW sur les IOI
+  const la = ioiA.length, lb = ioiB.length;
+  const dp = Array.from({length:la+1}, () => new Float32Array(lb+1).fill(Infinity));
+  dp[0][0] = 0;
+  for (let i=1; i<=la; i++) for (let j=1; j<=lb; j++) {
+    const cost = Math.abs(ioiA[i-1] - ioiB[j-1]);
+    dp[i][j] = cost + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+  }
+  const dtwDist = dp[la][lb] / Math.max(la, lb);
+  // 0 diff → 100%, 0.25 diff moyen → 0%
+  const ioiScore = Math.max(0, 1 - dtwDist * 4);
+
+  return ioiScore * countFactor;
+}
+
+// ─── Calcul et affichage des scores ──────────────────────────────────────────
+function computeAndDisplay() {
+  if (!store.prof || !store.eleve) return;
+
+  const pctPitch  = Math.round(scorePitch( store.prof.pitch,     store.eleve.pitch)     * 100);
+  const pctRhythm = Math.round(scoreRhythm(store.prof.syllables, store.eleve.syllables) * 100);
+  const pctGlobal = Math.round(pctPitch * 0.50 + pctRhythm * 0.50);
+
+  const scoreBox = document.getElementById('scoreBox');
+  scoreBox.style.display = 'flex';
+
+  const col = v => v>=75?'#28a745':v>=50?'#fd7e14':'#dc3545';
+
+  document.getElementById('scorePct').textContent            = pctGlobal + ' %';
+  document.getElementById('scorePct').style.color            = col(pctGlobal);
+  document.getElementById('scoreBarFill').style.width        = pctGlobal + '%';
+  document.getElementById('scoreBarFill').style.background   = col(pctGlobal);
+  document.getElementById('subPitchVal').textContent         = pctPitch  + ' %';
+  document.getElementById('subPitchVal').style.color         = col(pctPitch);
+  document.getElementById('subRhythmVal').textContent        = pctRhythm + ' %';
+  document.getElementById('subRhythmVal').style.color        = col(pctRhythm);
+  document.getElementById('scoreLabel').textContent =
+    pctGlobal >= 75 ? '🎉 Excellente prononciation !'
+    : pctGlobal >= 50 ? '👍 Bien, continue à t\'entraîner !'
+    : '💪 Écoute bien l\'intonation du professeur';
+}
+
+// ─── Dessin enveloppe + marqueurs syllabes ────────────────────────────────────
+function drawOverlay(canvas, buffer, color, syllablePositions) {
+  const wrap = canvas.parentElement;
+  const W = wrap.clientWidth || 740, H = wrap.clientHeight || 110;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  const env = computeEnvRMS(buffer, W);
+  const sm  = gaussSmooth(env, Math.max(3, Math.floor(W*0.01)));
+  const mid = H/2, scaleY = mid - 6;
+
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0, color+'bb');
+  grad.addColorStop(.5, color+'ff');
+  grad.addColorStop(1, color+'bb');
+
+  // Remplissage
+  ctx.beginPath();
+  ctx.moveTo(0, mid - sm[0]*scaleY);
+  for (let i=1; i<W; i++) {
+    const cx=i-.5;
+    ctx.bezierCurveTo(cx, mid-sm[i-1]*scaleY, cx, mid-sm[i]*scaleY, i, mid-sm[i]*scaleY);
+  }
+  for (let i=W-1; i>=0; i--) {
+    const cx=i+.5;
+    ctx.bezierCurveTo(cx, mid+sm[Math.min(i+1,W-1)]*scaleY, cx, mid+sm[i]*scaleY, i, mid+sm[i]*scaleY);
+  }
+  ctx.closePath();
+  ctx.fillStyle = grad; ctx.globalAlpha = .50; ctx.fill();
+
+  // Contour
+  ctx.beginPath();
+  ctx.moveTo(0, mid - sm[0]*scaleY);
+  for (let i=1; i<W; i++) {
+    const cx=i-.5;
+    ctx.bezierCurveTo(cx, mid-sm[i-1]*scaleY, cx, mid-sm[i]*scaleY, i, mid-sm[i]*scaleY);
+  }
+  ctx.globalAlpha = .9; ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+
+  // Marqueurs de syllabes (triangles)
+  ctx.globalAlpha = 0.90;
+  ctx.fillStyle = color;
+  for (const pos of syllablePositions) {
+    const x  = Math.round(pos * W);
+    const ix = Math.min(Math.round(pos * W), W-1);
+    const h  = sm[ix] * scaleY;
+    ctx.beginPath();
+    ctx.moveTo(x,   mid - h - 7);
+    ctx.lineTo(x-4, mid - h - 15);
+    ctx.lineTo(x+4, mid - h - 15);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ─── Usine de track ───────────────────────────────────────────────────────────
+function makeTrack({ waveId, envId, recId, playId, statusId, color, key }) {
+  const wave = WaveSurfer.create({
+    container: '#'+waveId, waveColor: color+'55', progressColor: color+'99',
+    height: 110, normalize: true,
+  });
+  const recBtn   = document.getElementById(recId);
+  const playBtn  = document.getElementById(playId);
+  const statusEl = document.getElementById(statusId);
+  const ovCanvas = document.getElementById(envId);
+  let mediaRecorder, audioChunks = [], stream;
+
+  (async () => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      statusEl.textContent = '✅ Micro prêt';
+      recBtn.disabled = false;
+    } catch(e) {
+      const isHttp = location.protocol==='http:' && !['localhost','127.0.0.1'].includes(location.hostname);
+      statusEl.textContent = isHttp ? '❌ HTTP — micro requiert HTTPS'
+        : e.name==='NotAllowedError' ? '❌ Permission refusée'
+        : e.name==='NotFoundError'   ? '❌ Aucun micro détecté'
+        : '❌ ' + e.name;
+      statusEl.style.color = '#c00';
+    }
+  })();
+
+  recBtn.onpointerdown = e => {
+    e.preventDefault(); recBtn.setPointerCapture(e.pointerId);
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = e => { if(e.data?.size>0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = async () => {
+      statusEl.textContent = '🔍 Analyse…';
+      const blob = new Blob(audioChunks, { type:'audio/webm' });
+      const { wav, buffer } = await trimSilence(blob);
+
+      const syllables = detectSyllables(computeEnvRMS(buffer, N_ENV));
+      const pitch     = extractPitch(buffer);
+      store[key] = { pitch, syllables };
+
+      wave.load(URL.createObjectURL(wav));
+      wave.once('ready', () => {
+        playBtn.disabled = false;
+        statusEl.textContent = `✅ Prêt — ${syllables.length} syllabe(s) détectée(s)`;
+        drawOverlay(ovCanvas, buffer, color, syllables);
+        refreshBothBtn();
+        computeAndDisplay();
+      });
+    };
+    mediaRecorder.start(100);
+    recBtn.classList.add('recording'); recBtn.textContent = '⏺ Enregistrement…';
+  };
+  const stopRec = () => {
+    if (mediaRecorder?.state==='recording') mediaRecorder.stop();
+    recBtn.classList.remove('recording'); recBtn.textContent = '🎤 Parler';
+  };
+  recBtn.onpointerup = stopRec;
+  recBtn.onlostpointercapture = stopRec;
+  playBtn.onclick = () => { wave.isPlaying() ? wave.pause() : wave.play(); };
+  return { wave, ready: () => !playBtn.disabled };
+}
+
+const profTrack  = makeTrack({ waveId:'waveProf',  envId:'envProf',  recId:'recProf',  playId:'playProf',  statusId:'statusProf',  color:'#0077ff', key:'prof'  });
+const eleveTrack = makeTrack({ waveId:'waveEleve', envId:'envEleve', recId:'recEleve', playId:'playEleve', statusId:'statusEleve', color:'#ff6600', key:'eleve' });
+
+const bothBtn = document.getElementById('bothBtn');
+function refreshBothBtn() { bothBtn.disabled = !(profTrack.ready() && eleveTrack.ready()); }
+bothBtn.onclick = () => { profTrack.wave.play(); eleveTrack.wave.play(); };
+
+// ─── Trim silence ─────────────────────────────────────────────────────────────
+async function trimSilence(blob) {
+  const audioCtx = new AudioContext();
+  const decoded  = await audioCtx.decodeAudioData(await blob.arrayBuffer());
+  const sr = decoded.sampleRate, nCh = decoded.numberOfChannels;
+  const maxAmp = new Float32Array(decoded.length);
+  for (let c=0; c<nCh; c++) {
+    const d = decoded.getChannelData(c);
+    for (let i=0; i<decoded.length; i++) { const a=Math.abs(d[i]); if(a>maxAmp[i]) maxAmp[i]=a; }
+  }
+  let start = 0;
+  for (let i=0; i<maxAmp.length; i++) { if(maxAmp[i]>SILENCE_THRESH){start=i;break;} }
+  start = Math.max(0, start - Math.floor(HEAD_SEC*sr));
+  let end = maxAmp.length-1;
+  for (let i=maxAmp.length-1; i>=0; i--) { if(maxAmp[i]>SILENCE_THRESH){end=i;break;} }
+  end = Math.min(maxAmp.length-1, end + Math.floor(TAIL_SEC*sr));
+  const newLen = end-start+1;
+  const buf = audioCtx.createBuffer(nCh, newLen, sr);
+  for (let c=0; c<nCh; c++) buf.copyToChannel(decoded.getChannelData(c).slice(start,end+1), c);
+  audioCtx.close();
+  return { wav: bufferToWav(buf), buffer: buf };
+}
+
+function bufferToWav(buffer) {
+  const nCh=buffer.numberOfChannels, sr=buffer.sampleRate, len=buffer.length;
+  const pcm = new Int16Array(len*nCh);
+  for (let i=0; i<len; i++) for (let c=0; c<nCh; c++) {
+    const s = buffer.getChannelData(c)[i];
+    pcm[i*nCh+c] = Math.max(-32768, Math.min(32767, Math.round(s*32767)));
+  }
+  const db=pcm.byteLength, wav=new ArrayBuffer(44+db), v=new DataView(wav);
+  const w = (o,s) => [...s].forEach((c,i) => v.setUint8(o+i, c.charCodeAt(0)));
+  w(0,'RIFF'); v.setUint32(4,36+db,true); w(8,'WAVE'); w(12,'fmt ');
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,nCh,true);
+  v.setUint32(24,sr,true); v.setUint32(28,sr*nCh*2,true);
+  v.setUint16(32,nCh*2,true); v.setUint16(34,16,true);
+  w(36,'data'); v.setUint32(40,db,true);
+  new Uint8Array(wav,44).set(new Uint8Array(pcm.buffer));
+  return new Blob([wav],{type:'audio/wav'});
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Prononciation – Comparaison</title>
+<style>
+  /* ─── Base ─────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; }
+  body { font-family: Arial; padding: 16px; max-width: 780px; margin: 0 auto; }
+  h2 { margin: 0 0 4px 0; font-size: 16px; color: #333; }
+
+  .track { border: 1px solid #ddd; border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; background: #fafafa; }
+  .track.prof  { border-left: 4px solid #0077ff; }
+  .track.eleve { border-left: 4px solid #ff6600; }
+
+  .track-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+
+  /* Waveform : hauteur fixe sur desktop */
+  .wave-wrap { position: relative; height: 110px; border: 1px solid #e0e0e0; border-radius: 4px; background: #fff; }
+  .wave-wrap > div { position: absolute; inset: 0; }
+  .wave-wrap canvas.envelope { position: absolute; inset: 0; pointer-events: none; }
+
+  .status { font-size: 12px; color: #888; margin-top: 6px; min-height: 16px; }
+
+  button { padding: 9px 18px; font-size: 14px; cursor: pointer; border: none; border-radius: 5px; background: #eee; touch-action: none; }
+  button:disabled { opacity: .4; cursor: default; }
+  button.rec  { background: #0077ff; color: #fff; }
+  button.rec.recording { background: #ff2222; }
+  button.play { background: #28a745; color: #fff; }
+
+  #bothBtn { display: block; width: 100%; padding: 13px; font-size: 15px;
+             background: #6f42c1; color: #fff; border: none; border-radius: 6px;
+             cursor: pointer; margin-top: 4px; touch-action: none; }
+  #bothBtn:disabled { opacity: .4; cursor: default; }
+
+  /* Score */
+  #scoreBox { margin-top: 18px; padding: 16px 20px; border-radius: 8px; background: #f0f0f0;
+              display: flex; align-items: center; gap: 18px; transition: background .4s; }
+  #scoreLabel { font-size: 14px; color: #555; flex: 1; }
+  #scorePct { font-size: 38px; font-weight: bold; letter-spacing: -1px; transition: color .4s; }
+  #scoreBar { width: 100%; height: 10px; border-radius: 5px; background: #ddd; margin-top: 8px; overflow: hidden; }
+  #scoreBarFill { height: 100%; width: 0%; border-radius: 5px; transition: width .6s ease, background .4s; }
+
+  /* ─── Mobile portrait  (≤ 480 px) ──────────────────── */
+  @media (max-width: 480px) {
+    body { padding: 10px; }
+    h2 { font-size: 15px; }
+    .track { padding: 10px 12px; margin-bottom: 10px; }
+    .wave-wrap { height: 22vw; min-height: 70px; }   /* ~22 % de la largeur écran */
+    button { padding: 11px 16px; font-size: 15px; flex: 1; }
+    #bothBtn { padding: 14px; font-size: 16px; }
+    #scorePct { font-size: 30px; }
+  }
+
+  /* ─── Mobile paysage  (hauteur ≤ 450 px) ────────────── */
+  @media (max-height: 450px) and (orientation: landscape) {
+    body { padding: 6px 14px; }
+    h2 { font-size: 13px; margin-bottom: 2px; }
+    .track { padding: 6px 10px; margin-bottom: 8px; border-radius: 6px; }
+    .track-controls { margin-bottom: 5px; gap: 7px; }
+    .wave-wrap { height: 17vmin; min-height: 45px; }  /* proportionnel à la petite dimension */
+    .status { font-size: 11px; margin-top: 3px; min-height: 13px; }
+    button { padding: 7px 13px; font-size: 13px; }
+    #bothBtn { padding: 9px; font-size: 14px; margin-top: 2px; }
+    #scoreBox { padding: 8px 12px; margin-top: 8px; gap: 10px; }
+    #scorePct { font-size: 26px; }
+    #scoreBar { margin-top: 4px; height: 7px; }
+  }
+</style>
+<script src="https://unpkg.com/wavesurfer.js"></script>
+</head>
+<body>
+
+<div class="track prof">
+  <h2>👩‍🏫 Professeur</h2>
+  <div class="track-controls">
+    <button class="rec"  id="recProf"  disabled>🎤 Parler</button>
+    <button class="play" id="playProf" disabled>▶ Écouter</button>
+  </div>
+  <div class="wave-wrap">
+    <div id="waveProf"></div>
+    <canvas class="envelope" id="envProf"></canvas>
+  </div>
+  <div class="status" id="statusProf">⏳ Initialisation…</div>
+</div>
+
+<div class="track eleve">
+  <h2>🎓 Élève</h2>
+  <div class="track-controls">
+    <button class="rec"  id="recEleve"  disabled>🎤 Parler</button>
+    <button class="play" id="playEleve" disabled>▶ Écouter</button>
+  </div>
+  <div class="wave-wrap">
+    <div id="waveEleve"></div>
+    <canvas class="envelope" id="envEleve"></canvas>
+  </div>
+  <div class="status" id="statusEleve">⏳ Initialisation…</div>
+</div>
+
+<button id="bothBtn" disabled>▶▶ Écouter les deux ensemble</button>
+
+<div id="scoreBox" style="display:none">
+  <div style="flex:1">
+    <div id="scoreLabel">Similarité des enveloppes</div>
+    <div id="scoreBar"><div id="scoreBarFill"></div></div>
+  </div>
+  <div id="scorePct">—</div>
+</div>
+
+<script>
+// ─── Paramètres ───────────────────────────────────────────────────────────────
+const THRESHOLD = 0.01;
+const HEAD_SEC  = 0.04;
+const TAIL_SEC  = 0.50;
+const N_BUCKETS = 512;   // résolution commune pour la corrélation
+
+// ─── Enveloppes globales (pour corrélation) ───────────────────────────────────
+const envelopes = { prof: null, eleve: null };
+
+// ─── Usine de track ───────────────────────────────────────────────────────────
+function makeTrack({ waveId, envId, recId, playId, statusId, color, key }) {
+  const wave = WaveSurfer.create({
+    container: '#' + waveId,
+    waveColor: color + '55',
+    progressColor: color + '99',
+    height: 110,
+    normalize: true,
+  });
+
+  const recBtn    = document.getElementById(recId);
+  const playBtn   = document.getElementById(playId);
+  const statusEl  = document.getElementById(statusId);
+  const envCanvas = document.getElementById(envId);
+  let mediaRecorder, audioChunks = [], stream;
+
+  (async () => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      statusEl.textContent = '✅ Micro prêt';
+      recBtn.disabled = false;
+    } catch (e) {
+      const isHttp = location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
+      const msg =
+        isHttp                        ? '❌ HTTP détecté — le micro requiert HTTPS' :
+        e.name === 'NotAllowedError'  ? '❌ Permission refusée — autorisez le micro dans votre navigateur' :
+        e.name === 'NotFoundError'    ? '❌ Aucun micro détecté sur cet appareil' :
+        e.name === 'SecurityError'    ? '❌ Page non sécurisée — le micro requiert HTTPS' :
+        e.name === 'NotSupportedError'? '❌ Micro non supporté sur ce navigateur' :
+        '❌ Erreur micro : ' + e.name + ' — ' + e.message;
+      statusEl.textContent = msg;
+      statusEl.style.color = '#c00';
+      console.error('getUserMedia:', e);
+    }
+  })();
+
+  recBtn.onpointerdown = (e) => {
+    e.preventDefault();
+    recBtn.setPointerCapture(e.pointerId);
+    audioChunks   = [];
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = (e) => { if (e.data?.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = async () => {
+      statusEl.textContent = '🔍 Rognage…';
+      const blob   = new Blob(audioChunks, { type: 'audio/webm' });
+      const { wav, buffer } = await trimSilence(blob);
+      // Calcule et stocke l'enveloppe normalisée à N_BUCKETS
+      envelopes[key] = computeEnvelope(buffer, N_BUCKETS);
+      wave.load(URL.createObjectURL(wav));
+      wave.once('ready', () => {
+        playBtn.disabled = false;
+        statusEl.textContent = '✅ Prêt';
+        drawEnvelope(envCanvas, buffer, color);
+        refreshBothBtn();
+        tryCorrelation();
+      });
+    };
+    mediaRecorder.start(100);
+    recBtn.classList.add('recording');
+    recBtn.textContent = '⏺ Enregistrement…';
+  };
+
+  const stopRec = () => {
+    if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
+    recBtn.classList.remove('recording');
+    recBtn.textContent = '🎤 Parler';
+  };
+  recBtn.onpointerup          = stopRec;
+  recBtn.onlostpointercapture = stopRec;
+
+  playBtn.onclick = () => { wave.isPlaying() ? wave.pause() : wave.play(); };
+  return { wave, isReady: () => !playBtn.disabled };
+}
+
+const prof  = makeTrack({ waveId:'waveProf',  envId:'envProf',  recId:'recProf',  playId:'playProf',  statusId:'statusProf',  color:'#0077ff', key:'prof'  });
+const eleve = makeTrack({ waveId:'waveEleve', envId:'envEleve', recId:'recEleve', playId:'playEleve', statusId:'statusEleve', color:'#ff6600', key:'eleve' });
+
+const bothBtn = document.getElementById('bothBtn');
+function refreshBothBtn() { bothBtn.disabled = !(prof.isReady() && eleve.isReady()); }
+bothBtn.onclick = () => { prof.wave.play(); eleve.wave.play(); };
+
+// ─── Corrélation ─────────────────────────────────────────────────────────────
+function tryCorrelation() {
+  if (!envelopes.prof || !envelopes.eleve) return;
+
+  // Les deux enveloppes ont déjà N_BUCKETS points — elles sont alignées 0→1
+  const a = envelopes.prof;
+  const b = envelopes.eleve;
+  const n = a.length;   // === N_BUCKETS
+
+  // Pearson
+  let sumA = 0, sumB = 0;
+  for (let i = 0; i < n; i++) { sumA += a[i]; sumB += b[i]; }
+  const mA = sumA / n, mB = sumB / n;
+
+  let num = 0, dA = 0, dB = 0;
+  for (let i = 0; i < n; i++) {
+    const da = a[i] - mA, db = b[i] - mB;
+    num += da * db;
+    dA  += da * da;
+    dB  += db * db;
+  }
+  const denom = Math.sqrt(dA * dB);
+  const r     = denom < 1e-10 ? 0 : num / denom;   // −1 … +1
+
+  // Ramène à 0–100 % (on considère que r<0 = 0 %)
+  const pct = Math.round(Math.max(0, r) * 100);
+
+  const scoreBox     = document.getElementById('scoreBox');
+  const scorePct     = document.getElementById('scorePct');
+  const scoreBarFill = document.getElementById('scoreBarFill');
+
+  scoreBox.style.display = 'flex';
+  scoreBox.style.flexDirection = 'column';
+
+  // Couleur selon le score
+  const col = pct >= 75 ? '#28a745' : pct >= 50 ? '#fd7e14' : '#dc3545';
+
+  scorePct.textContent  = pct + ' %';
+  scorePct.style.color  = col;
+  scoreBarFill.style.width      = pct + '%';
+  scoreBarFill.style.background = col;
+
+  document.getElementById('scoreLabel').textContent =
+    pct >= 75 ? '🎉 Très bonne similarité des enveloppes !'
+    : pct >= 50 ? '👍 Similarité correcte — continuez à pratiquer'
+    : '💪 Encore un effort — les rythmes divergent';
+}
+
+// ─── Calcul enveloppe RMS normalisée ─────────────────────────────────────────
+function computeEnvelope(buffer, nBuckets) {
+  const data       = buffer.getChannelData(0);
+  const bucketSize = Math.ceil(data.length / nBuckets);
+  const env        = new Float32Array(nBuckets);
+  let   maxVal     = 0;
+
+  for (let b = 0; b < nBuckets; b++) {
+    let sum = 0, cnt = 0;
+    const off = b * bucketSize;
+    for (let i = off; i < Math.min(off + bucketSize, data.length); i++, cnt++) sum += data[i] * data[i];
+    env[b] = Math.sqrt(sum / (cnt || 1));
+    if (env[b] > maxVal) maxVal = env[b];
+  }
+  // Normalise 0→1
+  if (maxVal > 0) for (let i = 0; i < nBuckets; i++) env[i] /= maxVal;
+  return env;
+}
+
+// ─── Dessin enveloppe canvas ──────────────────────────────────────────────────
+function drawEnvelope(canvas, buffer, color) {
+  const wrap = canvas.parentElement;
+  const W = wrap.clientWidth || 740, H = wrap.clientHeight || 110;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  const env  = computeEnvelope(buffer, W);
+
+  // Lissage
+  const smooth = new Float32Array(W);
+  const win    = Math.max(3, Math.floor(W * 0.01));
+  for (let i = 0; i < W; i++) {
+    let s = 0, n = 0;
+    for (let j = Math.max(0, i-win); j <= Math.min(W-1, i+win); j++, n++) s += env[j];
+    smooth[i] = s / n;
+  }
+
+  const mid    = H / 2;
+  const scaleY = (mid - 6);
+
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0,   color + 'cc');
+  grad.addColorStop(0.5, color + 'ff');
+  grad.addColorStop(1,   color + 'cc');
+
+  function drawCurveTop() {
+    ctx.moveTo(0, mid - smooth[0] * scaleY);
+    for (let i = 1; i < W; i++) {
+      const cpx = (i - 0.5);
+      ctx.bezierCurveTo(cpx, mid - smooth[i-1]*scaleY, cpx, mid - smooth[i]*scaleY, i, mid - smooth[i]*scaleY);
+    }
+  }
+  function drawCurveBottom(reverse) {
+    if (reverse) {
+      for (let i = W-1; i >= 0; i--) {
+        const cpx = (i + 0.5);
+        ctx.bezierCurveTo(cpx, mid + smooth[i+1 < W ? i+1 : i]*scaleY, cpx, mid + smooth[i]*scaleY, i, mid + smooth[i]*scaleY);
+      }
+    } else {
+      ctx.moveTo(0, mid + smooth[0] * scaleY);
+      for (let i = 1; i < W; i++) {
+        const cpx = (i - 0.5);
+        ctx.bezierCurveTo(cpx, mid + smooth[i-1]*scaleY, cpx, mid + smooth[i]*scaleY, i, mid + smooth[i]*scaleY);
+      }
+    }
+  }
+
+  // Remplissage
+  ctx.beginPath();
+  drawCurveTop();
+  drawCurveBottom(true);
+  ctx.closePath();
+  ctx.fillStyle   = grad;
+  ctx.globalAlpha = 0.55;
+  ctx.fill();
+
+  // Contour haut
+  ctx.beginPath(); drawCurveTop();
+  ctx.globalAlpha = 0.9; ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+
+  // Contour bas
+  ctx.beginPath(); drawCurveBottom(false);
+  ctx.stroke();
+
+  ctx.globalAlpha = 1;
+}
+
+// ─── Rognage silence ─────────────────────────────────────────────────────────
+async function trimSilence(blob) {
+  const audioCtx = new AudioContext();
+  const decoded  = await audioCtx.decodeAudioData(await blob.arrayBuffer());
+  const sr = decoded.sampleRate, nCh = decoded.numberOfChannels;
+
+  const maxAmp = new Float32Array(decoded.length);
+  for (let c = 0; c < nCh; c++) {
+    const d = decoded.getChannelData(c);
+    for (let i = 0; i < decoded.length; i++) { const a = Math.abs(d[i]); if (a > maxAmp[i]) maxAmp[i] = a; }
+  }
+
+  let start = 0;
+  for (let i = 0; i < maxAmp.length; i++) { if (maxAmp[i] > THRESHOLD) { start = i; break; } }
+  start = Math.max(0, start - Math.floor(HEAD_SEC * sr));
+
+  let end = maxAmp.length - 1;
+  for (let i = maxAmp.length - 1; i >= 0; i--) { if (maxAmp[i] > THRESHOLD) { end = i; break; } }
+  end = Math.min(maxAmp.length - 1, end + Math.floor(TAIL_SEC * sr));
+
+  const newLen = end - start + 1;
+  const buf = audioCtx.createBuffer(nCh, newLen, sr);
+  for (let c = 0; c < nCh; c++) buf.copyToChannel(decoded.getChannelData(c).slice(start, end+1), c);
+  audioCtx.close();
+  return { wav: bufferToWav(buf), buffer: buf };
+}
+
+function bufferToWav(buffer) {
+  const nCh = buffer.numberOfChannels, sr = buffer.sampleRate, len = buffer.length;
+  const pcm = new Int16Array(len * nCh);
+  for (let i = 0; i < len; i++)
+    for (let c = 0; c < nCh; c++) {
+      const s = buffer.getChannelData(c)[i];
+      pcm[i * nCh + c] = Math.max(-32768, Math.min(32767, Math.round(s * 32767)));
+    }
+  const db = pcm.byteLength, wav = new ArrayBuffer(44+db), v = new DataView(wav);
+  const w = (o, s) => [...s].forEach((c,i) => v.setUint8(o+i, c.charCodeAt(0)));
+  w(0,'RIFF'); v.setUint32(4,36+db,true); w(8,'WAVE'); w(12,'fmt ');
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,nCh,true);
+  v.setUint32(24,sr,true); v.setUint32(28,sr*nCh*2,true);
+  v.setUint16(32,nCh*2,true); v.setUint16(34,16,true);
+  w(36,'data'); v.setUint32(40,db,true);
+  new Uint8Array(wav,44).set(new Uint8Array(pcm.buffer));
+  return new Blob([wav], { type:'audio/wav' });
+}
+</script>
+</body>
+</html>

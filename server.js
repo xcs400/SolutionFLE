@@ -332,7 +332,7 @@ app.post('/api/contact', async (req, res) => {
     try {
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
-            to: process.env.EMAIL_TO || 'gamblin.aline@gmail.com',
+            to: process.env.EMAIL_TO || 'contact@solutionfle.fr',
             subject: `[Solution FLE] Nouveau message de ${name}`,
             text: `Nom: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
             replyTo: email

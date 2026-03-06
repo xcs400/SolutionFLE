@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Évaluation de la prononciation</title>
+
+<script src="https://unpkg.com/wavesurfer.js"></script>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  max-width: 820px;
+  margin: auto;
+  padding: 16px;
+}
+
+h2 { margin: 8px 0; }
+
+.track {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.prof  { border-left: 4px solid #0077ff; }
+.eleve { border-left: 4px solid #ff6600; }
+
+.controls { display: flex; gap: 10px; margin-bottom: 8px; }
+
+button {
+  padding: 8px 14px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button.recording { background:#c00; color:#fff; }
+
+.wave { height: 90px; }
+
+#results {
+  display:none;
+  margin-top: 20px;
+  padding: 16px;
+  background: #f3f3f3;
+  border-radius: 8px;
+}
+
+.bar {
+  height: 6px;
+  background: #ddd;
+  margin: 4px 0 10px;
+}
+
+.fill {
+  height: 6px;
+}
+
+.good { background:#28a745; }
+.mid  { background:#fd7e14; }
+.bad  { background:#dc3545; }
+</style>
+</head>
+
+<body>
+
+<h1>Évaluation de la prononciation</h1>
+
+<div class="track prof">
+  <h2>👩‍🏫 Référence</h2>
+  <div class="controls">
+    <button id="recProf">🎤 Parler</button>
+    <button id="playProf" disabled>▶ Écouter</button>
+  </div>
+  <div id="waveProf" class="wave"></div>
+</div>
+
+<div class="track eleve">
+  <h2>🎓 Élève</h2>
+  <div class="controls">
+    <button id="recEleve">🎤 Parler</button>
+    <button id="playEleve" disabled>▶ Écouter</button>
+  </div>
+  <div id="waveEleve" class="wave"></div>
+</div>
+
+<button id="analyzeBtn" disabled>📊 Analyser la prononciation</button>
+
+<div id="results"></div>
+
+<script>
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let ctx = new AudioContext();
+let buffers = { prof:null, eleve:null };
+
+function makeRecorder(waveId, recBtn, playBtn, key, color) {
+  const wave = WaveSurfer.create({
+    container: '#'+waveId,
+    waveColor: color+'55',
+    progressColor: color,
+    height: 90,
+    normalize: true
+  });
+
+  let stream, recorder, chunks=[];
+
+  navigator.mediaDevices.getUserMedia({audio:true}).then(s=>stream=s);
+
+  recBtn.onclick = () => {
+    if (!recorder || recorder.state==="inactive") {
+      chunks=[];
+      recorder = new MediaRecorder(stream);
+      recorder.ondataavailable=e=>chunks.push(e.data);
+      recorder.onstop = async ()=>{
+        const blob=new Blob(chunks);
+        const buf=await ctx.decodeAudioData(await blob.arrayBuffer());
+        buffers[key]=buf;
+        wave.loadBlob(blob);
+        playBtn.disabled=false;
+        if (buffers.prof && buffers.eleve) analyzeBtn.disabled=false;
+      };
+      recorder.start();
+      recBtn.textContent="⏺ Stop";
+      recBtn.classList.add("recording");
+    } else {
+      recorder.stop();
+      recBtn.textContent="🎤 Parler";
+      recBtn.classList.remove("recording");
+    }
+  };
+
+  playBtn.onclick=()=>wave.playPause();
+}
+
+makeRecorder("waveProf",recProf,playProf,"prof","#0077ff");
+makeRecorder("waveEleve",recEleve,playEleve,"eleve","#ff6600");
+
+/* ---------- ANALYSE ---------- */
+
+function envelope(buffer,n=400){
+  const d=buffer.getChannelData(0);
+  const step=Math.floor(d.length/n);
+  let e=new Float32Array(n),m=0;
+  for(let i=0;i<n;i++){
+    let s=0;
+    for(let j=i*step;j<(i+1)*step && j<d.length;j++) s+=d[j]*d[j];
+    e[i]=Math.sqrt(s);
+    if(e[i]>m)m=e[i];
+  }
+  for(let i=0;i<n;i++) e[i]/=m||1;
+  return e;
+}
+
+function corr(a,b){
+  let ma=0,mb=0;
+  for(let i=0;i<a.length;i++){ma+=a[i];mb+=b[i];}
+  ma/=a.length; mb/=b.length;
+  let num=0,da=0,db=0;
+  for(let i=0;i<a.length;i++){
+    let x=a[i]-ma,y=b[i]-mb;
+    num+=x*y; da+=x*x; db+=y*y;
+  }
+  return Math.max(0,num/Math.sqrt(da*db));
+}
+
+function durationScore(a,b){
+  return Math.round(Math.min(a.duration,b.duration)/Math.max(a.duration,b.duration)*100);
+}
+
+function pitchScore(buf){
+  const d=buf.getChannelData(0),sr=buf.sampleRate;
+  let f0=[];
+  for(let i=0;i+1024<d.length;i+=512){
+    let best=0,lag=0;
+    for(let l=50;l<400;l++){
+      let c=0;
+      for(let j=0;j<512;j++) c+=d[i+j]*d[i+j+l];
+      if(c>best){best=c;lag=l;}
+    }
+    if(best>0.01) f0.push(sr/lag);
+  }
+  if(!f0.length) return 0;
+  f0.sort((a,b)=>a-b);
+  return f0[Math.floor(f0.length/2)];
+}
+
+function centroid(buf){
+  const d=buf.getChannelData(0);
+  let s=0,c=0;
+  for(let i=0;i<d.length;i++){
+    let a=Math.abs(d[i]);
+    s+=i*a; c+=a;
+  }
+  return s/(c||1);
+}
+
+analyzeBtn.onclick=()=>{
+  const eA=envelope(buffers.prof);
+  const eB=envelope(buffers.eleve);
+  const rythme=Math.round(corr(eA,eB)*100);
+  const duree=durationScore(buffers.prof,buffers.eleve);
+
+  const pA=pitchScore(buffers.prof);
+  const pB=pitchScore(buffers.eleve);
+  const pitch=Math.round(Math.min(pA,pB)/Math.max(pA,pB)*100);
+
+  const sA=centroid(buffers.prof);
+  const sB=centroid(buffers.eleve);
+  const spectral=Math.round(Math.min(sA,sB)/Math.max(sA,sB)*100);
+
+  const global=Math.round(
+    0.3*rythme+0.15*duree+0.2*pitch+0.35*spectral
+  );
+
+  function line(label,v){
+    let cls=v>75?"good":v>50?"mid":"bad";
+    return `
+      <div>${label} : ${v} %</div>
+      <div class="bar"><div class="fill ${cls}" style="width:${v}%"></div></div>
+    `;
+  }
+
+  results.style.display="block";
+  results.innerHTML=`
+    <h2>Prononciation : ${global} %</h2>
+    ${line("Rythme",rythme)}
+    ${line("Durée",duree)}
+    ${line("Intonation",pitch)}
+    ${line("Voyelles",spectral)}
+    <strong>Conseil :</strong><br>
+    ${spectral<60?"Travaille l’ouverture des voyelles":
+      pitch<60?"Soigne l’intonation":
+      duree<60?"Ralentis légèrement":
+      "Prononciation globalement correcte"}
+  `;
+};
+</script>
+</body>
+</html>

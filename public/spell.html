@@ -327,7 +327,7 @@
       </div>
       <div id="scorePct">—</div>
     </div>
-      <div class="sub-scores">
+    <div class="sub-scores">
       <div class="sub-score">
         <div id="subPitchVal" class="sub-score-val">—</div>
         <div class="sub-score-lbl">🎵 Prosodie</div>
@@ -408,33 +408,147 @@
       return out;
     }
 
-    // SCORE PROSODIE (forme mélodique, indépendant de la hauteur absolue)
-    // Z-normalisation → fonctionne cross-genre (voix grave/aiguë)
-    // ═══════════════════════════════════════════════════════════════
+    // SCORE PROSODIE — Δpitch (variations mélodiques entre frames)
+    // ─────────────────────────────────────────────────────────────
+    // POURQUOI Δpitch et non Z-score sur le pitch absolu ?
+    //
+    // Z-score : compare la FORME du contour après centrage/normalisation.
+    //   → Problème 1 : reste dépendant du genre si la variance diffère.
+    //   → Problème 2 : un son monotone (std ≈ 0 Hz) voit son bruit de ±0.1 Hz
+    //     amplifié en ±10 unités → "fausse mélodie" → score artificiellement élevé.
+    //   → Problème 3 : correction par heuristique (seuils arbitraires).
+    //
+    // Δpitch = différences entre frames voisées consécutives :
+    //   → Naturellement gender-neutral : prof à 220 Hz monte de +4 st, élève
+    //     à 110 Hz monte de +4 st → delta identique, peu importe l'octave.
+    //   → Son monotone → Δ ≈ 0 partout → DTW mismatch avec le prof → score bas ✅
+    //   → Pas d'amplification du bruit (Δ de ±0.1 Hz reste ±0.1 Hz).
+    //   → Standard dans les systèmes CAPT (Computer-Assisted Pronunciation Training).
+    // ─────────────────────────────────────────────────────────────
     function scorePitch(pitchA, pitchB) {
       const toSt = hz => hz > 50 ? 12 * Math.log2(hz / 150) : null;
 
-      const vA = pitchA.frames.map(toSt).filter(v => v !== null);
-      const vB = pitchB.frames.map(toSt).filter(v => v !== null);
+      const stA = pitchA.frames.map(toSt);
+      const stB = pitchB.frames.map(toSt);
 
-      // Pénalité voix : si l'élève n'a pas assez de frames voisées → pas de parole réelle
-      const vrA = vA.length / (pitchA.frames.length || 1);
-      const vrB = vB.length / (pitchB.frames.length || 1);
-      const voicedPenalty = Math.min(vrA, vrB) / (Math.max(vrA, vrB) + 1e-10);
-      if (vA.length < 5 || vB.length < 5 || vrB < 0.05) return 0;
+      // Taux de voisement (pénélise l'élève silencieux ou bruyant)
+      const vrA = stA.filter(v => v != null).length / stA.length;
+      const vrB = stB.filter(v => v != null).length / stB.length;
+      if (vrB < 0.08) return 0;  // Seuil voicing plus strict
 
-      // Z-score : retire la moyenne ET normalise la variance
-      // → compare la FORME du contour, pas la hauteur absolue
-      const znorm = arr => {
-        const m = arr.reduce((s, v) => s + v, 0) / arr.length;
-        const std = Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length) || 1;
-        return arr.map(v => (v - m) / std);
+      // Extraction des deltas sur paires voisées consécutives
+      const deltasOf = stArr => {
+        const d = [];
+        for (let i = 0; i < stArr.length - 1; i++) {
+          if (stArr[i] != null && stArr[i + 1] != null) {
+            // Clamp ±6st élimine sauts d'octave résiduels (artefacts YIN)
+            d.push(Math.max(-6, Math.min(6, stArr[i + 1] - stArr[i])));
+          }
+        }
+        return d;
       };
-      const cA = znorm(vA), cB = znorm(vB);
 
-      const N = 80;
-      const rA = Array.from(resample(Float32Array.from(cA), N));
-      const rB = Array.from(resample(Float32Array.from(cB), N));
+      const dA = deltasOf(stA);
+      const dB = deltasOf(stB);
+
+      // Pas assez de données voisées pour comparer
+      if (dA.length < 8 || dB.length < 8) {
+        return 0.25 * Math.min(vrA, vrB) / Math.max(vrA, vrB, 1e-10);
+      }
+
+      // DTW sur les contours pitch rééchantillonnés (N=60 points)
+      const N = 60;
+      const resample = (arr, n) => {
+        const out = new Float32Array(n);
+        for (let i = 0; i < n; i++) {
+          const t = i / (n - 1) * (arr.length - 1);
+          const lo = Math.floor(t), hi = Math.min(lo + 1, arr.length - 1);
+          out[i] = arr[lo] + (t - lo) * (arr[hi] - arr[lo]);
+        }
+        return out;
+      };
+
+      const rA = Array.from(resample(Float32Array.from(dA), N));
+      const rB = Array.from(resample(Float32Array.from(dB), N));
+
+      // Matrice DTW
+      const dtw = Array.from({ length: N }, () => new Float32Array(N).fill(Infinity));
+      dtw[0][0] = 0;
+
+      for (let i = 1; i < N; i++) {
+        for (let j = 1; j < N; j++) {
+          const cost = Math.abs(rA[i - 1] - rB[j - 1]);
+          dtw[i][j] = cost + Math.min(dtw[i - 1][j], dtw[i][j - 1], dtw[i - 1][j - 1]);
+        }
+      }
+
+      const dtwDist = dtw[N - 1][N - 1] / (2 * N);  // Normalisation DTW
+
+      // ✅ CORRECTION 1 : DTW plus strict (0.8 au lieu de 1.5)
+      const shapeScore = Math.max(0, 1 - dtwDist / 0.8);
+
+      // Span mélodique absolu (range en semitones)
+      const rangeOf = vals => {
+        if (vals.length < 2) return 0;
+        let mn = vals[0], mx = vals[0];
+        for (const v of vals) {
+          if (v < mn) mn = v;
+          if (v > mx) mx = v;
+        }
+        return mx - mn;
+      };
+
+      const voicedValA = stA.filter(v => v != null);
+      const voicedValB = stB.filter(v => v != null);
+      const rangeA = rangeOf(voicedValA);
+      const rangeB = rangeOf(voicedValB);
+
+      // ✅ CORRECTION 2 : span plus exigeant (3.5st min, 40% prof)
+      const requiredRange = Math.max(3.5, rangeA * 0.40);
+      const rangeFactor = Math.min(1, rangeB / requiredRange);
+
+      // ✅ CORRECTION 3 : poids 60/20/20 (plus équilibré)
+      const voicedPenalty = Math.min(vrA, vrB) / Math.max(vrA, vrB, 1e-10);
+
+      return shapeScore * 0.60 + 0.20 * voicedPenalty + 0.20 * rangeFactor;
+    }
+
+
+    function scorePitchold(pitchA, pitchB) {
+      const toSt = hz => hz > 50 ? 12 * Math.log2(hz / 150) : null;
+
+      const stA = pitchA.frames.map(toSt);
+      const stB = pitchB.frames.map(toSt);
+
+      // Taux de voisement : pénalise l'élève silencieux ou bruyant
+      const vrA = stA.filter(v => v !== null).length / (stA.length || 1);
+      const vrB = stB.filter(v => v !== null).length / (stB.length || 1);
+      if (vrB < 0.05) return 0;
+
+      // ── Extraction des deltas sur paires voisées consécutives ──
+      // On ne prend Δ[i] = st[i+1] - st[i] que si les deux frames sont voisées.
+      // Cela évite les sauts artificiels aux frontières voix/silence.
+      const deltasOf = stArr => {
+        const d = [];
+        for (let i = 0; i < stArr.length - 1; i++) {
+          if (stArr[i] !== null && stArr[i + 1] !== null) {
+            // Clamp à ±6 st : élimine les sauts d'octave résiduels (artefacts YIN)
+            d.push(Math.max(-6, Math.min(6, stArr[i + 1] - stArr[i])));
+          }
+        }
+        return d;
+      };
+
+      const dA = deltasOf(stA);
+      const dB = deltasOf(stB);
+
+      // Pas assez de données voisées pour comparer
+      if (dA.length < 5 || dB.length < 5) return 0.30 * Math.min(vrA, vrB) / (Math.max(vrA, vrB) + 1e-10);
+
+      // ── DTW sur les contours Δpitch (rééchantillonnés à N points) ─
+      const N = 60;
+      const rA = Array.from(resample(Float32Array.from(dA), N));
+      const rB = Array.from(resample(Float32Array.from(dB), N));
 
       const dtw = Array.from({ length: N + 1 }, () => new Float32Array(N + 1).fill(Infinity));
       dtw[0][0] = 0;
@@ -443,10 +557,49 @@
         dtw[i][j] = cost + Math.min(dtw[i - 1][j], dtw[i][j - 1], dtw[i - 1][j - 1]);
       }
       const dtwDist = dtw[N][N] / (2 * N);
-      const shapeScore = Math.max(0, 1 - dtwDist / 2.0);
-      // Pondère par la similarité de taux de voix (pénalise le bruit non voisé)
-      return shapeScore * (0.6 + 0.4 * voicedPenalty);
+
+      // ── Span mélodique absolu (range en semitones) ────────────────
+      // PROBLÈME Δpitch : DTW trop flexible → aligne les Δ≈0 du student
+      // ("chiiiii" = Δ constant = 0) avec les nombreux Δ≈0 du prof
+      // (pitch stable entre phonèmes) → score élevé alors que faux.
+      //
+      // SOLUTION : vérifier que l'élève couvre un SPAN minimal de hauteur.
+      // Un span de 0.1 st ("chiiiiii") ≠ span de 5 st (vraie intonation).
+      // Ce test est robuste : basé sur les semitones bruts, pas normalisé.
+      //
+      // range = max(st_voisés) - min(st_voisés)
+      //   "chiiiiii" → range ≈ 0.1 st
+      //   bonne prononciation → range ≈ 3-6 st
+      //   requis = max(2.0 st, 25% du range du prof)
+      const voicedValA = stA.filter(v => v !== null);
+      const voicedValB = stB.filter(v => v !== null);
+
+      const rangeOf = vals => {
+        if (vals.length < 2) return 0;
+        let mn = vals[0], mx = vals[0];
+        for (const v of vals) { if (v < mn) mn = v; if (v > mx) mx = v; }
+        return mx - mn;
+      };
+      const rangeA = rangeOf(voicedValA);
+      const rangeB = rangeOf(voicedValB);
+      // Seuil : au moins 2 st de variation OU 25% du range du prof
+      const requiredRange = Math.max(2.0, rangeA * 0.25);
+      const rangeFactor = Math.min(1, rangeB / requiredRange);
+
+      // Exemple "chiiiiii" : rangeB = 0.1, requiredRange = 2.0 → rangeFactor = 0.05
+      // Exemple bonne prononciation : rangeB = 4, requiredRange = 2.0 → rangeFactor = 1
+
+      // Échelle DTW : la plupart des deltas sont dans ±1.5 st
+      const shapeScore = Math.max(0, 1 - dtwDist / 1.5);
+
+      // Score final = forme × voisement × span mélodique
+      const voicedPenalty = Math.min(vrA, vrB) / (Math.max(vrA, vrB) + 1e-10);
+      return shapeScore * (0.7 + 0.3 * voicedPenalty) * rangeFactor;
     }
+
+
+
+
 
     // SCORE TEMPS FORTS — compare les enveloppes d'énergie (accents, articulation)
     // Mesure si les mêmes syllabes sont accentuées, indépendamment du timbre/genre
@@ -461,22 +614,45 @@
       if (vrB < 0.05) return 0; // bruit ou silence → score nul
 
       const N = 64;
-      // Resampler à N buckets et Z-normaliser
-      const prep = env => {
-        const r = Array.from(resample(Float32Array.from(env), N));
-        const m = r.reduce((s, v) => s + v, 0) / N;
-        const std = Math.sqrt(r.reduce((s, v) => s + (v - m) ** 2, 0) / N) || 1;
-        return r.map(v => (v - m) / std);
+      const resampleEnv = env => Array.from(resample(Float32Array.from(env), N));
+      const rA = resampleEnv(envA);
+      const rB = resampleEnv(envB);
+
+      // ── Pénalité d'enveloppe plate (anti-bourdonnement continu) ──
+      // MÊME PROBLÈME que scorePitch : un son continu a une énergie
+      // quasi-constante (std ≈ 0). Après Z-score, le bruit de quantification
+      // est amplifié → corrélation artificielle avec l'enveloppe du prof.
+      // SOLUTION : mesurer la variance RÉELLE de l'enveloppe avant normalisation.
+      const stdOf = arr => {
+        const m = arr.reduce((s, v) => s + v, 0) / arr.length;
+        return Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length);
       };
-      const nA = prep(envA), nB = prep(envB);
+      const stdEnvA = stdOf(rA);
+      const stdEnvB = stdOf(rB);
+
+      // Pénalité : si l'enveloppe de l'élève est plate alors que le prof articule
+      // (seuil à 0.06 car l'enveloppe est normalisée 0..1)
+      const flatnessPenalty = stdEnvA > 0.04
+        ? Math.min(1, stdEnvB / Math.max(stdEnvA * 0.35, 0.06))
+        : 1;
+
+      // Z-normaliser pour la corrélation de Pearson
+      const znorm = (arr, s) => {
+        const m = arr.reduce((sum, v) => sum + v, 0) / arr.length;
+        return s > 0.01 ? arr.map(v => (v - m) / s) : arr.map(() => 0);
+      };
+      const nA = znorm(rA, stdEnvA);
+      const nB = znorm(rB, stdEnvB);
+
       // Corrélation de Pearson (–1..1) → score 0..1
       let num = 0, dA = 0, dB = 0;
       for (let i = 0; i < N; i++) { num += nA[i] * nB[i]; dA += nA[i] ** 2; dB += nB[i] ** 2; }
       const r = (dA > 0 && dB > 0) ? num / Math.sqrt(dA * dB) : 0;
       const corr = Math.max(0, (r + 1) / 2);
-      // Pondère par taux de voix élève vs prof
+
+      // Pondère par taux de voix + pénalité de platitude d'enveloppe
       const voicedPenalty = Math.min(vrA, vrB) / (Math.max(vrA, vrB) + 1e-10);
-      return corr * (0.5 + 0.5 * voicedPenalty);
+      return corr * (0.5 + 0.5 * voicedPenalty) * flatnessPenalty;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -513,19 +689,15 @@
     function computeAndDisplay() {
       if (!store.prof || !store.eleve) return;
 
-      const pctPitch  = Math.round(scorePitch(store.prof.pitch, store.eleve.pitch) * 100);
+      const pctPitch = Math.round(scorePitch(store.prof.pitch, store.eleve.pitch) * 100);
       const pctRhythm = Math.round(scoreRhythm(store.prof.syllables, store.eleve.syllables) * 100);
       const pctStress = Math.round(scoreStress(store.prof.envelope, store.eleve.envelope, store.prof.pitch, store.eleve.pitch) * 100);
 
-      // Gate syllabique : pénalise si l'élève n'a détecté aucune syllabe (bruit, silence)
-      const nSylProf = store.prof.syllables.length;
-      const nSylEleve = store.eleve.syllables.length;
-      // Rapport syllabes élève/prof, plafonné à 1, penalise à 0 si 0 syllabes détectées
-      const sylGate = nSylProf === 0 ? 1 : Math.min(1, nSylEleve / nSylProf);
-
-      // Poids : prosodie 30% · rythme 35% · temps forts 35%
-      const rawGlobal = pctPitch * 0.30 + pctRhythm * 0.35 + pctStress * 0.35;
-      const pctGlobal = Math.round(rawGlobal * sylGate);
+      // Score global = moyenne pondérée exacte des 3 sous-scores affichés
+      // Poids : prosodie 30% · rythme 35% · accentuation 35%
+      // Note : scoreRhythm intègre déjà un countFactor qui pénalise l'écart de syllabes,
+      //        donc pas besoin d'un sylGate séparé (qui rendait le total incohérent).
+      const pctGlobal = Math.round(pctPitch * 0.30 + pctRhythm * 0.35 + pctStress * 0.35);
 
       document.getElementById('scoreBox').style.display = 'flex';
       const col = v => v >= 75 ? '#28a745' : v >= 50 ? '#fd7e14' : '#dc3545';
@@ -1193,83 +1365,8 @@
     // Load history at startup
     loadHistory();
 
-    // ═══════════════════════════════════════════════════════════════
-    // UTILITAIRES AUDIO
-    // ═══════════════════════════════════════════════════════════════
-    async function trimSilence(blob) {
-      const audioCtx = new AudioContext();
-      const decoded = await audioCtx.decodeAudioData(await blob.arrayBuffer());
-      const sr = decoded.sampleRate;
-      const nCh = decoded.numberOfChannels;
-      const N = decoded.length;
 
-      const mono = new Float32Array(N);
-      for (let c = 0; c < nCh; c++) {
-        const d = decoded.getChannelData(c);
-        for (let i = 0; i < N; i++) mono[i] += d[i] / nCh;
-      }
 
-      const winLen = Math.max(1, Math.floor(ONSET_WIN_SEC * sr));
-      const nFrames = Math.ceil(N / winLen);
-      const rms = new Float32Array(nFrames);
-      for (let f = 0; f < nFrames; f++) {
-        const off = f * winLen;
-        let sum = 0, cnt = 0;
-        for (let i = off; i < Math.min(off + winLen, N); i++, cnt++) sum += mono[i] ** 2;
-        rms[f] = Math.sqrt(sum / (cnt || 1));
-      }
-
-      const noiseFrames = rms.slice(0, Math.max(4, Math.floor(nFrames * 0.20)));
-      const sorted = Float32Array.from(noiseFrames).sort();
-      const noiseFloor = sorted[Math.floor(sorted.length * 0.75)];
-      const dynThresh = Math.max(SILENCE_THRESH, noiseFloor * 4);
-
-      let onsetFrame = -1;
-      for (let f = 0; f < nFrames - ONSET_CONFIRM; f++) {
-        let ok = true;
-        for (let k = 0; k < ONSET_CONFIRM; k++) {
-          if (rms[f + k] < dynThresh) { ok = false; break; }
-        }
-        if (ok) { onsetFrame = f; break; }
-      }
-
-      if (onsetFrame < 0) onsetFrame = 0;
-
-      const onsetSample = onsetFrame * winLen;
-      const start = Math.max(0, onsetSample - Math.round(PRE_SPEECH_SEC * sr));
-
-      let endFrame = nFrames - 1;
-      for (let f = nFrames - 1; f >= 0; f--) {
-        if (rms[f] >= dynThresh) { endFrame = f; break; }
-      }
-      const end = Math.min(N - 1, (endFrame + 1) * winLen + Math.round(TAIL_SEC * sr));
-
-      const newLen = end - start + 1;
-      const buf = audioCtx.createBuffer(nCh, newLen, sr);
-      for (let c = 0; c < nCh; c++) {
-        buf.copyToChannel(decoded.getChannelData(c).slice(start, end + 1), c);
-      }
-      audioCtx.close();
-      return { wav: bufferToWav(buf), buffer: buf };
-    }
-
-    function bufferToWav(buffer) {
-      const nCh = buffer.numberOfChannels, sr = buffer.sampleRate, len = buffer.length;
-      const pcm = new Int16Array(len * nCh);
-      for (let i = 0; i < len; i++) for (let c = 0; c < nCh; c++) {
-        const s = buffer.getChannelData(c)[i];
-        pcm[i * nCh + c] = Math.max(-32768, Math.min(32767, Math.round(s * 32767)));
-      }
-      const db = pcm.byteLength, wav = new ArrayBuffer(44 + db), v = new DataView(wav);
-      const w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
-      w(0, 'RIFF'); v.setUint32(4, 36 + db, true); w(8, 'WAVE'); w(12, 'fmt ');
-      v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, nCh, true);
-      v.setUint32(24, sr, true); v.setUint32(28, sr * nCh * 2, true);
-      v.setUint16(32, nCh * 2, true); v.setUint16(34, 16, true);
-      w(36, 'data'); v.setUint32(40, db, true);
-      new Uint8Array(wav, 44).set(new Uint8Array(pcm.buffer));
-      return new Blob([wav], { type: 'audio/wav' });
-    }
 
     // ─── Initialisation au chargement ──────────────────────────────────────────
     appModes[0].dispatchEvent(new Event('change'));

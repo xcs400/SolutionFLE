@@ -1,0 +1,148 @@
+version: "3.9"
+
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8081:80"
+    volumes:
+      - web_www:/var/www/html
+      - ftp_www:/var/www/ftp:ro
+      - web_nginx:/etc/nginx/conf.d
+    depends_on:
+      - php
+    networks:
+      - webnet
+    restart: unless-stopped
+
+  php:
+    image: php:8.3-fpm
+    volumes:
+      - web_www:/var/www/html
+    networks:
+      - webnet
+    restart: unless-stopped
+    command: >
+      sh -c "
+      apt-get update &&
+      apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev &&
+      docker-php-ext-configure gd --with-freetype --with-jpeg &&
+      docker-php-ext-install gd mysqli pdo pdo_mysql &&
+      php-fpm
+      "
+
+  mariadb:
+    image: mariadb:10.11
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: app
+      MYSQL_USER: app
+      MYSQL_PASSWORD: apppass
+    volumes:
+      - web_db:/var/lib/mysql
+    networks:
+      - webnet
+    restart: unless-stopped
+
+  phpmyadmin:
+      image: phpmyadmin:latest
+      ports:
+        - "8082:80"
+      environment:
+        PMA_HOST: mariadb
+        PMA_PORT: 3306
+        # ⚡ ENLEVER PMA_USER et PMA_PASSWORD
+        UPLOAD_LIMIT: 50M
+      depends_on:
+        - mariadb
+      networks:
+        - webnet
+      restart: unless-stopped
+    
+  node:
+      image: node:20-alpine
+      working_dir: /app
+      ports:
+        - "5173:5173"  # Votre port préféré
+      volumes:
+        - web_node:/app
+      networks:
+        - webnet
+      restart: unless-stopped
+      environment:
+        - NODE_ENV=production
+        - PORT=5173    # On force Node à écouter sur 5173
+      # Important : on build d'abord pour créer le dossier /dist, puis on lance le serveur mail
+  #    command: sh -c "npm install && npm run build && node server.js"
+  #    command: sh -c "npm install && npx vite build && node server.js"
+      command: sh -c "npm install --include=dev && npm run build && node server.js"
+      
+  ftp:
+    image: fauria/vsftpd
+    ports:
+      - "21:21"
+      - "21000-21010:21000-21010"
+    environment:
+      FTP_USER: ftpuser
+      FTP_PASS: ftppass
+      PASV_ADDRESS: "192.168.1.52"
+      PASV_MIN_PORT: 21000
+      PASV_MAX_PORT: 21010
+      LOG_STDOUT: "YES"
+      FILE_OPEN_MODE: "0644"
+      LOCAL_UMASK: "022"
+    volumes:
+      - ftp_www:/home/vsftpd/ftpuser
+      - web_www:/home/vsftpd/ftpuser/www
+      - web_node:/home/vsftpd/ftpuser/node
+      - web_nginx:/home/vsftpd/ftpuser/nginx
+    networks:
+      - webnet
+    restart: unless-stopped
+
+  permissions-fixer:
+    image: alpine:latest
+    volumes:
+      - web_www:/var/www/html
+      - web_node:/app
+    command: >
+      sh -c "while true; do 
+        chmod -R 755 /var/www/html /app 2>/dev/null || true;
+        find /var/www/html -type f -exec chmod 644 {} \; 2>/dev/null || true;
+        sleep 30; 
+      done"
+    restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --url http://nginx:80 run --token eyJhIjoiYTNhZmY0YmNhNWI4MjZkMWQwMTZkNTYzMGU2MmE0ZmQiLCJ0IjoiNGYzMzI1NmEtZjE5MC00OTQ4LWFhODctYmJjMjE3ZmFiOTU2IiwicyI6Ik1EWmlZelU1T1dZdFpqaG1PUzAwTm1KakxXRTFNVFV0TjJRM05ETTBOMlV5T0dGaCJ9
+    networks:
+      - webnet
+    restart: unless-stopped
+
+
+    
+  portainer:
+    image: portainer/portainer-ce:latest
+    command: -H unix:///var/run/docker.sock
+    ports:
+      - "9009:9000"
+      - "9443:9443"
+    volumes:
+      - portainer_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - webnet
+    restart: unless-stopped
+
+networks:
+  webnet:
+    driver: bridge
+
+volumes:
+  web_www:
+  web_nginx:
+  web_db:
+  web_node:
+  ftp_www:
+  portainer_data:

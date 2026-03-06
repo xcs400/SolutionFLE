@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Ajoutez l'URL de votre nom de domaine ici (ex: https://www.votre-domaine.com/sitemap.xml)
+Sitemap: https://solutionfle.fr/sitemap.xml

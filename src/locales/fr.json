@@ -19,7 +19,7 @@
   "hero": {
     "title_line1": "Apprendre le français avec ",
     "title_line2": "Aline Gamblin",
-    "subtitle_html": "<img src=\"/uploads/Logo_Solution.jpg\" alt=\"Ma photo\" style=\"float:right;max-width:10%;border-radius:8px;margin-left:2rem;margin-bottom:1rem\"/>Professeure diplômée DAEFLE<br>Français langue étrangère - Alphabétisation - Remise à niveau en françaisCours individuels ou en mini-groupe à mon domicile<br/>Sessions de formation en centre ou en entreprise",
+    "subtitle_html": "Professeure diplômée DAEFLE<br>Français langue étrangère - Alphabétisation - Remise à niveau en français<br>Cours individuels ou en mini-groupe à mon domicile<br/>Sessions de formations en centre ou en entreprise",
     "cta": "Découvrir",
     "cta_link": "#services",
     "image_alt": "Visuel FLE"
@@ -89,21 +89,12 @@
       }
     ]
   },
-  "servicePage": {
-    "interested": "Cette formation vous intéresse ?",
-    "contactCta": "Me contacter pour en savoir plus"
-  },
   "resources": {
     "title": "Contenus & Actualités FLE",
     "subtitle": "Restez connectés avec le monde francophone. Voici une sélection de ressources mises à jour quotidiennement pour pratiquer votre français.",
     "error": "Impossible de charger les actualités FLE pour le moment.",
     "feed_unavailable": "Flux temporairement indisponible.",
     "read_more": "Consulter"
-  },
-  "pronunciation": {
-    "title": "Outil de prononciation",
-    "description": "Améliorez votre prononciation française avec notre outil interactif. Testez votre prononciation et recevez des retours instantanés.",
-    "cta": "🎤 Accéder à l'outil"
   },
   "testimonials": {
     "title": "Témoignages de mes étudiants",
@@ -169,7 +160,7 @@
     "error_generic": "Une erreur est survenue. Veuillez réessayer ou m'appeler directement.",
     "success": "Merci ! Votre message a été envoyé avec succès. Je vous recontacterai très bientôt.",
     "phone_value": "06 49 16 35 37",
-    "email_value": "solutionFLE@gmail.com"
+    "email_value": "contact@solutionfle.fr"
   },
   "footer": {
     "copyright": "Aline Gamblin - Solution FLE",

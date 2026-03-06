@@ -184,8 +184,8 @@ const Header = () => {
                         <a href="tel:+33649163537" className="contact-link" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '600' }}>
                             <Phone className="contact-icon" size={12} /> <EditableText tag="span" translationKey="contact.phone_value">{t('contact.phone_value') || '+33 6 49 16 35 37'}</EditableText>
                         </a>
-                        <a href="mailto:solutionFLE@gmail.com" className="contact-link" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '600', fontSize: '0.8rem' }}>
-                            <Mail className="contact-icon" size={12} /> <EditableText tag="span" translationKey="contact.email_value">{t('contact.email_value') || 'solutionFLE@gmail.com'}</EditableText>
+                        <a href="mailto:contact@solutionfle.fr" className="contact-link" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '600', fontSize: '0.8rem' }}>
+                            <Mail className="contact-icon" size={12} /> <EditableText tag="span" translationKey="contact.email_value">{t('contact.email_value') || 'contact@solutionfle.fr'}</EditableText>
                         </a>
                     </div>
 
@@ -214,7 +214,7 @@ const Header = () => {
                                         <span style={{ fontWeight: '800' }}>
                                             <EditableText tag="span" translationKey="nav.logo_part1">{t('nav.logo_part1') || 'Solution'}</EditableText>
                                         </span>
-      
+
                                         <span style={{ fontWeight: '800' }}>
                                             <EditableText tag="span" translationKey="nav.logo_part2">{t('nav.logo_part2') || 'FLE'}</EditableText>
                                         </span>
